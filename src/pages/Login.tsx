@@ -33,18 +33,18 @@ export const Login = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
         <div className="absolute inset-0" 
              style={{
-               background: "linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)",
-               opacity: 0.8
+               background: "linear-gradient(102.3deg, rgba(147,39,143,1) 5.9%, rgba(234,172,232,1) 64%, rgba(246,219,245,1) 89%)",
+               opacity: 0.9
              }}
         />
         <div className="relative z-10 text-center p-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-enterprise-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Enterprise Portal
           </h1>
-          <p className="text-xl text-enterprise-600 max-w-md">
+          <p className="text-xl text-white/90 max-w-md">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
@@ -108,4 +108,3 @@ export const Login = () => {
     </div>
   );
 };
-
