@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -373,67 +372,69 @@ export const EditFiles = () => {
         </div>
       </div>
 
-      <div className="flex gap-6">
-        <div className={`border rounded-lg ${isAdmin ? 'w-2/3' : 'w-full'}`}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {processedData.map((row) => (
-                <TableRow 
-                  key={row.id}
-                  onClick={() => setSelectedRow(row.id)}
-                  className={`cursor-pointer hover:bg-gray-50 ${
-                    selectedRow === row.id ? 'bg-gray-50' : ''
-                  } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
-                >
-                  <TableCell>{renderEditableCell(row, 'name')}</TableCell>
-                  <TableCell>{renderEditableCell(row, 'department')}</TableCell>
-                  <TableCell>{renderEditableCell(row, 'value')}</TableCell>
-                  <TableCell>{renderEditableCell(row, 'date')}</TableCell>
-                  <TableCell>
-                    {editingRow === row.id ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSave();
-                        }}
-                        className="h-8"
-                      >
-                        <Save className="h-4 w-4 mr-1" />
-                        Save
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(row);
-                        }}
-                        className="h-8"
-                      >
-                        Edit
-                      </Button>
-                    )}
-                  </TableCell>
+      <div className="flex gap-6 flex-col lg:flex-row">
+        <div className={`border rounded-lg overflow-hidden ${isAdmin ? 'lg:w-2/3' : 'w-full'}`}>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[150px]">Name</TableHead>
+                  <TableHead className="min-w-[120px]">Department</TableHead>
+                  <TableHead className="min-w-[100px]">Value</TableHead>
+                  <TableHead className="min-w-[120px]">Date</TableHead>
+                  <TableHead className="min-w-[100px] sticky right-0 bg-background">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {processedData.map((row) => (
+                  <TableRow 
+                    key={row.id}
+                    onClick={() => setSelectedRow(row.id)}
+                    className={`cursor-pointer hover:bg-gray-50 ${
+                      selectedRow === row.id ? 'bg-gray-50' : ''
+                    } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
+                  >
+                    <TableCell className="min-w-[150px]">{renderEditableCell(row, 'name')}</TableCell>
+                    <TableCell className="min-w-[120px]">{renderEditableCell(row, 'department')}</TableCell>
+                    <TableCell className="min-w-[100px]">{renderEditableCell(row, 'value')}</TableCell>
+                    <TableCell className="min-w-[120px]">{renderEditableCell(row, 'date')}</TableCell>
+                    <TableCell className="min-w-[100px] sticky right-0 bg-background">
+                      {editingRow === row.id ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSave();
+                          }}
+                          className="h-8 w-full sm:w-auto"
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          Save
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(row);
+                          }}
+                          className="h-8 w-full sm:w-auto"
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         {isAdmin && selectedRow && (
-          <div className="w-1/3 border rounded-lg bg-gray-50">
+          <div className="w-full lg:w-1/3 border rounded-lg bg-gray-50">
             <div className="p-4 border-b bg-white rounded-t-lg">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-enterprise-500" />
