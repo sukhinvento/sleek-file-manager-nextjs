@@ -15,13 +15,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, AlertTriangle } from 'lucide-react';
+import { History, AlertTriangle, ArrowUpDown, Search } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface DataRow {
   id: number;
@@ -33,11 +35,17 @@ interface DataRow {
   isDateValid: boolean;
 }
 
+type SortField = 'name' | 'department' | 'value' | 'date';
+type SortOrder = 'asc' | 'desc';
+
 export const EditFiles = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const mockTableData: DataRow[] = [
     { 
@@ -117,6 +125,58 @@ export const EditFiles = () => {
     return value;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortData = (data: DataRow[]) => {
+    return [...data].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      if (sortField === 'value') {
+        aValue = a.isValueValid ? parseFloat(String(a.value).replace('$', '')) : -1;
+        bValue = b.isValueValid ? parseFloat(String(b.value).replace('$', '')) : -1;
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const filterData = (data: DataRow[]) => {
+    return data.filter(row => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        row.name.toLowerCase().includes(searchLower) ||
+        row.department.toLowerCase().includes(searchLower) ||
+        String(row.value).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.date.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  };
+
+  const getSortIcon = (field: SortField) => {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="ml-2 h-8 data-[state=sorted]:bg-muted"
+        onClick={() => handleSort(field)}
+      >
+        <ArrowUpDown className="h-4 w-4" />
+      </Button>
+    );
+  };
+
+  const processedData = sortData(filterData(mockTableData));
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -163,6 +223,18 @@ export const EditFiles = () => {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search in table..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-6">
@@ -170,14 +242,22 @@ export const EditFiles = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>
+                  Name {getSortIcon('name')}
+                </TableHead>
+                <TableHead>
+                  Department {getSortIcon('department')}
+                </TableHead>
+                <TableHead>
+                  Value {getSortIcon('value')}
+                </TableHead>
+                <TableHead>
+                  Date {getSortIcon('date')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTableData.map((row) => (
+              {processedData.map((row) => (
                 <TableRow 
                   key={row.id}
                   onClick={() => setSelectedRow(row.id)}
