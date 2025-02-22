@@ -243,32 +243,40 @@ export const EditFiles = () => {
           </Select>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-[180px] h-10">
-              <SortAsc className="mr-2 h-4 w-4" />
-              <span className="mr-1">Sort by:</span> {sortField}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[180px]">
-            <DropdownMenuItem onClick={() => handleSort('name')}>
-              Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleSort('department')}>
-              Department {sortField === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleSort('value')}>
-              Value {sortField === 'value' && (sortOrder === 'asc' ? '↑' : '↓')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleSort('date')}>
-              Date {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
-              Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-10 w-10">
+                    <SortAsc className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[180px]">
+                  <DropdownMenuItem onClick={() => handleSort('name')}>
+                    Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort('department')}>
+                    Department {sortField === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort('value')}>
+                    Value {sortField === 'value' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort('date')}>
+                    Date {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+                    Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Sort by: {sortField} ({sortOrder === 'asc' ? 'ascending' : 'descending'})</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="flex gap-6">
