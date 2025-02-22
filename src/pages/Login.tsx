@@ -44,8 +44,8 @@ export const Login = () => {
           />
           {/* Decorative geometric shapes */}
           <div className="absolute top-0 left-0 w-96 h-96 bg-[#1EAEDB]/10 -translate-x-1/3 -translate-y-1/3 backdrop-blur-lg transform rotate-45" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#0FA0CE]/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-[#33C3F0]/20 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#33C3F0]/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-[#0FA0CE]/20 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
                style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
           <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-[#1EAEDB]/10 backdrop-blur-md transform rotate-12"
                style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }} />
