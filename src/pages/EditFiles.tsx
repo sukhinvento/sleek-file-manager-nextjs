@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, AlertTriangle, ArrowUpDown, Search, SortAsc } from 'lucide-react';
+import { History, AlertTriangle, ArrowUpDown, Search, SortAsc, Save } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -42,6 +42,10 @@ interface DataRow {
   isDateValid: boolean;
 }
 
+type EditableRow = {
+  [K in keyof Omit<DataRow, 'id' | 'isValueValid' | 'isDateValid'>]: string;
+};
+
 type SortField = 'name' | 'department' | 'value' | 'date';
 type SortOrder = 'asc' | 'desc';
 
@@ -53,6 +57,8 @@ export const EditFiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [editingRow, setEditingRow] = useState<number | null>(null);
+  const [editedData, setEditedData] = useState<EditableRow | null>(null);
 
   const mockTableData: DataRow[] = [
     { 
@@ -107,6 +113,45 @@ export const EditFiles = () => {
     setIsAdmin(userType === 'admin');
   }, []);
 
+  const validateValue = (value: string): boolean => {
+    return /^\$\d+(\.\d{2})?$/.test(value);
+  };
+
+  const validateDate = (date: string): boolean => {
+    return /^\d{4}-\d{2}-\d{2}$/.test(date);
+  };
+
+  const handleEdit = (row: DataRow) => {
+    setEditingRow(row.id);
+    setEditedData({
+      name: row.name,
+      department: row.department,
+      value: String(row.value),
+      date: row.date,
+    });
+  };
+
+  const handleSave = () => {
+    if (!editedData || editingRow === null) return;
+
+    const isValueValid = validateValue(editedData.value);
+    const isDateValid = validateDate(editedData.date);
+
+    if (!isValueValid || !isDateValid) {
+      return;
+    }
+
+    console.log('Saving changes:', { id: editingRow, ...editedData });
+    
+    setEditingRow(null);
+    setEditedData(null);
+  };
+
+  const handleCellEdit = (field: keyof EditableRow, value: string) => {
+    if (!editedData) return;
+    setEditedData({ ...editedData, [field]: value });
+  };
+
   const renderCellWithValidation = (value: string | number, isValid: boolean, errorMessage: string, expectedFormat: string) => {
     if (!isValid) {
       return (
@@ -130,6 +175,31 @@ export const EditFiles = () => {
       );
     }
     return value;
+  };
+
+  const renderEditableCell = (row: DataRow, field: keyof EditableRow) => {
+    if (editingRow === row.id) {
+      return (
+        <Input
+          value={editedData?.[field] || ''}
+          onChange={(e) => handleCellEdit(field, e.target.value)}
+          className="h-8 w-full"
+        />
+      );
+    }
+
+    if (field === 'value' || field === 'date') {
+      return renderCellWithValidation(
+        row[field],
+        field === 'value' ? row.isValueValid : row.isDateValid,
+        field === 'value' 
+          ? "The value must be a numerical amount with currency symbol."
+          : "The date must follow YYYY-MM-DD format.",
+        field === 'value' ? "$1234.56" : "2024-02-20"
+      );
+    }
+
+    return row[field];
   };
 
   const handleSort = (field: SortField) => {
@@ -288,6 +358,7 @@ export const EditFiles = () => {
                 <TableHead>Department</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -299,22 +370,36 @@ export const EditFiles = () => {
                     selectedRow === row.id ? 'bg-gray-50' : ''
                   } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
                 >
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.department}</TableCell>
+                  <TableCell>{renderEditableCell(row, 'name')}</TableCell>
+                  <TableCell>{renderEditableCell(row, 'department')}</TableCell>
+                  <TableCell>{renderEditableCell(row, 'value')}</TableCell>
+                  <TableCell>{renderEditableCell(row, 'date')}</TableCell>
                   <TableCell>
-                    {renderCellWithValidation(
-                      row.value, 
-                      row.isValueValid, 
-                      "The value must be a numerical amount with currency symbol.",
-                      "$1234.56"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {renderCellWithValidation(
-                      row.date, 
-                      row.isDateValid, 
-                      "The date must follow YYYY-MM-DD format.",
-                      "2024-02-20"
+                    {editingRow === row.id ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSave();
+                        }}
+                        className="h-8"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(row);
+                        }}
+                        className="h-8"
+                      >
+                        Edit
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
