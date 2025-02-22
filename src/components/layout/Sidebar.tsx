@@ -20,6 +20,11 @@ interface NavItem {
   path: string;
 }
 
+interface SidebarProps {
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (isOpen: boolean) => void;
+}
+
 const navItems: NavItem[] = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Upload, label: 'Upload Files', path: '/upload' },
@@ -28,9 +33,8 @@ const navItems: NavItem[] = [
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
@@ -55,7 +59,7 @@ export const Sidebar = () => {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-40 transform transition-transform duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-40 transition-transform duration-300 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
