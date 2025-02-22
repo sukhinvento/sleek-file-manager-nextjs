@@ -7,9 +7,9 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
-    <div className="flex h-screen bg-enterprise-50">
+    <div className="flex h-screen w-full bg-enterprise-50">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-8 ml-16 transition-[margin] duration-300 ease-in-out lg:ml-64">
+      <main className="flex-1 overflow-auto p-8 ml-16 transition-all duration-300 ease-in-out lg:ml-64 w-[calc(100%-4rem)] lg:w-[calc(100%-16rem)]">
         {children}
       </main>
     </div>

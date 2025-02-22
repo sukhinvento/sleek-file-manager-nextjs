@@ -34,7 +34,7 @@ export const Sidebar = () => {
 
   return (
     <div
-      className={`h-screen bg-enterprise-800 text-white fixed transition-[width] ease-in-out duration-300 ${
+      className={`h-screen bg-enterprise-800 text-white fixed left-0 top-0 z-20 transition-all ease-in-out duration-300 ${
         isCollapsed ? 'w-16' : 'w-64'
       } flex flex-col overflow-hidden`}
     >
