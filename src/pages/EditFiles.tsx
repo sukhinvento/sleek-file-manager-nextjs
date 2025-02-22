@@ -254,16 +254,16 @@ export const EditFiles = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[180px]">
                   <DropdownMenuItem onClick={() => handleSort('name')}>
-                    Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    {sortField === 'name' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Name
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort('department')}>
-                    Department {sortField === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    {sortField === 'department' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Department
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort('value')}>
-                    Value {sortField === 'value' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    {sortField === 'value' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Value
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort('date')}>
-                    Date {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    {sortField === 'date' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Date
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
@@ -284,18 +284,10 @@ export const EditFiles = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
-                  Name {getSortIcon('name')}
-                </TableHead>
-                <TableHead>
-                  Department {getSortIcon('department')}
-                </TableHead>
-                <TableHead>
-                  Value {getSortIcon('value')}
-                </TableHead>
-                <TableHead>
-                  Date {getSortIcon('date')}
-                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
