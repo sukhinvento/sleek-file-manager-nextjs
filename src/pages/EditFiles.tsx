@@ -262,17 +262,8 @@ export const EditFiles = () => {
     });
   };
 
-  const getSortIcon = (field: SortField) => {
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="ml-2 h-8 data-[state=sorted]:bg-muted"
-        onClick={() => handleSort(field)}
-      >
-        <ArrowUpDown className="h-4 w-4" />
-      </Button>
-    );
+  const getSortLabel = () => {
+    return `${sortField.charAt(0).toUpperCase() + sortField.slice(1)} ${sortOrder === 'asc' ? '↑' : '↓'}`;
   };
 
   const processedData = sortData(filterData(tableData));
@@ -362,8 +353,11 @@ export const EditFiles = () => {
                 <TooltipTrigger asChild>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-full">
-                        <SortAsc className="h-4 w-4" />
+                      <Button variant="outline" className="h-10 w-full justify-between">
+                        <div className="flex items-center gap-2">
+                          <SortAsc className="h-4 w-4" />
+                          <span className="text-sm">{getSortLabel()}</span>
+                        </div>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[180px]">
