@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -195,6 +194,18 @@ export const EditFiles = () => {
       </div>
 
       <div className="flex gap-4 mb-6">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search in table..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
         <div className="w-48">
           <Select
             onValueChange={(value) => setSelectedCategory(value)}
@@ -258,18 +269,6 @@ export const EditFiles = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search in table..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-        </div>
       </div>
 
       <div className="flex gap-6">
