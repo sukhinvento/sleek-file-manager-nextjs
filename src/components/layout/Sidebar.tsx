@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -10,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Menu,
   X
 } from 'lucide-react';
 
@@ -38,7 +36,6 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -47,23 +44,19 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <button
-          onClick={toggleMobileMenu}
-          className="p-2 rounded-lg bg-enterprise-800 text-white hover:bg-enterprise-700 transition-colors"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
       {/* Mobile Menu Overlay */}
       <div
-        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-40 transition-transform duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-30 transition-transform duration-300 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col h-full p-4 pt-16">
+        <div className="flex flex-col h-full p-4 pt-20">
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="absolute top-4 right-4 p-2 rounded-lg text-white hover:bg-enterprise-700 transition-colors"
+          >
+            <X size={24} />
+          </button>
           <nav className="flex-1">
             {navItems.map((item) => (
               <button
