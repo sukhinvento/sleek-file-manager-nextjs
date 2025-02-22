@@ -8,6 +8,7 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -16,17 +17,33 @@ export const Login = () => {
     setIsAdmin(email.endsWith('@admin.com'));
   }, [email]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      // Store the user type in sessionStorage
-      sessionStorage.setItem('userType', isAdmin ? 'admin' : 'user');
-      
+    setIsLoading(true);
+
+    try {
+      if (email && password) {
+        // Store the user type in sessionStorage
+        sessionStorage.setItem('userType', isAdmin ? 'admin' : 'user');
+        
+        toast({
+          title: "Success",
+          description: `Welcome back, ${isAdmin ? 'Admin' : 'User'}!`,
+        });
+
+        // Small delay to ensure storage is set before navigation
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
+      }
+    } catch (error) {
       toast({
-        title: "Success",
-        description: `Welcome back, ${isAdmin ? 'Admin' : 'User'}!`,
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred during login. Please try again.",
       });
-      navigate('/dashboard');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,6 +103,7 @@ export const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
+                disabled={isLoading}
               />
               {email && (
                 <p className="mt-1 text-sm text-enterprise-500">
@@ -105,14 +123,16 @@ export const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
+                disabled={isLoading}
               />
             </div>
 
             <Button
               type="submit"
               className="w-full"
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
         </div>
