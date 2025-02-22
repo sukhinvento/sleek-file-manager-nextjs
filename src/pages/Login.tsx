@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,17 @@ export const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check if email is from admin domain
+  useEffect(() => {
+    setIsAdmin(email.endsWith('@admin.com'));
+  }, [email]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
+      // Store the user type in sessionStorage
+      sessionStorage.setItem('userType', isAdmin ? 'admin' : 'user');
+      
       toast({
         title: "Success",
         description: `Welcome back, ${isAdmin ? 'Admin' : 'User'}!`,
@@ -54,26 +62,6 @@ export const Login = () => {
             </p>
           </div>
 
-          {/* Login Type Toggle */}
-          <div className="flex justify-center gap-4 p-1">
-            <Button
-              type="button"
-              variant={!isAdmin ? "default" : "outline"}
-              onClick={() => setIsAdmin(false)}
-              className="w-32"
-            >
-              User
-            </Button>
-            <Button
-              type="button"
-              variant={isAdmin ? "default" : "outline"}
-              onClick={() => setIsAdmin(true)}
-              className="w-32"
-            >
-              Admin
-            </Button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-enterprise-700" htmlFor="email">
@@ -87,6 +75,11 @@ export const Login = () => {
                 className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
+              {email && (
+                <p className="mt-1 text-sm text-enterprise-500">
+                  Logging in as {isAdmin ? 'Administrator' : 'Standard User'}
+                </p>
+              )}
             </div>
 
             <div>
@@ -107,7 +100,7 @@ export const Login = () => {
               type="submit"
               className="w-full"
             >
-              Sign in as {isAdmin ? 'Admin' : 'User'}
+              Sign In
             </Button>
           </form>
         </div>
@@ -115,3 +108,4 @@ export const Login = () => {
     </div>
   );
 };
+
