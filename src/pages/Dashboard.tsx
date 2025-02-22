@@ -11,7 +11,7 @@ const QuickActionCard = ({
   uploadButton,
   IllustrationIcon,
   illustrationColor = "#E5DEFF",
-  illustrationWidth = "33%"
+  illustrationWidth = "25%"
 }: { 
   icon: typeof FileUp; 
   title: string; 
