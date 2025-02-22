@@ -52,11 +52,11 @@ export const Login = () => {
         </div>
         
         {/* Content */}
-        <div className="relative z-10 text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold text-enterprise-900 drop-shadow-lg">
+        <div className="relative z-10 text-left px-12 space-y-4">
+          <h1 className="text-3xl md:text-5xl font-bold text-enterprise-900 drop-shadow-lg">
             Enterprise Portal
           </h1>
-          <p className="text-xl text-enterprise-700 max-w-md mx-auto leading-relaxed drop-shadow">
+          <p className="text-lg text-enterprise-700 max-w-md leading-relaxed drop-shadow">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
