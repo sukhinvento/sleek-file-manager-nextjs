@@ -196,12 +196,12 @@ export const EditFiles = () => {
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search in table..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 h-10"
             />
           </div>
         </div>
@@ -210,7 +210,7 @@ export const EditFiles = () => {
           <Select
             onValueChange={(value) => setSelectedCategory(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
@@ -228,7 +228,7 @@ export const EditFiles = () => {
             onValueChange={(value) => setSelectedSubCategory(value)}
             disabled={!selectedCategory}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Sub-Category" />
             </SelectTrigger>
             <SelectContent>
@@ -245,9 +245,9 @@ export const EditFiles = () => {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-[180px]">
+            <Button variant="outline" className="w-[180px] h-10">
               <SortAsc className="mr-2 h-4 w-4" />
-              Sort by: {sortField}
+              <span className="mr-1">Sort by:</span> {sortField}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[180px]">
