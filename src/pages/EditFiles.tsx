@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/components/ui/use-toast";
 
 interface DataRow {
   id: number;
@@ -50,6 +51,7 @@ type SortField = 'name' | 'department' | 'value' | 'date';
 type SortOrder = 'asc' | 'desc';
 
 export const EditFiles = () => {
+  const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
@@ -59,13 +61,12 @@ export const EditFiles = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedData, setEditedData] = useState<EditableRow | null>(null);
-
-  const mockTableData: DataRow[] = [
+  const [tableData, setTableData] = useState<DataRow[]>([
     { 
       id: 1, 
       name: "John Doe", 
       department: "Sales", 
-      value: "$5000", // Valid
+      value: "$5000",
       date: "2024-02-20",
       isValueValid: true,
       isDateValid: true 
@@ -74,7 +75,7 @@ export const EditFiles = () => {
       id: 2, 
       name: "Jane Smith", 
       department: "Marketing", 
-      value: "Invalid data", // Invalid: should be a number
+      value: "Invalid data",
       date: "2024-02-19",
       isValueValid: false,
       isDateValid: true
@@ -83,12 +84,12 @@ export const EditFiles = () => {
       id: 3, 
       name: "Mike Johnson", 
       department: "IT", 
-      value: "$4200", // Valid
-      date: "Invalid data", // Invalid: wrong date format
+      value: "$4200",
+      date: "Invalid data",
       isValueValid: true,
       isDateValid: false
     },
-  ];
+  ]);
 
   const categories = [
     { id: 1, name: "Finance" },
@@ -138,10 +139,32 @@ export const EditFiles = () => {
     const isDateValid = validateDate(editedData.date);
 
     if (!isValueValid || !isDateValid) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: !isValueValid 
+          ? "Please enter a valid value (e.g., $1234.56)" 
+          : "Please enter a valid date (YYYY-MM-DD)",
+      });
       return;
     }
 
-    console.log('Saving changes:', { id: editingRow, ...editedData });
+    setTableData(prevData => prevData.map(row => {
+      if (row.id === editingRow) {
+        return {
+          ...row,
+          ...editedData,
+          isValueValid: validateValue(editedData.value),
+          isDateValid: validateDate(editedData.date)
+        };
+      }
+      return row;
+    }));
+
+    toast({
+      title: "Changes saved successfully",
+      description: "The row has been updated with the new values.",
+    });
     
     setEditingRow(null);
     setEditedData(null);
@@ -252,7 +275,7 @@ export const EditFiles = () => {
     );
   };
 
-  const processedData = sortData(filterData(mockTableData));
+  const processedData = sortData(filterData(tableData));
 
   return (
     <div className="space-y-6">
