@@ -53,7 +53,7 @@ export const EditFiles = () => {
       id: 2, 
       name: "Jane Smith", 
       department: "Marketing", 
-      value: "Invalid", // Invalid: should be a number
+      value: "Invalid data", // Invalid: should be a number
       date: "2024-02-19",
       isValueValid: false,
       isDateValid: true
@@ -63,7 +63,7 @@ export const EditFiles = () => {
       name: "Mike Johnson", 
       department: "IT", 
       value: "$4200", // Valid
-      date: "Invalid Date", // Invalid: wrong date format
+      date: "Invalid data", // Invalid: wrong date format
       isValueValid: true,
       isDateValid: false
     },
