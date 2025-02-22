@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -15,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, AlertTriangle, ArrowUpDown, Search } from 'lucide-react';
+import { History, AlertTriangle, ArrowUpDown, Search, SortAsc } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -24,6 +25,13 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface DataRow {
   id: number;
@@ -223,6 +231,33 @@ export const EditFiles = () => {
             </SelectContent>
           </Select>
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-[180px]">
+              <SortAsc className="mr-2 h-4 w-4" />
+              Sort by: {sortField}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[180px]">
+            <DropdownMenuItem onClick={() => handleSort('name')}>
+              Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSort('department')}>
+              Department {sortField === 'department' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSort('value')}>
+              Value {sortField === 'value' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSort('date')}>
+              Date {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+              Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="flex-1">
           <div className="relative">
