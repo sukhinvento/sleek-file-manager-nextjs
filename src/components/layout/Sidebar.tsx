@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -9,7 +10,11 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  X
+  X,
+  Folder,
+  ChartBar,
+  ChartLine,
+  ChartPie
 } from 'lucide-react';
 
 interface NavItem {
@@ -18,17 +23,45 @@ interface NavItem {
   path: string;
 }
 
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
 interface SidebarProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (isOpen: boolean) => void;
 }
 
-const navItems: NavItem[] = [
-  { icon: Home, label: 'Dashboard', path: '/dashboard' },
-  { icon: Upload, label: 'Upload Files', path: '/upload' },
-  { icon: FileText, label: 'View Files', path: '/files' },
-  { icon: Edit, label: 'Edit Files', path: '/edit' },
-  { icon: Settings, label: 'Settings', path: '/settings' },
+const navGroups: NavGroup[] = [
+  {
+    label: "Main",
+    items: [
+      { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    ]
+  },
+  {
+    label: "File Management",
+    items: [
+      { icon: Upload, label: 'Upload Files', path: '/upload' },
+      { icon: FileText, label: 'View Files', path: '/files' },
+      { icon: Edit, label: 'Edit Files', path: '/edit' },
+    ]
+  },
+  {
+    label: "Analytics",
+    items: [
+      { icon: ChartBar, label: 'Usage Stats', path: '/analytics/usage' },
+      { icon: ChartLine, label: 'Trends', path: '/analytics/trends' },
+      { icon: ChartPie, label: 'Distribution', path: '/analytics/distribution' },
+    ]
+  },
+  {
+    label: "System",
+    items: [
+      { icon: Settings, label: 'Settings', path: '/settings' },
+    ]
+  }
 ];
 
 export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) => {
@@ -58,15 +91,22 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
             <X size={24} />
           </button>
           <nav className="flex-1">
-            {navItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                className="w-full flex items-center p-4 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors text-white"
-              >
-                <item.icon size={24} className="flex-shrink-0" />
-                <span className="ml-4 text-lg">{item.label}</span>
-              </button>
+            {navGroups.map((group) => (
+              <div key={group.label} className="mb-6">
+                <h2 className="text-enterprise-300 text-sm font-semibold mb-2 px-4">
+                  {group.label}
+                </h2>
+                {group.items.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className="w-full flex items-center p-4 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors text-white"
+                  >
+                    <item.icon size={24} className="flex-shrink-0" />
+                    <span className="ml-4 text-lg">{item.label}</span>
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
           <button 
@@ -97,21 +137,32 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         </div>
 
         <nav className="flex-1 px-2 py-4">
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className="w-full flex items-center p-3 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors"
-            >
-              <item.icon size={20} className="flex-shrink-0" />
-              <span 
-                className={`ml-3 transition-opacity duration-200 ${
-                  isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
-                } whitespace-nowrap`}
+          {navGroups.map((group) => (
+            <div key={group.label} className="mb-6">
+              <h2 
+                className={`text-enterprise-300 text-sm font-semibold mb-2 px-3 transition-opacity duration-200 ${
+                  isCollapsed ? 'opacity-0' : 'opacity-100'
+                }`}
               >
-                {item.label}
-              </span>
-            </button>
+                {group.label}
+              </h2>
+              {group.items.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className="w-full flex items-center p-3 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors"
+                >
+                  <item.icon size={20} className="flex-shrink-0" />
+                  <span 
+                    className={`ml-3 transition-opacity duration-200 ${
+                      isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+                    } whitespace-nowrap`}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 

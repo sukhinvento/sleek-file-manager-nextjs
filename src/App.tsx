@@ -49,6 +49,21 @@ const App = () => (
               <Settings />
             </AppLayout>
           } />
+          <Route path="/analytics/usage" element={
+            <AppLayout>
+              <div className="p-4">Usage Statistics Analytics</div>
+            </AppLayout>
+          } />
+          <Route path="/analytics/trends" element={
+            <AppLayout>
+              <div className="p-4">Trends Analytics</div>
+            </AppLayout>
+          } />
+          <Route path="/analytics/distribution" element={
+            <AppLayout>
+              <div className="p-4">Distribution Analytics</div>
+            </AppLayout>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
