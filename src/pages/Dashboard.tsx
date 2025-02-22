@@ -11,7 +11,7 @@ const QuickActionCard = ({
   uploadButton,
   IllustrationIcon,
   illustrationColor = "#E5DEFF",
-  illustrationWidth = "40%"
+  illustrationWidth = "33%"
 }: { 
   icon: typeof FileUp; 
   title: string; 
@@ -97,7 +97,6 @@ export const Dashboard = () => {
           uploadButton={true}
           IllustrationIcon={FileAxis3d}
           illustrationColor="#E5DEFF"
-          illustrationWidth="50%"
         />
         <QuickActionCard
           icon={FileText}
