@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -40,7 +39,6 @@ export const EditFiles = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
 
-  // Mock data with some invalid entries
   const mockTableData: DataRow[] = [
     { 
       id: 1, 
@@ -94,7 +92,7 @@ export const EditFiles = () => {
     setIsAdmin(userType === 'admin');
   }, []);
 
-  const renderCellWithValidation = (value: string | number, isValid: boolean, errorMessage: string) => {
+  const renderCellWithValidation = (value: string | number, isValid: boolean, errorMessage: string, expectedFormat: string) => {
     if (!isValid) {
       return (
         <TooltipProvider>
@@ -102,8 +100,15 @@ export const EditFiles = () => {
             <TooltipTrigger className="flex items-center gap-2 text-red-500">
               {value} <AlertTriangle className="h-4 w-4" />
             </TooltipTrigger>
-            <TooltipContent>
-              <p>{errorMessage}</p>
+            <TooltipContent className="max-w-xs p-3">
+              <div className="space-y-2">
+                <p className="font-medium">Invalid Data Format</p>
+                <div className="text-sm space-y-1">
+                  <p>Current value: <span className="text-red-500">{value}</span></p>
+                  <p>Expected format: <span className="text-green-500">{expectedFormat}</span></p>
+                  <p className="text-red-400">{errorMessage}</p>
+                </div>
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -161,7 +166,6 @@ export const EditFiles = () => {
       </div>
 
       <div className="flex gap-6">
-        {/* Main Table Section */}
         <div className={`border rounded-lg ${isAdmin ? 'w-2/3' : 'w-full'}`}>
           <Table>
             <TableHeader>
@@ -187,14 +191,16 @@ export const EditFiles = () => {
                     {renderCellWithValidation(
                       row.value, 
                       row.isValueValid, 
-                      "Invalid value format. Expected numerical value."
+                      "The value must be a numerical amount with currency symbol.",
+                      "$1234.56"
                     )}
                   </TableCell>
                   <TableCell>
                     {renderCellWithValidation(
                       row.date, 
                       row.isDateValid, 
-                      "Invalid date format. Expected YYYY-MM-DD."
+                      "The date must follow YYYY-MM-DD format.",
+                      "2024-02-20"
                     )}
                   </TableCell>
                 </TableRow>
@@ -203,7 +209,6 @@ export const EditFiles = () => {
           </Table>
         </div>
 
-        {/* Audit Trail Section */}
         {isAdmin && selectedRow && (
           <div className="w-1/3 border rounded-lg bg-gray-50">
             <div className="p-4 border-b bg-white rounded-t-lg">
