@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Login } from "./pages/Login";
+import { Dashboard } from "./pages/Dashboard";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -19,6 +20,11 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/dashboard" element={
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
