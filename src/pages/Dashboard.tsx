@@ -10,7 +10,8 @@ const QuickActionCard = ({
   onClick,
   uploadButton,
   IllustrationIcon,
-  illustrationColor = "#E5DEFF"
+  illustrationColor = "#E5DEFF",
+  illustrationWidth = "40%"
 }: { 
   icon: typeof FileUp; 
   title: string; 
@@ -19,6 +20,7 @@ const QuickActionCard = ({
   uploadButton?: boolean;
   IllustrationIcon: typeof FileAxis3d;
   illustrationColor?: string;
+  illustrationWidth?: string;
 }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -31,7 +33,7 @@ const QuickActionCard = ({
     <div className="relative p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 text-left w-full overflow-hidden group">
       <div className="flex">
         {/* Content */}
-        <div className="relative z-10 flex-1 pr-4">
+        <div className="relative z-10 flex-1 pr-4" style={{ width: `calc(100% - ${illustrationWidth})` }}>
           <Icon className="w-8 h-8 text-primary mb-4" />
           <h3 className="text-lg font-semibold text-enterprise-900 mb-2">{title}</h3>
           <p className="text-enterprise-500 mb-4">{description}</p>
@@ -56,7 +58,7 @@ const QuickActionCard = ({
         </div>
 
         {/* Vector Illustration */}
-        <div className="relative w-[40%] flex items-center justify-center">
+        <div className="relative flex items-center justify-center" style={{ width: illustrationWidth }}>
           <div className="absolute inset-0 bg-enterprise-100/30 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
           <div className="relative">
             {/* Background glow effect - more subtle */}
@@ -95,6 +97,7 @@ export const Dashboard = () => {
           uploadButton={true}
           IllustrationIcon={FileAxis3d}
           illustrationColor="#E5DEFF"
+          illustrationWidth="50%"
         />
         <QuickActionCard
           icon={FileText}
