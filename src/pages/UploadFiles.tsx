@@ -13,6 +13,7 @@ import { useState } from "react";
 export const UploadFiles = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   // Mock data - Replace with actual data from your backend
   const categories = [
@@ -34,11 +35,21 @@ export const UploadFiles = () => {
     }
 
     if (files && files.length > 0) {
-      console.log("Uploading files:", files);
-      console.log("Category:", selectedCategory);
-      console.log("SubCategory:", selectedSubCategory);
-      // Handle file upload logic here
+      setSelectedFiles(files);
+      console.log("Files selected:", files);
     }
+  };
+
+  const handleSubmit = () => {
+    if (!selectedFiles || !selectedCategory || !selectedSubCategory) {
+      console.error("Please select files and categories before submitting");
+      return;
+    }
+
+    console.log("Submitting files:", selectedFiles);
+    console.log("Category:", selectedCategory);
+    console.log("SubCategory:", selectedSubCategory);
+    // Handle final upload submission logic here
   };
 
   return (
@@ -108,12 +119,29 @@ export const UploadFiles = () => {
             className="hidden"
             onChange={(e) => handleFileUpload(e.target.files)}
           />
-          <Button
-            onClick={() => document.getElementById('file-upload')?.click()}
-            disabled={!selectedCategory || !selectedSubCategory}
-          >
-            Select Files
-          </Button>
+          <div className="space-y-4">
+            <Button
+              onClick={() => document.getElementById('file-upload')?.click()}
+              disabled={!selectedCategory || !selectedSubCategory}
+            >
+              Select Files
+            </Button>
+            
+            {selectedFiles && (
+              <div className="space-y-4">
+                <p className="text-enterprise-600">
+                  {selectedFiles.length} file(s) selected
+                </p>
+                <Button 
+                  variant="default" 
+                  onClick={handleSubmit}
+                  className="w-full"
+                >
+                  Submit Upload
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
