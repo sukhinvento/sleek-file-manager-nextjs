@@ -4,14 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Upload, 
-  FileText, 
-  Edit, 
+  FileText,
   Settings, 
   ChevronLeft,
   ChevronRight,
   LogOut,
   X,
-  Folder,
+  Database,
   ChartBar,
   ChartLine,
   ChartPie
@@ -45,7 +44,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Upload, label: 'Upload Files', path: '/upload' },
       { icon: FileText, label: 'View Files', path: '/files' },
-      { icon: Edit, label: 'Edit Files', path: '/edit' },
+      { icon: Database, label: 'Consolidated Data View', path: '/edit' },
     ]
   },
   {
