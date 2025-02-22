@@ -1,5 +1,5 @@
 
-import { FileUp, FileText, Edit, Upload, Files, FilePenLine } from 'lucide-react';
+import { FileUp, FileText, Edit, FileAxis3d, FolderKanban, FileCode2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 
@@ -9,14 +9,16 @@ const QuickActionCard = ({
   description, 
   onClick,
   uploadButton,
-  IllustrationIcon
+  IllustrationIcon,
+  illustrationColor = "#9b87f5"
 }: { 
   icon: typeof FileUp; 
   title: string; 
   description: string; 
   onClick: () => void;
   uploadButton?: boolean;
-  IllustrationIcon: typeof Upload;
+  IllustrationIcon: typeof FileAxis3d;
+  illustrationColor?: string;
 }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -56,7 +58,18 @@ const QuickActionCard = ({
         {/* Vector Illustration */}
         <div className="relative w-[40%] flex items-center justify-center">
           <div className="absolute inset-0 bg-enterprise-100/50 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
-          <IllustrationIcon className="w-24 h-24 text-enterprise-200 opacity-50 group-hover:opacity-70 transition-opacity duration-200" strokeWidth={1} />
+          <div className="relative">
+            {/* Background glow effect */}
+            <div 
+              className="absolute inset-0 blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-200"
+              style={{ backgroundColor: illustrationColor }}
+            />
+            <IllustrationIcon 
+              className="w-32 h-32 transition-all duration-200 group-hover:scale-105" 
+              strokeWidth={1}
+              style={{ color: illustrationColor }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -80,21 +93,24 @@ export const Dashboard = () => {
           description="Upload new files to the system"
           onClick={() => navigate('/upload')}
           uploadButton={true}
-          IllustrationIcon={Upload}
+          IllustrationIcon={FileAxis3d}
+          illustrationColor="#9b87f5"
         />
         <QuickActionCard
           icon={FileText}
           title="View Files"
           description="View and manage existing files"
           onClick={() => navigate('/files')}
-          IllustrationIcon={Files}
+          IllustrationIcon={FolderKanban}
+          illustrationColor="#7E69AB"
         />
         <QuickActionCard
           icon={Edit}
           title="Edit Files"
           description="Make changes to your files"
           onClick={() => navigate('/edit')}
-          IllustrationIcon={FilePenLine}
+          IllustrationIcon={FileCode2}
+          illustrationColor="#6E59A5"
         />
       </div>
     </div>
