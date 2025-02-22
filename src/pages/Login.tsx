@@ -38,7 +38,7 @@ export const Login = () => {
         <div className="absolute inset-0">
           <div className="absolute inset-0" 
                style={{
-                 background: "linear-gradient(60deg, #33C3F0 0%, #D3E4FD 50%, #F2FCE2 100%)",
+                 background: "linear-gradient(60deg, #1EAEDB 0%, #33C3F0 50%, #F2FCE2 100%)",
                  opacity: 0.95
                }}
           />
@@ -66,17 +66,17 @@ export const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-[#1EAEDB]">
+            <h2 className="text-3xl font-bold text-enterprise-900">
               Welcome Back
             </h2>
-            <p className="mt-2 text-[#0FA0CE]">
+            <p className="mt-2 text-enterprise-500">
               Please sign in to continue
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-[#0FA0CE]" htmlFor="email">
+              <label className="block text-sm font-medium text-enterprise-700" htmlFor="email">
                 Email Address
               </label>
               <input
@@ -84,18 +84,18 @@ export const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-[#D3E4FD] rounded-md text-[#1EAEDB] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#33C3F0] focus:border-transparent"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
               {email && (
-                <p className="mt-1 text-sm text-[#0FA0CE]">
+                <p className="mt-1 text-sm text-enterprise-500">
                   Logging in as {isAdmin ? 'Administrator' : 'Standard User'}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#0FA0CE]" htmlFor="password">
+              <label className="block text-sm font-medium text-enterprise-700" htmlFor="password">
                 Password
               </label>
               <input
@@ -103,14 +103,14 @@ export const Login = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-[#D3E4FD] rounded-md text-[#1EAEDB] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#33C3F0] focus:border-transparent"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-[#1EAEDB] hover:bg-[#33C3F0] text-white"
+              className="w-full"
             >
               Sign In
             </Button>
