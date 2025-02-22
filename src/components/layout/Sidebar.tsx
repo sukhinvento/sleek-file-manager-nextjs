@@ -33,54 +33,57 @@ export const Sidebar = () => {
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
   return (
-    <div
-      className={`h-screen bg-enterprise-800 text-white fixed left-0 top-0 z-20 transition-all ease-in-out duration-300 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      } flex flex-col overflow-hidden`}
-    >
-      <div className="p-4 flex items-center justify-between min-h-[64px]">
-        <div className={`overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
-          <span className="text-xl font-semibold whitespace-nowrap">Enterprise</span>
-        </div>
-        <button
-          onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-enterprise-700 transition-colors"
-        >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
-      </div>
-
-      <nav className="flex-1 px-2 py-4">
-        {navItems.map((item) => (
+    <>
+      <div
+        className={`fixed inset-y-0 left-0 z-20 h-screen bg-enterprise-800 text-white transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'w-16' : 'w-64'
+        } flex flex-col`}
+      >
+        <div className="p-4 flex items-center justify-between min-h-[64px]">
+          <div className={`overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+            <span className="text-xl font-semibold whitespace-nowrap">Enterprise</span>
+          </div>
           <button
-            key={item.path}
-            onClick={() => navigate(item.path)}
-            className="w-full flex items-center p-3 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors"
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg hover:bg-enterprise-700 transition-colors"
           >
-            <item.icon size={20} className="flex-shrink-0" />
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        </div>
+
+        <nav className="flex-1 px-2 py-4">
+          {navItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className="w-full flex items-center p-3 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors"
+            >
+              <item.icon size={20} className="flex-shrink-0" />
+              <span 
+                className={`ml-3 transition-opacity duration-200 ${
+                  isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+                } whitespace-nowrap`}
+              >
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4">
+          <button className="w-full flex items-center p-3 rounded-lg hover:bg-enterprise-700 transition-colors">
+            <LogOut size={20} className="flex-shrink-0" />
             <span 
               className={`ml-3 transition-opacity duration-200 ${
                 isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
               } whitespace-nowrap`}
             >
-              {item.label}
+              Logout
             </span>
           </button>
-        ))}
-      </nav>
-
-      <div className="p-4">
-        <button className="w-full flex items-center p-3 rounded-lg hover:bg-enterprise-700 transition-colors">
-          <LogOut size={20} className="flex-shrink-0" />
-          <span 
-            className={`ml-3 transition-opacity duration-200 ${
-              isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
-            } whitespace-nowrap`}
-          >
-            Logout
-          </span>
-        </button>
+        </div>
       </div>
-    </div>
+      <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'w-16' : 'w-64'}`} />
+    </>
   );
 };
