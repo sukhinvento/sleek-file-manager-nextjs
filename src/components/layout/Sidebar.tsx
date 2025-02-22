@@ -78,7 +78,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
     <>
       {/* Mobile Menu Overlay */}
       <div
-        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-30 transition-transform duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-enterprise-800 z-30 transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -90,7 +90,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
             <X size={24} />
           </button>
           <nav className="flex-1">
-            {navGroups.map((group) => (
+            {navGroups.map((group, index) => (
               <div key={group.label} className="mb-6">
                 <h2 className="text-enterprise-300 text-sm font-semibold mb-2 px-4">
                   {group.label}
@@ -105,6 +105,9 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                     <span className="ml-4 text-lg">{item.label}</span>
                   </button>
                 ))}
+                {index < navGroups.length - 1 && (
+                  <div className="h-px bg-enterprise-700/50 my-6" />
+                )}
               </div>
             ))}
           </nav>
@@ -124,7 +127,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         } flex-col`}
       >
         <div className="p-4 flex items-center justify-between min-h-[64px]">
-          <div className={`overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
             <span className="text-xl font-semibold whitespace-nowrap">Enterprise</span>
           </div>
           <button
@@ -136,11 +139,11 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         </div>
 
         <nav className="flex-1 px-2 py-4">
-          {navGroups.map((group) => (
+          {navGroups.map((group, index) => (
             <div key={group.label} className="mb-6">
               <h2 
-                className={`text-enterprise-300 text-sm font-semibold mb-2 px-3 transition-opacity duration-200 ${
-                  isCollapsed ? 'opacity-0' : 'opacity-100'
+                className={`text-enterprise-300 text-sm font-semibold mb-2 px-3 transition-all duration-300 ease-in-out ${
+                  isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100 h-auto'
                 }`}
               >
                 {group.label}
@@ -153,14 +156,19 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                 >
                   <item.icon size={20} className="flex-shrink-0" />
                   <span 
-                    className={`ml-3 transition-opacity duration-200 ${
-                      isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+                    className={`ml-3 transition-all duration-300 ease-in-out ${
+                      isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
                     } whitespace-nowrap`}
                   >
                     {item.label}
                   </span>
                 </button>
               ))}
+              {index < navGroups.length - 1 && (
+                <div className={`h-px bg-enterprise-700/50 my-6 transition-all duration-300 ease-in-out ${
+                  isCollapsed ? 'w-8 mx-auto' : 'w-full'
+                }`} />
+              )}
             </div>
           ))}
         </nav>
@@ -169,8 +177,8 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
           <button className="w-full flex items-center p-3 rounded-lg hover:bg-enterprise-700 transition-colors">
             <LogOut size={20} className="flex-shrink-0" />
             <span 
-              className={`ml-3 transition-opacity duration-200 ${
-                isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+              className={`ml-3 transition-all duration-300 ease-in-out ${
+                isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
               } whitespace-nowrap`}
             >
               Logout
