@@ -10,7 +10,7 @@ const QuickActionCard = ({
   onClick,
   uploadButton,
   IllustrationIcon,
-  illustrationColor = "#9b87f5"
+  illustrationColor = "#E5DEFF"
 }: { 
   icon: typeof FileUp; 
   title: string; 
@@ -57,16 +57,16 @@ const QuickActionCard = ({
 
         {/* Vector Illustration */}
         <div className="relative w-[40%] flex items-center justify-center">
-          <div className="absolute inset-0 bg-enterprise-100/50 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
+          <div className="absolute inset-0 bg-enterprise-100/30 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
           <div className="relative">
-            {/* Background glow effect */}
+            {/* Background glow effect - more subtle */}
             <div 
-              className="absolute inset-0 blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-200"
+              className="absolute inset-0 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-200"
               style={{ backgroundColor: illustrationColor }}
             />
             <IllustrationIcon 
-              className="w-32 h-32 transition-all duration-200 group-hover:scale-105" 
-              strokeWidth={1}
+              className="w-28 h-28 transition-all duration-200 group-hover:scale-105" 
+              strokeWidth={0.8}
               style={{ color: illustrationColor }}
             />
           </div>
@@ -94,7 +94,7 @@ export const Dashboard = () => {
           onClick={() => navigate('/upload')}
           uploadButton={true}
           IllustrationIcon={FileAxis3d}
-          illustrationColor="#9b87f5"
+          illustrationColor="#E5DEFF"
         />
         <QuickActionCard
           icon={FileText}
@@ -102,7 +102,7 @@ export const Dashboard = () => {
           description="View and manage existing files"
           onClick={() => navigate('/files')}
           IllustrationIcon={FolderKanban}
-          illustrationColor="#7E69AB"
+          illustrationColor="#D3E4FD"
         />
         <QuickActionCard
           icon={Edit}
@@ -110,7 +110,7 @@ export const Dashboard = () => {
           description="Make changes to your files"
           onClick={() => navigate('/edit')}
           IllustrationIcon={FileCode2}
-          illustrationColor="#6E59A5"
+          illustrationColor="#F1F0FB"
         />
       </div>
     </div>
