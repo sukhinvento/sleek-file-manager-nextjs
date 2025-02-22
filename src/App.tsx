@@ -6,6 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
+import { UploadFiles } from "./pages/UploadFiles";
+import { ViewFiles } from "./pages/ViewFiles";
+import { EditFiles } from "./pages/EditFiles";
+import { Settings } from "./pages/Settings";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +27,26 @@ const App = () => (
           <Route path="/dashboard" element={
             <AppLayout>
               <Dashboard />
+            </AppLayout>
+          } />
+          <Route path="/upload" element={
+            <AppLayout>
+              <UploadFiles />
+            </AppLayout>
+          } />
+          <Route path="/files" element={
+            <AppLayout>
+              <ViewFiles />
+            </AppLayout>
+          } />
+          <Route path="/edit" element={
+            <AppLayout>
+              <EditFiles />
+            </AppLayout>
+          } />
+          <Route path="/settings" element={
+            <AppLayout>
+              <Settings />
             </AppLayout>
           } />
           <Route path="*" element={<NotFound />} />
