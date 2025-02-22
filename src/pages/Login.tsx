@@ -38,22 +38,25 @@ export const Login = () => {
         <div className="absolute inset-0">
           <div className="absolute inset-0" 
                style={{
-                 background: "linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)",
-                 opacity: 0.9
+                 background: "linear-gradient(60deg, #abecd6 0%, #fbed96 100%)",
+                 opacity: 0.95
                }}
           />
-          {/* Decorative circles */}
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 backdrop-blur-lg" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3 backdrop-blur-lg" />
-          <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm" />
+          {/* Decorative geometric shapes */}
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 -translate-x-1/3 -translate-y-1/3 backdrop-blur-lg transform rotate-45" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-white/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/10 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
+               style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
+          <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-white/10 backdrop-blur-md transform rotate-12"
+               style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }} />
         </div>
         
         {/* Content */}
-        <div className="relative z-10 text-center p-8 backdrop-blur-sm bg-white/5 rounded-2xl border border-white/10 shadow-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg">
+        <div className="relative z-10 text-center p-8 backdrop-blur-sm bg-white/5 rounded-lg border border-white/10 shadow-2xl">
+          <h1 className="text-4xl md:text-5xl font-bold text-enterprise-900 mb-6 drop-shadow-lg">
             Enterprise Portal
           </h1>
-          <p className="text-xl text-white/90 max-w-md leading-relaxed drop-shadow">
+          <p className="text-xl text-enterprise-700 max-w-md leading-relaxed drop-shadow">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
