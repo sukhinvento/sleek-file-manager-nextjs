@@ -26,6 +26,10 @@ export const Login = () => {
         // Store the user type in sessionStorage
         sessionStorage.setItem('userType', isAdmin ? 'admin' : 'user');
         
+        // Clear form fields
+        setEmail('');
+        setPassword('');
+        
         toast({
           title: "Success",
           description: `Welcome back, ${isAdmin ? 'Admin' : 'User'}!`,
