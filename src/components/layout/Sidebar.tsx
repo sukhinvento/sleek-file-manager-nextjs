@@ -122,28 +122,32 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden lg:flex fixed inset-y-0 left-0 z-20 h-screen bg-enterprise-800 text-white transition-all duration-300 ease-in-out ${
+        className={`hidden lg:flex fixed inset-y-0 left-0 z-20 h-screen bg-enterprise-800 text-white transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isCollapsed ? 'w-16' : 'w-64'
         } flex-col`}
       >
         <div className="p-4 flex items-center justify-between min-h-[64px]">
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
-            <span className="text-xl font-semibold whitespace-nowrap">Enterprise</span>
+          <div className="overflow-hidden w-full">
+            <span className={`text-xl font-semibold whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              isCollapsed ? 'opacity-0 transform -translate-x-full' : 'opacity-100 transform translate-x-0'
+            }`}>
+              Enterprise
+            </span>
           </div>
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-enterprise-700 transition-colors"
+            className="p-2 rounded-lg hover:bg-enterprise-700 transition-colors flex-shrink-0"
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
         </div>
 
-        <nav className="flex-1 px-2 py-4">
+        <nav className="flex-1 px-2 py-4 overflow-hidden">
           {navGroups.map((group, index) => (
             <div key={group.label} className="mb-6">
               <h2 
-                className={`text-enterprise-300 text-sm font-semibold mb-2 px-3 transition-all duration-300 ease-in-out ${
-                  isCollapsed ? 'opacity-0 h-0 mb-0' : 'opacity-100 h-auto'
+                className={`text-enterprise-300 text-sm font-semibold mb-2 px-3 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  isCollapsed ? 'opacity-0 transform -translate-x-full' : 'opacity-100 transform translate-x-0'
                 }`}
               >
                 {group.label}
@@ -156,17 +160,17 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                 >
                   <item.icon size={20} className="flex-shrink-0" />
                   <span 
-                    className={`ml-3 transition-all duration-300 ease-in-out ${
-                      isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
-                    } whitespace-nowrap`}
+                    className={`ml-3 overflow-hidden whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      isCollapsed ? 'w-0 opacity-0 transform -translate-x-full' : 'w-auto opacity-100 transform translate-x-0'
+                    }`}
                   >
                     {item.label}
                   </span>
                 </button>
               ))}
               {index < navGroups.length - 1 && (
-                <div className={`h-px bg-enterprise-700/50 my-6 transition-all duration-300 ease-in-out ${
-                  isCollapsed ? 'w-8 mx-auto' : 'w-full'
+                <div className={`h-px bg-enterprise-700/50 my-6 mx-auto transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  isCollapsed ? 'w-8' : 'w-full'
                 }`} />
               )}
             </div>
@@ -177,16 +181,16 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
           <button className="w-full flex items-center p-3 rounded-lg hover:bg-enterprise-700 transition-colors">
             <LogOut size={20} className="flex-shrink-0" />
             <span 
-              className={`ml-3 transition-all duration-300 ease-in-out ${
-                isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
-              } whitespace-nowrap`}
+              className={`ml-3 overflow-hidden whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                isCollapsed ? 'w-0 opacity-0 transform -translate-x-full' : 'w-auto opacity-100 transform translate-x-0'
+              }`}
             >
               Logout
             </span>
           </button>
         </div>
       </div>
-      <div className={`hidden lg:block transition-all duration-300 ease-in-out ${isCollapsed ? 'w-16' : 'w-64'}`} />
+      <div className={`hidden lg:block transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isCollapsed ? 'w-16' : 'w-64'}`} />
     </>
   );
 };
