@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -15,7 +16,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History } from 'lucide-react';
+import { History, AlertTriangle } from 'lucide-react';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface DataRow {
+  id: number;
+  name: string;
+  department: string;
+  value: string | number;
+  date: string;
+  isValueValid: boolean;
+  isDateValid: boolean;
+}
 
 export const EditFiles = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -23,7 +40,37 @@ export const EditFiles = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
 
-  // Mock data - Replace with actual data from your backend
+  // Mock data with some invalid entries
+  const mockTableData: DataRow[] = [
+    { 
+      id: 1, 
+      name: "John Doe", 
+      department: "Sales", 
+      value: "$5000", // Valid
+      date: "2024-02-20",
+      isValueValid: true,
+      isDateValid: true 
+    },
+    { 
+      id: 2, 
+      name: "Jane Smith", 
+      department: "Marketing", 
+      value: "Invalid", // Invalid: should be a number
+      date: "2024-02-19",
+      isValueValid: false,
+      isDateValid: true
+    },
+    { 
+      id: 3, 
+      name: "Mike Johnson", 
+      department: "IT", 
+      value: "$4200", // Valid
+      date: "Invalid Date", // Invalid: wrong date format
+      isValueValid: true,
+      isDateValid: false
+    },
+  ];
+
   const categories = [
     { id: 1, name: "Finance" },
     { id: 2, name: "Operations" },
@@ -36,15 +83,9 @@ export const EditFiles = () => {
     "HR": ["Recruitment", "Training", "Performance"]
   };
 
-  const mockTableData = [
-    { id: 1, name: "John Doe", department: "Sales", value: "$5000", date: "2024-02-20" },
-    { id: 2, name: "Jane Smith", department: "Marketing", value: "$3500", date: "2024-02-19" },
-    { id: 3, name: "Mike Johnson", department: "IT", value: "$4200", date: "2024-02-18" },
-  ];
-
   const mockAuditTrail = [
     { id: 1, action: "Modified", user: "Admin", timestamp: "2024-02-20 14:30", details: "Changed value from $4800 to $5000" },
-    { id: 2, action: "Viewed", user: "User123", timestamp: "2024-02-20 13:15", details: "Accessed record" },
+    { id: 2, action: "Data Error", user: "System", timestamp: "2024-02-20 13:15", details: "Invalid value format detected" },
     { id: 3, action: "Created", user: "Admin", timestamp: "2024-02-20 10:00", details: "Initial entry" },
   ];
 
@@ -52,6 +93,24 @@ export const EditFiles = () => {
     const userType = sessionStorage.getItem('userType');
     setIsAdmin(userType === 'admin');
   }, []);
+
+  const renderCellWithValidation = (value: string | number, isValid: boolean, errorMessage: string) => {
+    if (!isValid) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="flex items-center gap-2 text-red-500">
+              {value} <AlertTriangle className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{errorMessage}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    return value;
+  };
 
   return (
     <div className="space-y-6">
@@ -120,19 +179,31 @@ export const EditFiles = () => {
                   onClick={() => setSelectedRow(row.id)}
                   className={`cursor-pointer hover:bg-gray-50 ${
                     selectedRow === row.id ? 'bg-gray-50' : ''
-                  }`}
+                  } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
                 >
                   <TableCell>{row.name}</TableCell>
                   <TableCell>{row.department}</TableCell>
-                  <TableCell>{row.value}</TableCell>
-                  <TableCell>{row.date}</TableCell>
+                  <TableCell>
+                    {renderCellWithValidation(
+                      row.value, 
+                      row.isValueValid, 
+                      "Invalid value format. Expected numerical value."
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {renderCellWithValidation(
+                      row.date, 
+                      row.isDateValid, 
+                      "Invalid date format. Expected YYYY-MM-DD."
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
 
-        {/* Audit Trail Section for Admin */}
+        {/* Audit Trail Section */}
         {isAdmin && selectedRow && (
           <div className="w-1/3 border rounded-lg bg-gray-50">
             <div className="p-4 border-b bg-white rounded-t-lg">
@@ -146,10 +217,18 @@ export const EditFiles = () => {
                 {mockAuditTrail.map((audit) => (
                   <div 
                     key={audit.id}
-                    className="bg-white p-4 rounded-lg border shadow-sm"
+                    className={`p-4 rounded-lg border shadow-sm ${
+                      audit.action === "Data Error" 
+                        ? 'bg-red-50 border-red-200' 
+                        : 'bg-white'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium text-enterprise-900">
+                      <span className={`font-medium ${
+                        audit.action === "Data Error" 
+                          ? 'text-red-600' 
+                          : 'text-enterprise-900'
+                      }`}>
                         {audit.action}
                       </span>
                       <span className="text-sm text-enterprise-500">
