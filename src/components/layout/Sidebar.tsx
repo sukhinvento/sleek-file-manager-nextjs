@@ -34,14 +34,14 @@ export const Sidebar = () => {
 
   return (
     <div
-      className={`h-screen bg-enterprise-800 text-white transition-all duration-300 ${
+      className={`h-screen bg-enterprise-800 text-white fixed transition-[width] ease-in-out duration-300 ${
         isCollapsed ? 'w-16' : 'w-64'
-      } flex flex-col`}
+      } flex flex-col overflow-hidden`}
     >
-      <div className="p-4 flex items-center justify-between">
-        {!isCollapsed && (
-          <span className="text-xl font-semibold">Enterprise</span>
-        )}
+      <div className="p-4 flex items-center justify-between min-h-[64px]">
+        <div className={`overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+          <span className="text-xl font-semibold whitespace-nowrap">Enterprise</span>
+        </div>
         <button
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-enterprise-700 transition-colors"
@@ -57,18 +57,28 @@ export const Sidebar = () => {
             onClick={() => navigate(item.path)}
             className="w-full flex items-center p-3 mb-2 rounded-lg hover:bg-enterprise-700 transition-colors"
           >
-            <item.icon size={20} />
-            {!isCollapsed && (
-              <span className="ml-3">{item.label}</span>
-            )}
+            <item.icon size={20} className="flex-shrink-0" />
+            <span 
+              className={`ml-3 transition-opacity duration-200 ${
+                isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+              } whitespace-nowrap`}
+            >
+              {item.label}
+            </span>
           </button>
         ))}
       </nav>
 
       <div className="p-4">
         <button className="w-full flex items-center p-3 rounded-lg hover:bg-enterprise-700 transition-colors">
-          <LogOut size={20} />
-          {!isCollapsed && <span className="ml-3">Logout</span>}
+          <LogOut size={20} className="flex-shrink-0" />
+          <span 
+            className={`ml-3 transition-opacity duration-200 ${
+              isCollapsed ? 'opacity-0 w-0' : 'opacity-100'
+            } whitespace-nowrap`}
+          >
+            Logout
+          </span>
         </button>
       </div>
     </div>
