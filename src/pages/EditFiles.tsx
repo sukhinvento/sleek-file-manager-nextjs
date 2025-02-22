@@ -353,11 +353,8 @@ export const EditFiles = () => {
                 <TooltipTrigger asChild>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="h-10 w-full justify-between">
-                        <div className="flex items-center gap-2">
-                          <SortAsc className="h-4 w-4" />
-                          <span className="text-sm">{getSortLabel()}</span>
-                        </div>
+                      <Button variant="outline" className="h-10 w-fit min-w-24">
+                        <span className="text-sm">{getSortLabel()}</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[180px]">
