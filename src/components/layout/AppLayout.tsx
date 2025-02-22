@@ -25,7 +25,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       <div className={`flex-1 transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
-        <main className={`lg:p-8 p-4 mt-16 lg:mt-0 ${isMobileMenuOpen ? 'lg:opacity-100' : 'lg:opacity-100'} transition-opacity duration-300`}>
+        <main className={`lg:p-4 p-4 mt-16 lg:mt-0 ${isMobileMenuOpen ? 'lg:opacity-100' : 'lg:opacity-100'} transition-opacity duration-300`}>
           {children}
         </main>
       </div>
