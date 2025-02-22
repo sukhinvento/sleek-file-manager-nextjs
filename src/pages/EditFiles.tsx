@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -287,7 +288,7 @@ export const EditFiles = () => {
       </div>
 
       <div className="grid grid-cols-12 gap-4 mb-6">
-        <div className="col-span-4 relative">
+        <div className="col-span-2 relative">
           <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search in table..."
@@ -334,7 +335,7 @@ export const EditFiles = () => {
           </Select>
         </div>
 
-        <div className="col-span-1">
+        <div className="col-span-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
