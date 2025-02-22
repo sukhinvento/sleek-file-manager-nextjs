@@ -58,7 +58,7 @@ const QuickActionCard = ({
         </div>
 
         {/* Vector Illustration */}
-        <div className="relative flex items-center justify-center" style={{ width: illustrationWidth }}>
+        <div className="relative flex items-start justify-end" style={{ width: illustrationWidth }}>
           <div className="absolute inset-0 bg-enterprise-100/30 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
           <div className="relative">
             {/* Background glow effect - more subtle */}
