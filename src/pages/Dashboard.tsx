@@ -11,7 +11,7 @@ const QuickActionCard = ({
   uploadButton,
   IllustrationIcon,
   illustrationColor = "#E5DEFF",
-  illustrationWidth = "25%"
+  illustrationWidth = "30%"
 }: { 
   icon: typeof FileUp; 
   title: string; 
@@ -33,7 +33,7 @@ const QuickActionCard = ({
     <div className="relative p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 text-left w-full overflow-hidden group">
       <div className="flex">
         {/* Content */}
-        <div className="relative z-10 flex-1 pr-4" style={{ width: `calc(100% - ${illustrationWidth})` }}>
+        <div className="relative z-10 flex-1 pr-4" style={{ width: "70%" }}>
           <Icon className="w-8 h-8 text-primary mb-4" />
           <h3 className="text-lg font-semibold text-enterprise-900 mb-2">{title}</h3>
           <p className="text-enterprise-500 mb-4">{description}</p>
