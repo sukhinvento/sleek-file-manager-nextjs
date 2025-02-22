@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -305,89 +306,93 @@ export const EditFiles = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4 mb-6">
-        <div className="col-span-2 relative">
-          <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search in table..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-10"
-          />
-        </div>
-
-        <div className="col-span-2">
-          <Select
-            onValueChange={(value) => setSelectedCategory(value)}
-          >
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.name}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="col-span-2">
-          <Select
-            onValueChange={(value) => setSelectedSubCategory(value)}
-            disabled={!selectedCategory}
-          >
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder="Select Sub-Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategory && 
-                subCategories[selectedCategory as keyof typeof subCategories].map((subCategory) => (
-                  <SelectItem key={subCategory} value={subCategory}>
-                    {subCategory}
+      <div className="flex flex-col gap-4">
+        {/* First row - Categories */}
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-4">
+          <div className="col-span-1 lg:col-span-2">
+            <Select onValueChange={(value) => setSelectedCategory(value)}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
                   </SelectItem>
-                ))
-              }
-            </SelectContent>
-          </Select>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="col-span-1 lg:col-span-2">
+            <Select
+              onValueChange={(value) => setSelectedSubCategory(value)}
+              disabled={!selectedCategory}
+            >
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select Sub-Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedCategory && 
+                  subCategories[selectedCategory as keyof typeof subCategories].map((subCategory) => (
+                    <SelectItem key={subCategory} value={subCategory}>
+                      {subCategory}
+                    </SelectItem>
+                  ))
+                }
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="col-span-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-10 w-10">
-                      <SortAsc className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[180px]">
-                    <DropdownMenuItem onClick={() => handleSort('name')}>
-                      {sortField === 'name' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Name
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSort('department')}>
-                      {sortField === 'department' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Department
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSort('value')}>
-                      {sortField === 'value' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Value
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSort('date')}>
-                      {sortField === 'date' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Date
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
-                      Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Sort by: {sortField} ({sortOrder === 'asc' ? 'ascending' : 'descending'})</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Second row - Search and Sort */}
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-4 mb-2">
+          <div className="col-span-1 lg:col-span-2 relative">
+            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search in table..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-10"
+            />
+          </div>
+
+          <div className="col-span-1 lg:col-span-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-10 w-full">
+                        <SortAsc className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[180px]">
+                      <DropdownMenuItem onClick={() => handleSort('name')}>
+                        {sortField === 'name' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSort('department')}>
+                        {sortField === 'department' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Department
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSort('value')}>
+                        {sortField === 'value' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Value
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSort('date')}>
+                        {sortField === 'date' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Date
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+                        Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sort by: {sortField} ({sortOrder === 'asc' ? 'ascending' : 'descending'})</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
 
