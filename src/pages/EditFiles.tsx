@@ -277,6 +277,25 @@ export const EditFiles = () => {
 
   const processedData = sortData(filterData(tableData));
 
+  const getVisibleColumns = () => {
+    const isMobile = window.innerWidth < 1024;
+    if (isMobile) {
+      return ['name', 'value', 'actions'];
+    }
+    return ['name', 'department', 'value', 'date', 'actions'];
+  };
+
+  const [visibleColumns, setVisibleColumns] = useState(getVisibleColumns());
+
+  useEffect(() => {
+    const handleResize = () => {
+      setVisibleColumns(getVisibleColumns());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -373,32 +392,50 @@ export const EditFiles = () => {
       </div>
 
       <div className="flex gap-6 flex-col lg:flex-row">
-        <div className={`border rounded-lg overflow-hidden ${isAdmin ? 'lg:w-2/3' : 'w-full'}`}>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[150px]">Name</TableHead>
-                  <TableHead className="min-w-[120px]">Department</TableHead>
-                  <TableHead className="min-w-[100px]">Value</TableHead>
-                  <TableHead className="min-w-[120px]">Date</TableHead>
-                  <TableHead className="min-w-[100px] sticky right-0 bg-background">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {processedData.map((row) => (
-                  <TableRow 
-                    key={row.id}
-                    onClick={() => setSelectedRow(row.id)}
-                    className={`cursor-pointer hover:bg-gray-50 ${
-                      selectedRow === row.id ? 'bg-gray-50' : ''
-                    } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
-                  >
-                    <TableCell className="min-w-[150px]">{renderEditableCell(row, 'name')}</TableCell>
-                    <TableCell className="min-w-[120px]">{renderEditableCell(row, 'department')}</TableCell>
-                    <TableCell className="min-w-[100px]">{renderEditableCell(row, 'value')}</TableCell>
-                    <TableCell className="min-w-[120px]">{renderEditableCell(row, 'date')}</TableCell>
-                    <TableCell className="min-w-[100px] sticky right-0 bg-background">
+        <div className={`border rounded-lg ${isAdmin ? 'lg:w-2/3' : 'w-full'}`}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {visibleColumns.includes('name') && (
+                  <TableHead className="w-1/3">Name</TableHead>
+                )}
+                {visibleColumns.includes('department') && (
+                  <TableHead className="w-1/4">Department</TableHead>
+                )}
+                {visibleColumns.includes('value') && (
+                  <TableHead className="w-1/3">Value</TableHead>
+                )}
+                {visibleColumns.includes('date') && (
+                  <TableHead>Date</TableHead>
+                )}
+                {visibleColumns.includes('actions') && (
+                  <TableHead className="w-1/3">Actions</TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {processedData.map((row) => (
+                <TableRow 
+                  key={row.id}
+                  onClick={() => setSelectedRow(row.id)}
+                  className={`cursor-pointer hover:bg-gray-50 ${
+                    selectedRow === row.id ? 'bg-gray-50' : ''
+                  } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
+                >
+                  {visibleColumns.includes('name') && (
+                    <TableCell>{renderEditableCell(row, 'name')}</TableCell>
+                  )}
+                  {visibleColumns.includes('department') && (
+                    <TableCell>{renderEditableCell(row, 'department')}</TableCell>
+                  )}
+                  {visibleColumns.includes('value') && (
+                    <TableCell>{renderEditableCell(row, 'value')}</TableCell>
+                  )}
+                  {visibleColumns.includes('date') && (
+                    <TableCell>{renderEditableCell(row, 'date')}</TableCell>
+                  )}
+                  {visibleColumns.includes('actions') && (
+                    <TableCell>
                       {editingRow === row.id ? (
                         <Button
                           variant="outline"
@@ -407,7 +444,7 @@ export const EditFiles = () => {
                             e.stopPropagation();
                             handleSave();
                           }}
-                          className="h-8 w-full sm:w-auto"
+                          className="h-8 w-full"
                         >
                           <Save className="h-4 w-4 mr-1" />
                           Save
@@ -420,17 +457,17 @@ export const EditFiles = () => {
                             e.stopPropagation();
                             handleEdit(row);
                           }}
-                          className="h-8 w-full sm:w-auto"
+                          className="h-8 w-full"
                         >
                           Edit
                         </Button>
                       )}
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
 
         {isAdmin && selectedRow && (
