@@ -1,5 +1,5 @@
 
-import { FileUp, FileText, Edit } from 'lucide-react';
+import { FileUp, FileText, Edit, Upload, Files, FilePenLine } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 
@@ -9,59 +9,54 @@ const QuickActionCard = ({
   description, 
   onClick,
   uploadButton,
-  backgroundPattern
+  IllustrationIcon
 }: { 
   icon: typeof FileUp; 
   title: string; 
   description: string; 
   onClick: () => void;
   uploadButton?: boolean;
-  backgroundPattern: string;
+  IllustrationIcon: typeof Upload;
 }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      // Handle file upload logic here
       console.log('Files selected:', files);
     }
   };
 
   return (
     <div className="relative p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 text-left w-full overflow-hidden group">
-      {/* Background Pattern */}
-      <div 
-        className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-200"
-        style={{
-          backgroundImage: `url(${backgroundPattern})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          mixBlendMode: 'multiply'
-        }}
-      />
-      
-      {/* Content */}
-      <div className="relative z-10">
-        <Icon className="w-8 h-8 text-primary mb-4" />
-        <h3 className="text-lg font-semibold text-enterprise-900 mb-2">{title}</h3>
-        <p className="text-enterprise-500 mb-4">{description}</p>
-        <div className="flex gap-2">
-          <Button onClick={onClick}>
-            {title}
-          </Button>
-          {uploadButton && (
-            <div className="relative">
-              <Button variant="outline">
-                Quick Upload
-              </Button>
-              <input 
-                type="file" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                onChange={handleFileUpload}
-                multiple
-              />
-            </div>
-          )}
+      <div className="flex">
+        {/* Content */}
+        <div className="relative z-10 flex-1 pr-4">
+          <Icon className="w-8 h-8 text-primary mb-4" />
+          <h3 className="text-lg font-semibold text-enterprise-900 mb-2">{title}</h3>
+          <p className="text-enterprise-500 mb-4">{description}</p>
+          <div className="flex gap-2">
+            <Button onClick={onClick}>
+              {title}
+            </Button>
+            {uploadButton && (
+              <div className="relative">
+                <Button variant="outline">
+                  Quick Upload
+                </Button>
+                <input 
+                  type="file" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  onChange={handleFileUpload}
+                  multiple
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Vector Illustration */}
+        <div className="relative w-[40%] flex items-center justify-center">
+          <div className="absolute inset-0 bg-enterprise-100/50 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
+          <IllustrationIcon className="w-24 h-24 text-enterprise-200 opacity-50 group-hover:opacity-70 transition-opacity duration-200" strokeWidth={1} />
         </div>
       </div>
     </div>
@@ -70,10 +65,6 @@ const QuickActionCard = ({
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-
-  const uploadPattern = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400&h=300";
-  const viewPattern = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=400&h=300";
-  const editPattern = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=400&h=300";
 
   return (
     <div className="space-y-8">
@@ -89,21 +80,21 @@ export const Dashboard = () => {
           description="Upload new files to the system"
           onClick={() => navigate('/upload')}
           uploadButton={true}
-          backgroundPattern={uploadPattern}
+          IllustrationIcon={Upload}
         />
         <QuickActionCard
           icon={FileText}
           title="View Files"
           description="View and manage existing files"
           onClick={() => navigate('/files')}
-          backgroundPattern={viewPattern}
+          IllustrationIcon={Files}
         />
         <QuickActionCard
           icon={Edit}
           title="Edit Files"
           description="Make changes to your files"
           onClick={() => navigate('/edit')}
-          backgroundPattern={editPattern}
+          IllustrationIcon={FilePenLine}
         />
       </div>
     </div>
