@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -58,8 +57,8 @@ export const EditFiles = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-enterprise-900">Edit Files</h1>
-          <p className="text-enterprise-500 mt-2">View and edit consolidated file data</p>
+          <h1 className="text-3xl font-bold text-enterprise-900">Consolidated Data View</h1>
+          <p className="text-enterprise-500 mt-2">View and analyze combined data from uploaded files</p>
         </div>
       </div>
 
