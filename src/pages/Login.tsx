@@ -38,25 +38,25 @@ export const Login = () => {
         <div className="absolute inset-0">
           <div className="absolute inset-0" 
                style={{
-                 background: "linear-gradient(60deg, #abecd6 0%, #fbed96 100%)",
+                 background: "linear-gradient(60deg, #33C3F0 0%, #D3E4FD 50%, #F2FCE2 100%)",
                  opacity: 0.95
                }}
           />
           {/* Decorative geometric shapes */}
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 -translate-x-1/3 -translate-y-1/3 backdrop-blur-lg transform rotate-45" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-white/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/10 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
+          <div className="absolute top-0 left-0 w-96 h-96 bg-[#1EAEDB]/10 -translate-x-1/3 -translate-y-1/3 backdrop-blur-lg transform rotate-45" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#0FA0CE]/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-[#F2FCE2]/20 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
                style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
-          <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-white/10 backdrop-blur-md transform rotate-12"
+          <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-[#33C3F0]/10 backdrop-blur-md transform rotate-12"
                style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }} />
         </div>
         
         {/* Content */}
         <div className="relative z-10 text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold text-enterprise-900 drop-shadow-lg">
+          <h1 className="text-4xl md:text-6xl font-bold text-[#1EAEDB] drop-shadow-lg">
             Enterprise Portal
           </h1>
-          <p className="text-xl text-enterprise-700 max-w-md mx-auto leading-relaxed drop-shadow">
+          <p className="text-xl text-[#0FA0CE] max-w-md mx-auto leading-relaxed drop-shadow">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
@@ -66,17 +66,17 @@ export const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-enterprise-900">
+            <h2 className="text-3xl font-bold text-[#1EAEDB]">
               Welcome Back
             </h2>
-            <p className="mt-2 text-enterprise-500">
+            <p className="mt-2 text-[#0FA0CE]">
               Please sign in to continue
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-enterprise-700" htmlFor="email">
+              <label className="block text-sm font-medium text-[#0FA0CE]" htmlFor="email">
                 Email Address
               </label>
               <input
@@ -84,18 +84,18 @@ export const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-[#D3E4FD] rounded-md text-[#1EAEDB] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#33C3F0] focus:border-transparent"
                 required
               />
               {email && (
-                <p className="mt-1 text-sm text-enterprise-500">
+                <p className="mt-1 text-sm text-[#0FA0CE]">
                   Logging in as {isAdmin ? 'Administrator' : 'Standard User'}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-enterprise-700" htmlFor="password">
+              <label className="block text-sm font-medium text-[#0FA0CE]" htmlFor="password">
                 Password
               </label>
               <input
@@ -103,14 +103,14 @@ export const Login = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-[#D3E4FD] rounded-md text-[#1EAEDB] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#33C3F0] focus:border-transparent"
                 required
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-[#1EAEDB] hover:bg-[#33C3F0] text-white"
             >
               Sign In
             </Button>
