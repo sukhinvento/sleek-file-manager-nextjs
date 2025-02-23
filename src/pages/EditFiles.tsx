@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, AlertTriangle, ArrowUpDown, Search, SortAsc, Save } from 'lucide-react';
+import { History, AlertTriangle, X } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -40,6 +40,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 
 interface DataRow {
   id: number;
@@ -57,6 +58,14 @@ type EditableRow = {
 
 type SortField = 'name' | 'department' | 'value' | 'date';
 type SortOrder = 'asc' | 'desc';
+
+interface AuditEntry {
+  id: number;
+  action: string;
+  user: string;
+  timestamp: string;
+  details: string;
+}
 
 export const EditFiles = () => {
   const { toast } = useToast();
@@ -134,6 +143,8 @@ export const EditFiles = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
+  const [selectedAuditRow, setSelectedAuditRow] = useState<number | null>(null);
 
   useEffect(() => {
     const userType = sessionStorage.getItem('userType');
@@ -324,6 +335,11 @@ export const EditFiles = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handleAuditClick = (rowId: number) => {
+    setSelectedAuditRow(rowId);
+    setShowAuditTrail(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -462,32 +478,47 @@ export const EditFiles = () => {
                   )}
                   {visibleColumns.includes('actions') && (
                     <TableCell>
-                      {editingRow === row.id ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSave();
-                          }}
-                          className="h-8 w-full"
-                        >
-                          <Save className="h-4 w-4 mr-1" />
-                          Save
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(row);
-                          }}
-                          className="h-8 w-full"
-                        >
-                          Edit
-                        </Button>
-                      )}
+                      <div className="flex gap-2">
+                        {editingRow === row.id ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSave();
+                            }}
+                            className="h-8"
+                          >
+                            <Save className="h-4 w-4 mr-1" />
+                            Save
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(row);
+                              }}
+                              className="h-8"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAuditClick(row.id);
+                              }}
+                              className="h-8"
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -528,47 +559,56 @@ export const EditFiles = () => {
         </div>
 
         {isAdmin && selectedRow && (
-          <div className="w-full lg:w-1/3 border rounded-lg bg-gray-50">
-            <div className="p-4 border-b bg-white rounded-t-lg">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-enterprise-500" />
-                <h3 className="font-semibold text-enterprise-900">Audit Trail</h3>
-              </div>
-            </div>
-            <ScrollArea className="h-[calc(100vh-300px)] p-4">
-              <div className="space-y-4">
-                {mockAuditTrail.map((audit) => (
-                  <div 
-                    key={audit.id}
-                    className={`p-4 rounded-lg border shadow-sm ${
-                      audit.action === "Data Error" 
-                        ? 'bg-red-50 border-red-200' 
-                        : 'bg-white'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className={`font-medium ${
+          <Sheet open={showAuditTrail} onOpenChange={setShowAuditTrail}>
+            <SheetContent side="right" className="w-full sm:w-[400px]">
+              <SheetHeader className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="flex items-center gap-2">
+                    <History className="w-5 h-5 text-muted-foreground" />
+                    Audit Trail
+                  </SheetTitle>
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100vh-100px)] mt-6">
+                <div className="space-y-4 pr-4">
+                  {mockAuditTrail.map((audit) => (
+                    <div 
+                      key={audit.id}
+                      className={`p-4 rounded-lg border shadow-sm ${
                         audit.action === "Data Error" 
-                          ? 'text-red-600' 
-                          : 'text-enterprise-900'
-                      }`}>
-                        {audit.action}
-                      </span>
-                      <span className="text-sm text-enterprise-500">
-                        {audit.timestamp}
-                      </span>
+                          ? 'bg-red-50 border-red-200' 
+                          : 'bg-white'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className={`font-medium ${
+                          audit.action === "Data Error" 
+                            ? 'text-red-600' 
+                            : 'text-enterprise-900'
+                        }`}>
+                          {audit.action}
+                        </span>
+                        <span className="text-sm text-enterprise-500">
+                          {audit.timestamp}
+                        </span>
+                      </div>
+                      <p className="text-sm text-enterprise-700 mb-1">
+                        {audit.details}
+                      </p>
+                      <p className="text-xs text-enterprise-500">
+                        By: {audit.user}
+                      </p>
                     </div>
-                    <p className="text-sm text-enterprise-700 mb-1">
-                      {audit.details}
-                    </p>
-                    <p className="text-xs text-enterprise-500">
-                      By: {audit.user}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
     </div>
