@@ -335,7 +335,8 @@ export const EditFiles = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleAuditClick = (rowId: number) => {
+  const handleAuditClick = (rowId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedAuditRow(rowId);
     setShowAuditTrail(true);
   };
@@ -508,10 +509,7 @@ export const EditFiles = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAuditClick(row.id);
-                              }}
+                              onClick={(e) => handleAuditClick(row.id, e)}
                               className="h-8"
                             >
                               <History className="h-4 w-4" />
