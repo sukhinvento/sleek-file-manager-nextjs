@@ -22,7 +22,7 @@ export function ColumnSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-auto h-8 lg:flex">
+        <Button variant="outline" className="h-10 w-fit min-w-24">
           <Columns className="mr-2 h-4 w-4" />
           <span>Columns</span>
         </Button>
