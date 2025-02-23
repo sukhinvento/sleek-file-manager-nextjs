@@ -297,7 +297,6 @@ export const EditFiles = () => {
       </div>
 
       <div className="flex flex-col gap-4">
-        {/* First row - Categories */}
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-4">
           <div className="col-span-1 lg:col-span-2">
             <Select onValueChange={(value) => setSelectedCategory(value)}>
@@ -334,20 +333,20 @@ export const EditFiles = () => {
             </Select>
           </div>
         </div>
+      </div>
 
-        {/* Second row - Search and Sort */}
-        <div className="grid grid-cols-2 lg:grid-cols-12 gap-4 mb-2">
-          <div className="col-span-1 lg:col-span-2 relative">
-            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search in table..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-10"
-            />
-          </div>
-
-          <div className="col-span-1 lg:col-span-2">
+      <div className="flex gap-6 flex-col lg:flex-row">
+        <div className={`border rounded-lg ${isAdmin ? 'lg:w-2/3' : 'w-full'}`}>
+          <div className="px-4 py-3 border-b flex items-center justify-between">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search in table..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 h-10"
+              />
+            </div>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -383,11 +382,6 @@ export const EditFiles = () => {
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>
-      </div>
-
-      <div className="flex gap-6 flex-col lg:flex-row">
-        <div className={`border rounded-lg ${isAdmin ? 'lg:w-2/3' : 'w-full'}`}>
           <Table>
             <TableHeader>
               <TableRow>
