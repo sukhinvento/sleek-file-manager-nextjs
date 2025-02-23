@@ -22,8 +22,19 @@ export const EditFiles = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
   const [selectedAuditRow, setSelectedAuditRow] = useState<number | null>(null);
-
-  const tableData = [
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    'name', 
+    'department', 
+    'subCategory', 
+    'value', 
+    'date', 
+    'status',
+    'priority',
+    'assignedTo',
+    'lastModified',
+    'actions'
+  ]);
+  const [tableData, setTableData] = useState<DataRow[]>([
     { 
       id: 1, 
       name: "John Doe", 
@@ -79,7 +90,7 @@ export const EditFiles = () => {
     { id: 40, name: "Leo Marshall", department: "Sales", subCategory: "South", value: "$5300", date: "Invalid date", status: "Active", priority: "Medium", assignedTo: "Team A", lastModified: "2024-01-13", isValueValid: true, isDateValid: false },
     { id: 41, name: "Luna Perry", department: "Marketing", subCategory: "Traditional", value: "$4700", date: "2024-01-12", status: "Inactive", priority: "High", assignedTo: "Team B", lastModified: "2024-01-12", isValueValid: true, isDateValid: true },
     { id: 42, name: "Elijah Long", department: "IT", subCategory: "Infrastructure", value: "Invalid data", date: "2024-01-11", status: "Active", priority: "Low", assignedTo: "Team C", lastModified: "2024-01-11", isValueValid: false, isDateValid: true }
-  ];
+  ]);
 
   const categories = [
     { id: 1, name: "Sales" },
