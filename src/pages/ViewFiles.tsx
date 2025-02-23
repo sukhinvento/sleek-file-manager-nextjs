@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, History } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,9 +19,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export const ViewFiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     'name',
     'type',
@@ -64,6 +74,14 @@ export const ViewFiles = () => {
     file.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
     file.date.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedFiles = filteredFiles.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleAuditClick = (fileId: number) => {
+    console.log(`View audit trail for file ${fileId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -114,7 +132,7 @@ export const ViewFiles = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredFiles.map((file) => (
+              {paginatedFiles.map((file) => (
                 <TableRow key={file.id} className="hover:bg-muted/50">
                   {visibleColumns.includes('name') && (
                     <TableCell className="sticky left-0 bg-white">
@@ -148,6 +166,23 @@ export const ViewFiles = () => {
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="rounded-md"
+                                onClick={() => handleAuditClick(file.id)}
+                              >
+                                <History className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View audit trail</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                   )}
@@ -155,6 +190,35 @@ export const ViewFiles = () => {
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="border-t px-4 py-2 bg-white">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(page)}
+                    isActive={currentPage === page}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>
