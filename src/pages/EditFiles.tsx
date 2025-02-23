@@ -46,6 +46,7 @@ interface DataRow {
   id: number;
   name: string;
   department: string;
+  subCategory: string;  // Added subCategory field
   value: string | number;
   date: string;
   isValueValid: boolean;
@@ -53,7 +54,7 @@ interface DataRow {
 }
 
 type EditableRow = {
-  [K in keyof Omit<DataRow, 'id' | 'isValueValid' | 'isDateValid'>]: string;
+  [K in keyof Omit<DataRow, 'id' | 'isValueValid' | 'isDateValid'>>]: string;
 };
 
 type SortField = 'name' | 'department' | 'value' | 'date';
@@ -78,48 +79,48 @@ export const EditFiles = () => {
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedData, setEditedData] = useState<EditableRow | null>(null);
   const [tableData, setTableData] = useState<DataRow[]>([
-    { id: 1, name: "John Doe", department: "Sales", value: "$5000", date: "2024-02-20", isValueValid: true, isDateValid: true },
-    { id: 2, name: "Jane Smith", department: "Marketing", value: "Invalid data", date: "2024-02-19", isValueValid: false, isDateValid: true },
-    { id: 3, name: "Mike Johnson", department: "IT", value: "$4200", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 4, name: "Sarah Wilson", department: "Sales", value: "$6300", date: "2024-02-18", isValueValid: true, isDateValid: true },
-    { id: 5, name: "Tom Brown", department: "Marketing", value: "$3800", date: "2024-02-17", isValueValid: true, isDateValid: true },
-    { id: 6, name: "Emily Davis", department: "IT", value: "$5500", date: "2024-02-16", isValueValid: true, isDateValid: true },
-    { id: 7, name: "Michael Lee", department: "Sales", value: "$4700", date: "2024-02-15", isValueValid: true, isDateValid: true },
-    { id: 8, name: "Jessica Taylor", department: "Marketing", value: "Invalid data", date: "2024-02-14", isValueValid: false, isDateValid: true },
-    { id: 9, name: "David Wilson", department: "IT", value: "$5100", date: "2024-02-13", isValueValid: true, isDateValid: true },
-    { id: 10, name: "Lisa Anderson", department: "Sales", value: "$4900", date: "2024-02-12", isValueValid: true, isDateValid: true },
-    { id: 11, name: "Robert Martin", department: "Marketing", value: "$5200", date: "2024-02-11", isValueValid: true, isDateValid: true },
-    { id: 12, name: "Emma Thompson", department: "IT", value: "$4600", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 13, name: "James Wilson", department: "Sales", value: "$5800", date: "2024-02-09", isValueValid: true, isDateValid: true },
-    { id: 14, name: "Sophie Clark", department: "Marketing", value: "$4300", date: "2024-02-08", isValueValid: true, isDateValid: true },
-    { id: 15, name: "William Turner", department: "IT", value: "Invalid data", date: "2024-02-07", isValueValid: false, isDateValid: true },
-    { id: 16, name: "Oliver White", department: "Sales", value: "$5400", date: "2024-02-06", isValueValid: true, isDateValid: true },
-    { id: 17, name: "Grace Harris", department: "Marketing", value: "$4800", date: "2024-02-05", isValueValid: true, isDateValid: true },
-    { id: 18, name: "Daniel King", department: "IT", value: "$5600", date: "2024-02-04", isValueValid: true, isDateValid: true },
-    { id: 19, name: "Ava Martinez", department: "Sales", value: "$4400", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 20, name: "Lucas Baker", department: "Marketing", value: "$5300", date: "2024-02-02", isValueValid: true, isDateValid: true },
-    { id: 21, name: "Mia Nelson", department: "IT", value: "$4700", date: "2024-02-01", isValueValid: true, isDateValid: true },
-    { id: 22, name: "Ethan Carter", department: "Sales", value: "Invalid data", date: "2024-01-31", isValueValid: false, isDateValid: true },
-    { id: 23, name: "Isabella Hill", department: "Marketing", value: "$5100", date: "2024-01-30", isValueValid: true, isDateValid: true },
-    { id: 24, name: "Alexander Ross", department: "IT", value: "$4900", date: "2024-01-29", isValueValid: true, isDateValid: true },
-    { id: 25, name: "Charlotte Wood", department: "Sales", value: "$5500", date: "2024-01-28", isValueValid: true, isDateValid: true },
-    { id: 26, name: "Benjamin Cox", department: "Marketing", value: "$4600", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 27, name: "Sophia Ward", department: "IT", value: "$5200", date: "2024-01-26", isValueValid: true, isDateValid: true },
-    { id: 28, name: "Henry Foster", department: "Sales", value: "$4800", date: "2024-01-25", isValueValid: true, isDateValid: true },
-    { id: 29, name: "Amelia Butler", department: "Marketing", value: "Invalid data", date: "2024-01-24", isValueValid: false, isDateValid: true },
-    { id: 30, name: "Sebastian Gray", department: "IT", value: "$5300", date: "2024-01-23", isValueValid: true, isDateValid: true },
-    { id: 31, name: "Victoria Price", department: "Sales", value: "$4700", date: "2024-01-22", isValueValid: true, isDateValid: true },
-    { id: 32, name: "Jack Morgan", department: "Marketing", value: "$5100", date: "2024-01-21", isValueValid: true, isDateValid: true },
-    { id: 33, name: "Scarlett Cole", department: "IT", value: "$4900", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 34, name: "Theodore Barnes", department: "Sales", value: "$5400", date: "2024-01-19", isValueValid: true, isDateValid: true },
-    { id: 35, name: "Chloe Russell", department: "Marketing", value: "Invalid data", date: "2024-01-18", isValueValid: false, isDateValid: true },
-    { id: 36, name: "Owen Griffin", department: "IT", value: "$5000", date: "2024-01-17", isValueValid: true, isDateValid: true },
-    { id: 37, name: "Zoe Fisher", department: "Sales", value: "$4800", date: "2024-01-16", isValueValid: true, isDateValid: true },
-    { id: 38, name: "Gabriel Kelly", department: "Marketing", value: "$5200", date: "2024-01-15", isValueValid: true, isDateValid: true },
-    { id: 39, name: "Audrey Hayes", department: "IT", value: "$4600", date: "2024-01-14", isValueValid: true, isDateValid: true },
-    { id: 40, name: "Leo Marshall", department: "Sales", value: "$5300", date: "Invalid date", isValueValid: true, isDateValid: false },
-    { id: 41, name: "Luna Perry", department: "Marketing", value: "$4700", date: "2024-01-12", isValueValid: true, isDateValid: true },
-    { id: 42, name: "Elijah Long", department: "IT", value: "Invalid data", date: "2024-01-11", isValueValid: false, isDateValid: true }
+    { id: 1, name: "John Doe", department: "Sales", subCategory: "North", value: "$5000", date: "2024-02-20", isValueValid: true, isDateValid: true },
+    { id: 2, name: "Jane Smith", department: "Marketing", subCategory: "Digital", value: "Invalid data", date: "2024-02-19", isValueValid: false, isDateValid: true },
+    { id: 3, name: "Mike Johnson", department: "IT", subCategory: "Development", value: "$4200", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 4, name: "Sarah Wilson", department: "Sales", subCategory: "South", value: "$6300", date: "2024-02-18", isValueValid: true, isDateValid: true },
+    { id: 5, name: "Tom Brown", department: "Marketing", subCategory: "Traditional", value: "$3800", date: "2024-02-17", isValueValid: true, isDateValid: true },
+    { id: 6, name: "Emily Davis", department: "IT", subCategory: "Infrastructure", value: "$5500", date: "2024-02-16", isValueValid: true, isDateValid: true },
+    { id: 7, name: "Michael Lee", department: "Sales", subCategory: "East", value: "$4700", date: "2024-02-15", isValueValid: true, isDateValid: true },
+    { id: 8, name: "Jessica Taylor", department: "Marketing", subCategory: "Social", value: "Invalid data", date: "2024-02-14", isValueValid: false, isDateValid: true },
+    { id: 9, name: "David Wilson", department: "IT", subCategory: "Support", value: "$5100", date: "2024-02-13", isValueValid: true, isDateValid: true },
+    { id: 10, name: "Lisa Anderson", department: "Sales", subCategory: "West", value: "$4900", date: "2024-02-12", isValueValid: true, isDateValid: true },
+    { id: 11, name: "Robert Martin", department: "Marketing", subCategory: "Digital", value: "$5200", date: "2024-02-11", isValueValid: true, isDateValid: true },
+    { id: 12, name: "Emma Thompson", department: "IT", subCategory: "Development", value: "$4600", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 13, name: "James Wilson", department: "Sales", subCategory: "North", value: "$5800", date: "2024-02-09", isValueValid: true, isDateValid: true },
+    { id: 14, name: "Sophie Clark", department: "Marketing", subCategory: "Traditional", value: "$4300", date: "2024-02-08", isValueValid: true, isDateValid: true },
+    { id: 15, name: "William Turner", department: "IT", subCategory: "Infrastructure", value: "Invalid data", date: "2024-02-07", isValueValid: false, isDateValid: true },
+    { id: 16, name: "Oliver White", department: "Sales", subCategory: "South", value: "$5400", date: "2024-02-06", isValueValid: true, isDateValid: true },
+    { id: 17, name: "Grace Harris", department: "Marketing", subCategory: "Social", value: "$4800", date: "2024-02-05", isValueValid: true, isDateValid: true },
+    { id: 18, name: "Daniel King", department: "IT", subCategory: "Support", value: "$5600", date: "2024-02-04", isValueValid: true, isDateValid: true },
+    { id: 19, name: "Ava Martinez", department: "Sales", subCategory: "East", value: "$4400", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 20, name: "Lucas Baker", department: "Marketing", subCategory: "Digital", value: "$5300", date: "2024-02-02", isValueValid: true, isDateValid: true },
+    { id: 21, name: "Mia Nelson", department: "IT", subCategory: "Development", value: "$4700", date: "2024-02-01", isValueValid: true, isDateValid: true },
+    { id: 22, name: "Ethan Carter", department: "Sales", subCategory: "West", value: "Invalid data", date: "2024-01-31", isValueValid: false, isDateValid: true },
+    { id: 23, name: "Isabella Hill", department: "Marketing", subCategory: "Traditional", value: "$5100", date: "2024-01-30", isValueValid: true, isDateValid: true },
+    { id: 24, name: "Alexander Ross", department: "IT", subCategory: "Infrastructure", value: "$4900", date: "2024-01-29", isValueValid: true, isDateValid: true },
+    { id: 25, name: "Charlotte Wood", department: "Sales", subCategory: "North", value: "$5500", date: "2024-01-28", isValueValid: true, isDateValid: true },
+    { id: 26, name: "Benjamin Cox", department: "Marketing", subCategory: "Social", value: "$4600", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 27, name: "Sophia Ward", department: "IT", subCategory: "Support", value: "$5200", date: "2024-01-26", isValueValid: true, isDateValid: true },
+    { id: 28, name: "Henry Foster", department: "Sales", subCategory: "South", value: "$4800", date: "2024-01-25", isValueValid: true, isDateValid: true },
+    { id: 29, name: "Amelia Butler", department: "Marketing", subCategory: "Digital", value: "Invalid data", date: "2024-01-24", isValueValid: false, isDateValid: true },
+    { id: 30, name: "Sebastian Gray", department: "IT", subCategory: "Development", value: "$5300", date: "2024-01-23", isValueValid: true, isDateValid: true },
+    { id: 31, name: "Victoria Price", department: "Sales", subCategory: "East", value: "$4700", date: "2024-01-22", isValueValid: true, isDateValid: true },
+    { id: 32, name: "Jack Morgan", department: "Marketing", subCategory: "Traditional", value: "$5100", date: "2024-01-21", isValueValid: true, isDateValid: true },
+    { id: 33, name: "Scarlett Cole", department: "IT", subCategory: "Infrastructure", value: "$4900", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 34, name: "Theodore Barnes", department: "Sales", subCategory: "West", value: "$5400", date: "2024-01-19", isValueValid: true, isDateValid: true },
+    { id: 35, name: "Chloe Russell", department: "Marketing", subCategory: "Social", value: "Invalid data", date: "2024-01-18", isValueValid: false, isDateValid: true },
+    { id: 36, name: "Owen Griffin", department: "IT", subCategory: "Support", value: "$5000", date: "2024-01-17", isValueValid: true, isDateValid: true },
+    { id: 37, name: "Zoe Fisher", department: "Sales", subCategory: "North", value: "$4800", date: "2024-01-16", isValueValid: true, isDateValid: true },
+    { id: 38, name: "Gabriel Kelly", department: "Marketing", subCategory: "Digital", value: "$5200", date: "2024-01-15", isValueValid: true, isDateValid: true },
+    { id: 39, name: "Audrey Hayes", department: "IT", subCategory: "Development", value: "$4600", date: "2024-01-14", isValueValid: true, isDateValid: true },
+    { id: 40, name: "Leo Marshall", department: "Sales", subCategory: "South", value: "$5300", date: "Invalid date", isValueValid: true, isDateValid: false },
+    { id: 41, name: "Luna Perry", department: "Marketing", subCategory: "Traditional", value: "$4700", date: "2024-01-12", isValueValid: true, isDateValid: true },
+    { id: 42, name: "Elijah Long", department: "IT", subCategory: "Infrastructure", value: "Invalid data", date: "2024-01-11", isValueValid: false, isDateValid: true }
   ]);
 
   // Update categories to match the departments in our data
@@ -165,6 +166,7 @@ export const EditFiles = () => {
       department: row.department,
       value: String(row.value),
       date: row.date,
+      subCategory: row.subCategory,
     });
   };
 
@@ -291,15 +293,15 @@ export const EditFiles = () => {
       const matchesSearch = searchTerm.toLowerCase() === "" || 
         row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         row.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(row.value).toLowerCase().includes(searchTerm.toLowerCase()) ||
         row.date.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory = selectedCategory === "all" || 
         row.department === selectedCategory;
 
-      // We're not filtering by subcategory in the actual data yet, 
-      // but the structure is in place for when we add that field
-      const matchesSubCategory = selectedSubCategory === "all" || true;
+      const matchesSubCategory = selectedSubCategory === "all" || 
+        row.subCategory === selectedSubCategory;
 
       return matchesSearch && matchesCategory && matchesSubCategory;
     });
@@ -327,7 +329,7 @@ export const EditFiles = () => {
     if (isMobile) {
       return ['name', 'value', 'actions'];
     }
-    return ['name', 'department', 'value', 'date', 'actions'];
+    return ['name', 'department', 'subCategory', 'value', 'date', 'actions'];
   };
 
   const [visibleColumns, setVisibleColumns] = useState(getVisibleColumns());
@@ -455,19 +457,22 @@ export const EditFiles = () => {
             <TableHeader>
               <TableRow>
                 {visibleColumns.includes('name') && (
-                  <TableHead className="w-1/3">Name</TableHead>
+                  <TableHead className="w-1/4">Name</TableHead>
                 )}
                 {visibleColumns.includes('department') && (
-                  <TableHead className="w-1/4">Department</TableHead>
+                  <TableHead className="w-1/6">Department</TableHead>
+                )}
+                {visibleColumns.includes('subCategory') && (
+                  <TableHead className="w-1/6">Region</TableHead>
                 )}
                 {visibleColumns.includes('value') && (
-                  <TableHead className="w-1/3">Value</TableHead>
+                  <TableHead className="w-1/6">Value</TableHead>
                 )}
                 {visibleColumns.includes('date') && (
                   <TableHead>Date</TableHead>
                 )}
                 {visibleColumns.includes('actions') && (
-                  <TableHead className="w-1/3">Actions</TableHead>
+                  <TableHead className="w-1/6">Actions</TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -485,6 +490,9 @@ export const EditFiles = () => {
                   )}
                   {visibleColumns.includes('department') && (
                     <TableCell>{renderEditableCell(row, 'department')}</TableCell>
+                  )}
+                  {visibleColumns.includes('subCategory') && (
+                    <TableCell>{renderEditableCell(row, 'subCategory')}</TableCell>
                   )}
                   {visibleColumns.includes('value') && (
                     <TableCell>{renderEditableCell(row, 'value')}</TableCell>
