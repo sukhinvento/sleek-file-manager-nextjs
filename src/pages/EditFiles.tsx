@@ -99,7 +99,7 @@ export const EditFiles = () => {
     { id: 19, name: "Ava Martinez", department: "Sales", value: "$4400", date: "Invalid date", isValueValid: true, isDateValid: false },
     { id: 20, name: "Lucas Baker", department: "Marketing", value: "$5300", date: "2024-02-02", isValueValid: true, isDateValid: true },
     { id: 21, name: "Mia Nelson", department: "IT", value: "$4700", date: "2024-02-01", isValueValid: true, isDateValid: true },
-    { id: 22, name: "Ethan Carter", department: "Sales", value: "Invalid data", date: "2024-01-31", isValueValid: false, isValueValid: true },
+    { id: 22, name: "Ethan Carter", department: "Sales", value: "Invalid data", date: "2024-01-31", isValueValid: false, isDateValid: true },
     { id: 23, name: "Isabella Hill", department: "Marketing", value: "$5100", date: "2024-01-30", isValueValid: true, isDateValid: true },
     { id: 24, name: "Alexander Ross", department: "IT", value: "$4900", date: "2024-01-29", isValueValid: true, isDateValid: true },
     { id: 25, name: "Charlotte Wood", department: "Sales", value: "$5500", date: "2024-01-28", isValueValid: true, isDateValid: true },
