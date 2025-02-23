@@ -224,13 +224,13 @@ export const EditFiles = () => {
             <TooltipTrigger className="flex items-center gap-2 text-red-500">
               {value} <AlertTriangle className="h-4 w-4" />
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs p-3">
+            <TooltipContent className="max-w-[300px] p-4">
               <div className="space-y-2">
                 <p className="font-medium">Invalid Data Format</p>
-                <div className="text-sm space-y-1">
-                  <p>Current value: <span className="text-red-500">{value}</span></p>
+                <div className="text-sm space-y-2">
+                  <p className="text-red-500">Current value: {value}</p>
                   <p>Expected format: <span className="text-green-500">{expectedFormat}</span></p>
-                  <p className="text-red-400">{errorMessage}</p>
+                  <p className="text-red-400 break-normal">{errorMessage}</p>
                 </div>
               </div>
             </TooltipContent>
