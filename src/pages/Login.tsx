@@ -7,17 +7,9 @@ import { Button } from "@/components/ui/button";
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Handle email change and check admin status
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEmail = e.target.value;
-    setEmail(newEmail);
-    setIsAdmin(newEmail.endsWith('@admin.com'));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,13 +17,10 @@ export const Login = () => {
 
     try {
       if (email && password) {
-        // Store the user type in sessionStorage
-        sessionStorage.setItem('userType', isAdmin ? 'admin' : 'user');
-        
         // Show success toast
         toast({
           title: "Success",
-          description: `Welcome back, ${isAdmin ? 'Admin' : 'User'}!`,
+          description: "Welcome back!",
         });
 
         // Clear form fields
@@ -104,16 +93,11 @@ export const Login = () => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={handleEmailChange}
+                onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
                 disabled={isLoading}
               />
-              {email && (
-                <p className="mt-1 text-sm text-enterprise-500">
-                  Logging in as {isAdmin ? 'Administrator' : 'Standard User'}
-                </p>
-              )}
             </div>
 
             <div>
