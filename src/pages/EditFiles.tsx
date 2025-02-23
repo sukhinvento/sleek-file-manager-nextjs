@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -287,13 +286,20 @@ export const EditFiles = () => {
 
   const filterData = (data: DataRow[]) => {
     return data.filter(row => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        row.name.toLowerCase().includes(searchLower) ||
-        row.department.toLowerCase().includes(searchLower) ||
+      const matchesSearch = searchTerm.toLowerCase() === "" || 
+        row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(row.value).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.date.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+        row.date.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory = selectedCategory === "" || 
+        categories.find(c => c.name === selectedCategory)?.name === selectedCategory;
+
+      const matchesSubCategory = selectedSubCategory === "" || 
+        (selectedCategory && subCategories[selectedCategory as keyof typeof subCategories]
+          .includes(selectedSubCategory));
+
+      return matchesSearch && matchesCategory && matchesSubCategory;
     });
   };
 
@@ -351,11 +357,15 @@ export const EditFiles = () => {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-4">
           <div className="col-span-1 lg:col-span-2">
-            <Select onValueChange={(value) => setSelectedCategory(value)}>
+            <Select onValueChange={(value) => {
+              setSelectedCategory(value);
+              setSelectedSubCategory(""); // Reset subcategory when category changes
+            }}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
                     {category.name}
@@ -369,11 +379,13 @@ export const EditFiles = () => {
             <Select
               onValueChange={(value) => setSelectedSubCategory(value)}
               disabled={!selectedCategory}
+              value={selectedSubCategory}
             >
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select Sub-Category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">All Sub-Categories</SelectItem>
                 {selectedCategory && 
                   subCategories[selectedCategory as keyof typeof subCategories].map((subCategory) => (
                     <SelectItem key={subCategory} value={subCategory}>
