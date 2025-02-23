@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { History } from 'lucide-react';
 import { 
   Table,
