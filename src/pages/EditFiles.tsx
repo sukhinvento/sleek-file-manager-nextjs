@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, AlertTriangle, X } from 'lucide-react';
+import { History, AlertTriangle, X, Search, Save } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
