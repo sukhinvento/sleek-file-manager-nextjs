@@ -122,16 +122,18 @@ export const EditFiles = () => {
     { id: 42, name: "Elijah Long", department: "IT", value: "Invalid data", date: "2024-01-11", isValueValid: false, isDateValid: true }
   ]);
 
+  // Update categories to match the departments in our data
   const categories = [
-    { id: 1, name: "Finance" },
-    { id: 2, name: "Operations" },
-    { id: 3, name: "HR" }
+    { id: 1, name: "Sales" },
+    { id: 2, name: "Marketing" },
+    { id: 3, name: "IT" }
   ];
 
+  // Update subcategories to align with departments
   const subCategories = {
-    "Finance": ["Budget", "Revenue", "Expenses"],
-    "Operations": ["Logistics", "Supply Chain", "Production"],
-    "HR": ["Recruitment", "Training", "Performance"]
+    "Sales": ["North", "South", "East", "West"],
+    "Marketing": ["Digital", "Traditional", "Social"],
+    "IT": ["Development", "Infrastructure", "Support"]
   };
 
   const mockAuditTrail = [
@@ -293,12 +295,11 @@ export const EditFiles = () => {
         row.date.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory = selectedCategory === "all" || 
-        categories.find(c => c.name === selectedCategory)?.name === selectedCategory;
+        row.department === selectedCategory;
 
-      const matchesSubCategory = selectedSubCategory === "all" || 
-        (selectedCategory && selectedCategory !== "all" && 
-          subCategories[selectedCategory as keyof typeof subCategories]
-            .includes(selectedSubCategory));
+      // We're not filtering by subcategory in the actual data yet, 
+      // but the structure is in place for when we add that field
+      const matchesSubCategory = selectedSubCategory === "all" || true;
 
       return matchesSearch && matchesCategory && matchesSubCategory;
     });
@@ -366,10 +367,10 @@ export const EditFiles = () => {
               value={selectedCategory}
             >
               <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select Category" />
+                <SelectValue placeholder="Select Department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">All Departments</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
                     {category.name}
@@ -386,12 +387,12 @@ export const EditFiles = () => {
               value={selectedSubCategory}
             >
               <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select Sub-Category" />
+                <SelectValue placeholder="Select Region" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sub-Categories</SelectItem>
+                <SelectItem value="all">All Regions</SelectItem>
                 {selectedCategory && selectedCategory !== "all" && 
-                  subCategories[selectedCategory as keyof typeof subCategories].map((subCategory) => (
+                  subCategories[selectedCategory as keyof typeof subCategories]?.map((subCategory) => (
                     <SelectItem key={subCategory} value={subCategory}>
                       {subCategory}
                     </SelectItem>
