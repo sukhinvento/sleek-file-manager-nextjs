@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Table,
@@ -126,14 +125,12 @@ export const EditFiles = () => {
     { id: 42, name: "Elijah Long", department: "IT", subCategory: "Infrastructure", value: "Invalid data", date: "2024-01-11", isValueValid: false, isDateValid: true }
   ]);
 
-  // Update categories to match the departments in our data
   const categories = [
     { id: 1, name: "Sales" },
     { id: 2, name: "Marketing" },
     { id: 3, name: "IT" }
   ];
 
-  // Update subcategories to align with departments
   const subCategories = {
     "Sales": ["North", "South", "East", "West"],
     "Marketing": ["Digital", "Traditional", "Social"],
@@ -354,7 +351,6 @@ export const EditFiles = () => {
 
   const handleColumnToggle = (column: string) => {
     if (column === 'name' || column === 'actions') {
-      // Don't allow toggling of name and actions columns
       return;
     }
     
@@ -477,123 +473,127 @@ export const EditFiles = () => {
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {visibleColumns.includes('name') && (
-                  <TableHead className="w-1/4">Name</TableHead>
-                )}
-                {visibleColumns.includes('department') && (
-                  <TableHead className="w-1/6">Department</TableHead>
-                )}
-                {visibleColumns.includes('subCategory') && (
-                  <TableHead className="w-1/6">Region</TableHead>
-                )}
-                {visibleColumns.includes('value') && (
-                  <TableHead className="w-1/6">Value</TableHead>
-                )}
-                {visibleColumns.includes('date') && (
-                  <TableHead>Date</TableHead>
-                )}
-                {visibleColumns.includes('actions') && (
-                  <TableHead className="w-1/6">Actions</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {processedData.map((row) => (
-                <TableRow 
-                  key={row.id}
-                  onClick={() => setSelectedRow(row.id)}
-                  className={`cursor-pointer hover:bg-gray-50 ${
-                    selectedRow === row.id ? 'bg-gray-50' : ''
-                  } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
-                >
-                  {visibleColumns.includes('name') && (
-                    <TableCell>{renderEditableCell(row, 'name')}</TableCell>
-                  )}
-                  {visibleColumns.includes('department') && (
-                    <TableCell>{renderEditableCell(row, 'department')}</TableCell>
-                  )}
-                  {visibleColumns.includes('subCategory') && (
-                    <TableCell>{renderEditableCell(row, 'subCategory')}</TableCell>
-                  )}
-                  {visibleColumns.includes('value') && (
-                    <TableCell>{renderEditableCell(row, 'value')}</TableCell>
-                  )}
-                  {visibleColumns.includes('date') && (
-                    <TableCell>{renderEditableCell(row, 'date')}</TableCell>
-                  )}
-                  {visibleColumns.includes('actions') && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {editingRow === row.id ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSave();
-                                  }}
-                                >
-                                  <Save className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Save changes</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEdit(row);
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Edit row</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+          <ScrollArea className="h-[600px]">
+            <div className="min-w-[800px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {visibleColumns.includes('name') && (
+                      <TableHead className="w-[200px]">Name</TableHead>
+                    )}
+                    {visibleColumns.includes('department') && (
+                      <TableHead className="w-[150px]">Department</TableHead>
+                    )}
+                    {visibleColumns.includes('subCategory') && (
+                      <TableHead className="w-[150px]">Region</TableHead>
+                    )}
+                    {visibleColumns.includes('value') && (
+                      <TableHead className="w-[120px]">Value</TableHead>
+                    )}
+                    {visibleColumns.includes('date') && (
+                      <TableHead className="w-[120px]">Date</TableHead>
+                    )}
+                    {visibleColumns.includes('actions') && (
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {processedData.map((row) => (
+                    <TableRow 
+                      key={row.id}
+                      onClick={() => setSelectedRow(row.id)}
+                      className={`cursor-pointer hover:bg-gray-50 ${
+                        selectedRow === row.id ? 'bg-gray-50' : ''
+                      } ${(!row.isValueValid || !row.isDateValid) ? 'bg-red-50/50' : ''}`}
+                    >
+                      {visibleColumns.includes('name') && (
+                        <TableCell>{renderEditableCell(row, 'name')}</TableCell>
+                      )}
+                      {visibleColumns.includes('department') && (
+                        <TableCell>{renderEditableCell(row, 'department')}</TableCell>
+                      )}
+                      {visibleColumns.includes('subCategory') && (
+                        <TableCell>{renderEditableCell(row, 'subCategory')}</TableCell>
+                      )}
+                      {visibleColumns.includes('value') && (
+                        <TableCell>{renderEditableCell(row, 'value')}</TableCell>
+                      )}
+                      {visibleColumns.includes('date') && (
+                        <TableCell>{renderEditableCell(row, 'date')}</TableCell>
+                      )}
+                      {visibleColumns.includes('actions') && (
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {editingRow === row.id ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSave();
+                                      }}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Save changes</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEdit(row);
+                                        }}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Edit row</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
 
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) => handleAuditClick(row.id, e)}
-                                  >
-                                    <History className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>View audit trail</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={(e) => handleAuditClick(row.id, e)}
+                                      >
+                                        <History className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>View audit trail</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
           <div className="border-t p-4">
             <Pagination>
               <PaginationContent>
