@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, AlertTriangle, X, Search, Save, Edit } from 'lucide-react';
+import { ColumnSelector } from "@/components/ui/column-selector";
 import { 
   Tooltip,
   TooltipContent,
@@ -46,7 +47,7 @@ interface DataRow {
   id: number;
   name: string;
   department: string;
-  subCategory: string;  // Added subCategory field
+  subCategory: string;
   value: string | number;
   date: string;
   isValueValid: boolean;
@@ -78,6 +79,7 @@ export const EditFiles = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedData, setEditedData] = useState<EditableRow | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(['name', 'department', 'subCategory', 'value', 'date', 'actions']);
   const [tableData, setTableData] = useState<DataRow[]>([
     { id: 1, name: "John Doe", department: "Sales", subCategory: "North", value: "$5000", date: "2024-02-20", isValueValid: true, isDateValid: true },
     { id: 2, name: "Jane Smith", department: "Marketing", subCategory: "Digital", value: "Invalid data", date: "2024-02-19", isValueValid: false, isDateValid: true },
@@ -332,8 +334,6 @@ export const EditFiles = () => {
     return ['name', 'department', 'subCategory', 'value', 'date', 'actions'];
   };
 
-  const [visibleColumns, setVisibleColumns] = useState(getVisibleColumns());
-
   useEffect(() => {
     const handleResize = () => {
       setVisibleColumns(getVisibleColumns());
@@ -347,6 +347,21 @@ export const EditFiles = () => {
     e.stopPropagation();
     setSelectedAuditRow(rowId);
     setShowAuditTrail(true);
+  };
+
+  const allColumns = ['name', 'department', 'subCategory', 'value', 'date', 'actions'];
+
+  const handleColumnToggle = (column: string) => {
+    if (column === 'name' || column === 'actions') {
+      // Don't allow toggling of name and actions columns
+      return;
+    }
+    
+    setVisibleColumns((prev) =>
+      prev.includes(column)
+        ? prev.filter((col) => col !== column)
+        : [...prev, column]
+    );
   };
 
   return (
@@ -408,7 +423,7 @@ export const EditFiles = () => {
 
       <div className="flex gap-6 flex-col lg:flex-row">
         <div className="border rounded-lg w-full">
-          <div className="px-4 py-3 border-b flex items-center justify-between">
+          <div className="px-4 py-3 border-b flex items-center justify-between gap-4">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -418,40 +433,47 @@ export const EditFiles = () => {
                 className="pl-8 h-10"
               />
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="h-10 w-fit min-w-24">
-                        <span className="text-sm">{getSortLabel()}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[180px]">
-                      <DropdownMenuItem onClick={() => handleSort('name')}>
-                        {sortField === 'name' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Name
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSort('department')}>
-                        {sortField === 'department' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Department
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSort('value')}>
-                        {sortField === 'value' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Value
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSort('date')}>
-                        {sortField === 'date' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Date
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
-                        Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Sort by: {sortField} ({sortOrder === 'asc' ? 'ascending' : 'descending'})</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-2">
+              <ColumnSelector
+                columns={allColumns}
+                visibleColumns={visibleColumns}
+                onColumnToggle={handleColumnToggle}
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="h-10 w-fit min-w-24">
+                          <span className="text-sm">{getSortLabel()}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[180px]">
+                        <DropdownMenuItem onClick={() => handleSort('name')}>
+                          {sortField === 'name' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Name
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSort('department')}>
+                          {sortField === 'department' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Department
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSort('value')}>
+                          {sortField === 'value' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Value
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSort('date')}>
+                          {sortField === 'date' ? (sortOrder === 'asc' ? '↑ ' : '↓ ') : '  '}Date
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+                          Order: {sortOrder === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sort by: {sortField} ({sortOrder === 'asc' ? 'ascending' : 'descending'})</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
           <Table>
             <TableHeader>
@@ -641,19 +663,4 @@ export const EditFiles = () => {
                         {audit.timestamp}
                       </span>
                     </div>
-                    <p className="text-sm text-enterprise-700 mb-1">
-                      {audit.details}
-                    </p>
-                    <p className="text-xs text-enterprise-500">
-                      By: {audit.user}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </div>
-  );
-};
+                    <p className="text
