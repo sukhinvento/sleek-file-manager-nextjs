@@ -70,8 +70,8 @@ interface AuditEntry {
 export const EditFiles = () => {
   const { toast } = useToast();
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -99,7 +99,7 @@ export const EditFiles = () => {
     { id: 19, name: "Ava Martinez", department: "Sales", value: "$4400", date: "Invalid date", isValueValid: true, isDateValid: false },
     { id: 20, name: "Lucas Baker", department: "Marketing", value: "$5300", date: "2024-02-02", isValueValid: true, isDateValid: true },
     { id: 21, name: "Mia Nelson", department: "IT", value: "$4700", date: "2024-02-01", isValueValid: true, isDateValid: true },
-    { id: 22, name: "Ethan Carter", department: "Sales", value: "Invalid data", date: "2024-01-31", isValueValid: false, isDateValid: true },
+    { id: 22, name: "Ethan Carter", department: "Sales", value: "Invalid data", date: "2024-01-31", isValueValid: false, isValueValid: true },
     { id: 23, name: "Isabella Hill", department: "Marketing", value: "$5100", date: "2024-01-30", isValueValid: true, isDateValid: true },
     { id: 24, name: "Alexander Ross", department: "IT", value: "$4900", date: "2024-01-29", isValueValid: true, isDateValid: true },
     { id: 25, name: "Charlotte Wood", department: "Sales", value: "$5500", date: "2024-01-28", isValueValid: true, isDateValid: true },
@@ -292,12 +292,13 @@ export const EditFiles = () => {
         String(row.value).toLowerCase().includes(searchTerm.toLowerCase()) ||
         row.date.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCategory = selectedCategory === "" || 
+      const matchesCategory = selectedCategory === "all" || 
         categories.find(c => c.name === selectedCategory)?.name === selectedCategory;
 
-      const matchesSubCategory = selectedSubCategory === "" || 
-        (selectedCategory && subCategories[selectedCategory as keyof typeof subCategories]
-          .includes(selectedSubCategory));
+      const matchesSubCategory = selectedSubCategory === "all" || 
+        (selectedCategory && selectedCategory !== "all" && 
+          subCategories[selectedCategory as keyof typeof subCategories]
+            .includes(selectedSubCategory));
 
       return matchesSearch && matchesCategory && matchesSubCategory;
     });
@@ -357,15 +358,18 @@ export const EditFiles = () => {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-4">
           <div className="col-span-1 lg:col-span-2">
-            <Select onValueChange={(value) => {
-              setSelectedCategory(value);
-              setSelectedSubCategory(""); // Reset subcategory when category changes
-            }}>
+            <Select 
+              onValueChange={(value) => {
+                setSelectedCategory(value);
+                setSelectedSubCategory("all"); // Reset subcategory when category changes
+              }}
+              value={selectedCategory}
+            >
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
                     {category.name}
@@ -378,15 +382,15 @@ export const EditFiles = () => {
           <div className="col-span-1 lg:col-span-2">
             <Select
               onValueChange={(value) => setSelectedSubCategory(value)}
-              disabled={!selectedCategory}
+              disabled={!selectedCategory || selectedCategory === "all"}
               value={selectedSubCategory}
             >
               <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select Sub-Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sub-Categories</SelectItem>
-                {selectedCategory && 
+                <SelectItem value="all">All Sub-Categories</SelectItem>
+                {selectedCategory && selectedCategory !== "all" && 
                   subCategories[selectedCategory as keyof typeof subCategories].map((subCategory) => (
                     <SelectItem key={subCategory} value={subCategory}>
                       {subCategory}
