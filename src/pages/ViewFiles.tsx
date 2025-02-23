@@ -72,7 +72,7 @@ export const ViewFiles = () => {
         <p className="text-enterprise-500 mt-2">Browse and manage your files</p>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <div className="px-4 py-3 border-b flex items-center justify-between gap-4 bg-white sticky top-0 z-20">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
@@ -80,7 +80,7 @@ export const ViewFiles = () => {
               placeholder="Search files..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-10"
+              className="pl-8 h-10 w-full rounded-md border border-input bg-background"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export const ViewFiles = () => {
           </div>
         </div>
 
-        <div className="relative overflow-auto">
+        <div className="relative overflow-auto border-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -115,7 +115,7 @@ export const ViewFiles = () => {
             </TableHeader>
             <TableBody>
               {filteredFiles.map((file) => (
-                <TableRow key={file.id}>
+                <TableRow key={file.id} className="hover:bg-muted/50">
                   {visibleColumns.includes('name') && (
                     <TableCell className="sticky left-0 bg-white">
                       <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export const ViewFiles = () => {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="outline" size="icon">
+                              <Button variant="outline" size="icon" className="rounded-md">
                                 <Download className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
