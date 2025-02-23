@@ -50,6 +50,10 @@ interface DataRow {
   subCategory: string;
   value: string | number;
   date: string;
+  status: string;
+  priority: string;
+  assignedTo: string;
+  lastModified: string;
   isValueValid: boolean;
   isDateValid: boolean;
 }
@@ -79,9 +83,33 @@ export const EditFiles = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedData, setEditedData] = useState<EditableRow | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['name', 'department', 'subCategory', 'value', 'date', 'actions']);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    'name', 
+    'department', 
+    'subCategory', 
+    'value', 
+    'date', 
+    'status',
+    'priority',
+    'assignedTo',
+    'lastModified',
+    'actions'
+  ]);
   const [tableData, setTableData] = useState<DataRow[]>([
-    { id: 1, name: "John Doe", department: "Sales", subCategory: "North", value: "$5000", date: "2024-02-20", isValueValid: true, isDateValid: true },
+    { 
+      id: 1, 
+      name: "John Doe", 
+      department: "Sales", 
+      subCategory: "North", 
+      value: "$5000", 
+      date: "2024-02-20",
+      status: "Active",
+      priority: "High",
+      assignedTo: "Team A",
+      lastModified: "2024-02-21",
+      isValueValid: true, 
+      isDateValid: true 
+    },
     { id: 2, name: "Jane Smith", department: "Marketing", subCategory: "Digital", value: "Invalid data", date: "2024-02-19", isValueValid: false, isDateValid: true },
     { id: 3, name: "Mike Johnson", department: "IT", subCategory: "Development", value: "$4200", date: "Invalid date", isValueValid: true, isDateValid: false },
     { id: 4, name: "Sarah Wilson", department: "Sales", subCategory: "South", value: "$6300", date: "2024-02-18", isValueValid: true, isDateValid: true },
@@ -167,6 +195,10 @@ export const EditFiles = () => {
       value: String(row.value),
       date: row.date,
       subCategory: row.subCategory,
+      status: row.status,
+      priority: row.priority,
+      assignedTo: row.assignedTo,
+      lastModified: row.lastModified,
     });
   };
 
@@ -347,7 +379,18 @@ export const EditFiles = () => {
     setShowAuditTrail(true);
   };
 
-  const allColumns = ['name', 'department', 'subCategory', 'value', 'date', 'actions'];
+  const allColumns = [
+    'name',
+    'department',
+    'subCategory',
+    'value',
+    'date',
+    'status',
+    'priority',
+    'assignedTo',
+    'lastModified',
+    'actions'
+  ];
 
   const handleColumnToggle = (column: string) => {
     if (column === 'name' || column === 'actions') {
@@ -474,7 +517,7 @@ export const EditFiles = () => {
           </div>
 
           <ScrollArea className="h-[600px]">
-            <div className="min-w-[800px]">
+            <div className="min-w-[1400px]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -492,6 +535,18 @@ export const EditFiles = () => {
                     )}
                     {visibleColumns.includes('date') && (
                       <TableHead className="w-[120px]">Date</TableHead>
+                    )}
+                    {visibleColumns.includes('status') && (
+                      <TableHead className="w-[120px]">Status</TableHead>
+                    )}
+                    {visibleColumns.includes('priority') && (
+                      <TableHead className="w-[120px]">Priority</TableHead>
+                    )}
+                    {visibleColumns.includes('assignedTo') && (
+                      <TableHead className="w-[150px]">Assigned To</TableHead>
+                    )}
+                    {visibleColumns.includes('lastModified') && (
+                      <TableHead className="w-[150px]">Last Modified</TableHead>
                     )}
                     {visibleColumns.includes('actions') && (
                       <TableHead className="w-[100px]">Actions</TableHead>
@@ -521,6 +576,18 @@ export const EditFiles = () => {
                       )}
                       {visibleColumns.includes('date') && (
                         <TableCell>{renderEditableCell(row, 'date')}</TableCell>
+                      )}
+                      {visibleColumns.includes('status') && (
+                        <TableCell>{row.status}</TableCell>
+                      )}
+                      {visibleColumns.includes('priority') && (
+                        <TableCell>{row.priority}</TableCell>
+                      )}
+                      {visibleColumns.includes('assignedTo') && (
+                        <TableCell>{row.assignedTo}</TableCell>
+                      )}
+                      {visibleColumns.includes('lastModified') && (
+                        <TableCell>{row.lastModified}</TableCell>
                       )}
                       {visibleColumns.includes('actions') && (
                         <TableCell>
