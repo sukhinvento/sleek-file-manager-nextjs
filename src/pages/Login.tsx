@@ -1,127 +1,122 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Mock login - replace with actual authentication logic
     try {
-      if (email && password) {
-        // Show success toast
-        toast({
-          title: "Success",
-          description: "Welcome back!",
-        });
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Clear form fields
-        setEmail('');
-        setPassword('');
+      if (email === "admin@example.com" && password === "password") {
+        toast.success("Login successful!");
+        router.push("/dashboard");
+      } else {
+        toast.error("Invalid credentials. Try admin@example.com / password");
         setIsLoading(false);
-
-        // Navigate to dashboard
-        navigate('/dashboard');
       }
     } catch (error) {
+      toast.error("An error occurred during login.");
       setIsLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An error occurred during login. Please try again.",
-      });
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0" 
-               style={{
-                 background: "linear-gradient(60deg, #000080 0%, #1a365d 50%, #2c5282 100%)",
-                 opacity: 0.95
-               }}
-          />
-          <div className="absolute top-0 left-0 w-96 h-96 bg-[#000080]/10 -translate-x-1/3 -translate-y-1/3 backdrop-blur-lg transform rotate-45" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#1a365d]/10 translate-x-1/4 translate-y-1/4 backdrop-blur-lg transform -rotate-12" />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-[#2c5282]/20 -translate-x-1/2 -translate-y-1/2 backdrop-blur-sm transform rotate-45" 
-               style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
-          <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-[#000080]/10 backdrop-blur-md transform rotate-12"
-               style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }} />
-        </div>
-        
-        {/* Content */}
-        <div className="relative z-10 text-left px-12 space-y-4">
-          <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">
-            Enterprise Portal
-          </h1>
-          <p className="text-lg text-gray-100 max-w-md leading-relaxed drop-shadow">
-            Streamline your workflow with our powerful file management system
+    <div className="flex h-screen">
+      <div className="hidden md:flex md:w-1/2 bg-enterprise-900">
+        <div className="flex flex-col justify-center px-12 w-full">
+          <h1 className="text-4xl font-bold text-white mb-6">Enterprise File Manager</h1>
+          <p className="text-enterprise-200 text-xl">
+            Securely manage, store, and collaborate on your enterprise files.
           </p>
         </div>
       </div>
-
-      {/* Right Section */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-enterprise-900">
-              Welcome Back
-            </h2>
-            <p className="mt-2 text-enterprise-500">
-              Please sign in to continue
-            </p>
+            <h2 className="text-3xl font-bold text-enterprise-900">Welcome back</h2>
+            <p className="mt-2 text-enterprise-600">Sign in to your account</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-enterprise-700" htmlFor="email">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-                disabled={isLoading}
-              />
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-enterprise-700">
+                  Email address
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-enterprise-700">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-enterprise-700" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-enterprise-300 rounded-md text-enterprise-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-                disabled={isLoading}
-              />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-enterprise-600 focus:ring-enterprise-500 border-enterprise-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-enterprise-700">
+                  Remember me
+                </label>
+              </div>
+              <div className="text-sm">
+                <a href="#" className="font-medium text-enterprise-600 hover:text-enterprise-500">
+                  Forgot your password?
+                </a>
+              </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
+            <Button 
+              type="submit" 
+              className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
+
+            <div className="mt-4 text-center text-sm">
+              <p className="text-enterprise-600">
+                Don't have an account?{" "}
+                <a href="#" className="font-medium text-enterprise-600 hover:text-enterprise-500">
+                  Sign up
+                </a>
+              </p>
+            </div>
           </form>
         </div>
       </div>
