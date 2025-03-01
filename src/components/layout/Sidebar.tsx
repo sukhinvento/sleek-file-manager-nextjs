@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -14,11 +13,16 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { useMobile } from '../../hooks/use-mobile';
+import { useIsMobile } from '../../hooks/use-mobile';
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) => {
   const router = useRouter();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const isActive = (path: string) => {
