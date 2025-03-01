@@ -1,10 +1,11 @@
 
+import { ViewFiles } from '@/src/pages/ViewFiles';
 import { AppLayout } from '@/src/components/layout/AppLayout';
 
-export default function TrendsAnalyticsPage() {
+export default function FilesPage() {
   return (
     <AppLayout>
-      <div className="p-4">Trends Analytics</div>
+      <ViewFiles />
     </AppLayout>
   );
 }

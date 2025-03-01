@@ -1,10 +1,11 @@
 
+import { UploadFiles } from '@/src/pages/UploadFiles';
 import { AppLayout } from '@/src/components/layout/AppLayout';
 
-export default function TrendsAnalyticsPage() {
+export default function UploadPage() {
   return (
     <AppLayout>
-      <div className="p-4">Trends Analytics</div>
+      <UploadFiles />
     </AppLayout>
   );
 }

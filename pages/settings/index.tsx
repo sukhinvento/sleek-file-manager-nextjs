@@ -1,10 +1,11 @@
 
+import { Settings } from '@/src/pages/Settings';
 import { AppLayout } from '@/src/components/layout/AppLayout';
 
-export default function TrendsAnalyticsPage() {
+export default function SettingsPage() {
   return (
     <AppLayout>
-      <div className="p-4">Trends Analytics</div>
+      <Settings />
     </AppLayout>
   );
 }

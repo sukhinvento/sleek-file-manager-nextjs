@@ -1,10 +1,11 @@
 
+import { EditFiles } from '@/src/pages/EditFiles';
 import { AppLayout } from '@/src/components/layout/AppLayout';
 
-export default function TrendsAnalyticsPage() {
+export default function EditPage() {
   return (
     <AppLayout>
-      <div className="p-4">Trends Analytics</div>
+      <EditFiles />
     </AppLayout>
   );
 }
