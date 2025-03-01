@@ -1,6 +1,6 @@
 
 import { FileUp, FileText, Edit, FileAxis3d, FolderKanban, FileCode2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { Button } from "@/components/ui/button";
 
 const QuickActionCard = ({ 
@@ -79,7 +79,7 @@ const QuickActionCard = ({
 };
 
 export const Dashboard = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div className="space-y-8">
@@ -93,7 +93,7 @@ export const Dashboard = () => {
           icon={FileUp}
           title="Upload Files"
           description="Upload new files to the system"
-          onClick={() => navigate('/upload')}
+          onClick={() => router.push('/upload')}
           uploadButton={true}
           IllustrationIcon={FileAxis3d}
           illustrationColor="#E5DEFF"
@@ -102,7 +102,7 @@ export const Dashboard = () => {
           icon={FileText}
           title="View Files"
           description="View and manage existing files"
-          onClick={() => navigate('/files')}
+          onClick={() => router.push('/files')}
           IllustrationIcon={FolderKanban}
           illustrationColor="#E5DEFF"
         />
@@ -110,7 +110,7 @@ export const Dashboard = () => {
           icon={Edit}
           title="Edit Files"
           description="Make changes to your files"
-          onClick={() => navigate('/edit')}
+          onClick={() => router.push('/edit')}
           IllustrationIcon={FileCode2}
           illustrationColor="#E5DEFF"
         />

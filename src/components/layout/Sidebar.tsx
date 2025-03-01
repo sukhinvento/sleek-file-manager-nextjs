@@ -89,7 +89,9 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
   ];
 
   return (
-    <div className="min-h-screen bg-white shadow-sm border-r">
+    <div className={`min-h-screen bg-white shadow-sm border-r fixed lg:relative z-50 transition-all duration-300 ${
+      isMobileMenuOpen ? 'left-0' : '-left-64 lg:left-0'
+    } w-64 lg:w-auto`}>
       <div className="p-4 border-b">
         <h2 className="text-xl font-bold text-enterprise-900">Enterprise File Manager</h2>
       </div>
@@ -121,14 +123,16 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                       <Link
                         href={submenuItem.path}
                         key={submenuItem.path}
-                        className={`flex items-center px-4 py-2 text-sm rounded-md ${
+                        passHref
+                      >
+                        <a className={`flex items-center px-4 py-2 text-sm rounded-md ${
                           isActive(submenuItem.path)
                             ? 'bg-enterprise-100 text-enterprise-900'
                             : 'text-enterprise-600 hover:bg-enterprise-50'
-                        }`}
-                      >
-                        <submenuItem.icon className="mr-2 h-4 w-4" />
-                        <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
+                        }`}>
+                          <submenuItem.icon className="mr-2 h-4 w-4" />
+                          <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
+                        </a>
                       </Link>
                     ))}
                   </div>
@@ -137,14 +141,16 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
             ) : (
               <Link
                 href={item.path}
-                className={`flex items-center px-4 py-2 ${
+                passHref
+              >
+                <a className={`flex items-center px-4 py-2 ${
                   isActive(item.path)
                     ? 'bg-enterprise-100 text-enterprise-900'
                     : 'text-enterprise-600 hover:bg-enterprise-50'
-                }`}
-              >
-                <item.icon className="mr-2 h-5 w-5" />
-                <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
+                }`}>
+                  <item.icon className="mr-2 h-5 w-5" />
+                  <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
+                </a>
               </Link>
             )}
           </div>
