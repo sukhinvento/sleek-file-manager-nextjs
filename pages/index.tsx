@@ -6,9 +6,14 @@ export default function Home() {
   const router = useRouter();
   
   useEffect(() => {
-    // Redirect to login page
     router.push('/login');
   }, [router]);
   
-  return null;
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl">Redirecting to login...</h1>
+      </div>
+    </div>
+  );
 }

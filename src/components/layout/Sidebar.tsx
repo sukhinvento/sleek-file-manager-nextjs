@@ -93,7 +93,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       isMobileMenuOpen ? 'left-0' : '-left-64 lg:left-0'
     } w-64 lg:w-auto`}>
       <div className="p-4 border-b">
-        <h2 className="text-xl font-bold text-enterprise-900">Enterprise File Manager</h2>
+        <h2 className="text-xl font-bold text-gray-900">Enterprise File Manager</h2>
       </div>
       <div className="py-2">
         {sidebarItems.map((item) => (
@@ -103,7 +103,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                 <Button
                   variant="ghost"
                   className={`w-full justify-between px-4 py-2 ${
-                    isSubmenuActive(item.path) ? 'bg-enterprise-50 text-enterprise-900' : ''
+                    isSubmenuActive(item.path) ? 'bg-gray-50 text-gray-900' : ''
                   }`}
                   onClick={() => toggleSubmenu(item.name)}
                 >
@@ -123,12 +123,11 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                       <Link
                         href={submenuItem.path}
                         key={submenuItem.path}
-                        passHref
                       >
                         <a className={`flex items-center px-4 py-2 text-sm rounded-md ${
                           isActive(submenuItem.path)
-                            ? 'bg-enterprise-100 text-enterprise-900'
-                            : 'text-enterprise-600 hover:bg-enterprise-50'
+                            ? 'bg-gray-100 text-gray-900'
+                            : 'text-gray-600 hover:bg-gray-50'
                         }`}>
                           <submenuItem.icon className="mr-2 h-4 w-4" />
                           <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
@@ -141,12 +140,11 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
             ) : (
               <Link
                 href={item.path}
-                passHref
               >
                 <a className={`flex items-center px-4 py-2 ${
                   isActive(item.path)
-                    ? 'bg-enterprise-100 text-enterprise-900'
-                    : 'text-enterprise-600 hover:bg-enterprise-50'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50'
                 }`}>
                   <item.icon className="mr-2 h-5 w-5" />
                   <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>

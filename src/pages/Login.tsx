@@ -35,10 +35,10 @@ export const Login = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden md:flex md:w-1/2 bg-enterprise-900">
+      <div className="hidden md:flex md:w-1/2 bg-[#171923]">
         <div className="flex flex-col justify-center px-12 w-full">
           <h1 className="text-4xl font-bold text-white mb-6">Enterprise File Manager</h1>
-          <p className="text-enterprise-200 text-xl">
+          <p className="text-gray-300 text-xl">
             Securely manage, store, and collaborate on your enterprise files.
           </p>
         </div>
@@ -46,14 +46,14 @@ export const Login = () => {
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-enterprise-900">Welcome back</h2>
-            <p className="mt-2 text-enterprise-600">Sign in to your account</p>
+            <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+            <p className="mt-2 text-gray-600">Sign in to your account</p>
           </div>
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-enterprise-700">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address
                 </label>
                 <Input
@@ -67,7 +67,7 @@ export const Login = () => {
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-enterprise-700">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
                 <Input
@@ -88,14 +88,14 @@ export const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-enterprise-600 focus:ring-enterprise-500 border-enterprise-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-enterprise-700">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-enterprise-600 hover:text-enterprise-500">
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
                   Forgot your password?
                 </a>
               </div>
@@ -110,9 +110,9 @@ export const Login = () => {
             </Button>
 
             <div className="mt-4 text-center text-sm">
-              <p className="text-enterprise-600">
+              <p className="text-gray-600">
                 Don't have an account?{" "}
-                <a href="#" className="font-medium text-enterprise-600 hover:text-enterprise-500">
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
                   Sign up
                 </a>
               </p>
