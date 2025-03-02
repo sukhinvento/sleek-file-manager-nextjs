@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 export const Login = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export const Login = () => {
 
       if (email === "admin@example.com" && password === "password") {
         toast.success("Login successful!");
-        router.push("/dashboard");
+        navigate("/dashboard");
       } else {
         toast.error("Invalid credentials. Try admin@example.com / password");
         setIsLoading(false);

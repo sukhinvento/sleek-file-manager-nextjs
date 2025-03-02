@@ -1,13 +1,13 @@
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
-  const router = useRouter();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    router.push('/login');
-  }, [router]);
+    navigate('/login');
+  }, [navigate]);
   
   return (
     <div className="flex h-screen w-full items-center justify-center">
