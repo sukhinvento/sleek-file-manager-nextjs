@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,34 +34,57 @@ export const Login = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="w-full md:w-1/2 bg-[#1a2155] bg-gradient-to-br from-[#1a2155] to-[#283593] flex items-center justify-center">
-        <div className="px-12 w-full max-w-lg relative">
-          {/* Vector Graphics */}
-          <div className="absolute inset-0 overflow-hidden opacity-20">
-            <svg className="absolute top-10 left-0" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="40" cy="40" r="40" fill="white" />
-            </svg>
-            <svg className="absolute bottom-20 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="120" height="120" rx="24" fill="white" />
-            </svg>
-            <svg className="absolute top-40 right-10" width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="30,0 60,52 0,52" fill="white" />
-            </svg>
-            <svg className="absolute top-10 right-20" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" fill="white" />
-            </svg>
-            <svg className="absolute bottom-10 right-40" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="50" fill="white" />
-            </svg>
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#556B2F] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 w-full h-full overflow-hidden opacity-20">
+          <svg className="absolute top-10 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="60" fill="white" />
+          </svg>
+          <svg className="absolute bottom-40 left-20" width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="90" cy="90" r="90" fill="white" />
+          </svg>
+          <svg className="absolute -bottom-20 right-20" width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="110" cy="110" r="110" fill="white" />
+          </svg>
+          
+          <svg className="absolute top-1/4 right-10" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="80" height="80" rx="8" fill="white" />
+          </svg>
+          <svg className="absolute bottom-20 left-40" width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="140" height="140" rx="24" fill="white" />
+          </svg>
+          
+          <svg className="absolute top-1/3 left-1/3" width="100" height="86" viewBox="0 0 100 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="50,0 100,86 0,86" fill="white" />
+          </svg>
+          <svg className="absolute top-20 right-40" width="60" height="52" viewBox="0 0 60 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="30,0 60,52 0,52" fill="white" />
+          </svg>
+          
+          <svg className="absolute bottom-10 right-10" width="120" height="104" viewBox="0 0 120 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="30,0 90,0 120,52 90,104 30,104 0,52" fill="white" />
+          </svg>
+          
+          <div className="absolute top-0 left-0 grid grid-cols-6 gap-4 opacity-30">
+            {Array.from({ length: 24 }).map((_, i) => (
+              <div key={`dot-tl-${i}`} className="w-2 h-2 rounded-full bg-white"></div>
+            ))}
           </div>
           
-          {/* Content */}
-          <h1 className="text-5xl font-bold text-white mb-4 relative z-10">Enterprise Portal</h1>
-          <p className="text-xl text-gray-300 relative z-10">
+          <div className="absolute bottom-10 right-10 grid grid-cols-8 gap-3 opacity-30">
+            {Array.from({ length: 32 }).map((_, i) => (
+              <div key={`dot-br-${i}`} className="w-1.5 h-1.5 rounded-full bg-white"></div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="px-12 w-full max-w-lg relative z-10">
+          <h1 className="text-5xl font-bold text-white mb-4">Enterprise Portal</h1>
+          <p className="text-xl text-gray-300">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
       </div>
+      
       <div className="hidden md:flex md:w-1/2 items-center justify-center bg-white p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
