@@ -12,6 +12,15 @@ const nextConfig = {
       ...config.resolve.fallback,
       process: require.resolve('process/browser') 
     };
+    
+    // Add process and process.env as plugins
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new (require('webpack')).ProvidePlugin({
+        process: 'process/browser',
+      })
+    );
+    
     return config;
   },
 }

@@ -123,15 +123,14 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                       <Link
                         href={submenuItem.path}
                         key={submenuItem.path}
-                      >
-                        <a className={`flex items-center px-4 py-2 text-sm rounded-md ${
+                        className={`flex items-center px-4 py-2 text-sm rounded-md ${
                           isActive(submenuItem.path)
                             ? 'bg-gray-100 text-gray-900'
                             : 'text-gray-600 hover:bg-gray-50'
-                        }`}>
-                          <submenuItem.icon className="mr-2 h-4 w-4" />
-                          <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
-                        </a>
+                        }`}
+                      >
+                        <submenuItem.icon className="mr-2 h-4 w-4" />
+                        <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
                       </Link>
                     ))}
                   </div>
@@ -140,15 +139,14 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
             ) : (
               <Link
                 href={item.path}
-              >
-                <a className={`flex items-center px-4 py-2 ${
+                className={`flex items-center px-4 py-2 ${
                   isActive(item.path)
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:bg-gray-50'
-                }`}>
-                  <item.icon className="mr-2 h-5 w-5" />
-                  <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
-                </a>
+                }`}
+              >
+                <item.icon className="mr-2 h-5 w-5" />
+                <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
               </Link>
             )}
           </div>
