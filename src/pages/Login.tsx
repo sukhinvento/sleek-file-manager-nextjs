@@ -35,26 +35,26 @@ export const Login = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden md:flex md:w-1/2 bg-[#171923]">
-        <div className="flex flex-col justify-center px-12 w-full">
-          <h1 className="text-4xl font-bold text-white mb-6">Enterprise File Manager</h1>
-          <p className="text-gray-300 text-xl">
-            Securely manage, store, and collaborate on your enterprise files.
+      <div className="w-full md:w-1/2 bg-[#1a2155] bg-gradient-to-br from-[#1a2155] to-[#283593] flex items-center justify-center">
+        <div className="px-12 w-full max-w-lg">
+          <h1 className="text-5xl font-bold text-white mb-4">Enterprise Portal</h1>
+          <p className="text-xl text-gray-300">
+            Streamline your workflow with our powerful file management system
           </p>
         </div>
       </div>
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
+      <div className="hidden md:flex md:w-1/2 items-center justify-center bg-white p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
-            <p className="mt-2 text-gray-600">Sign in to your account</p>
+            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+            <p className="mt-2 text-gray-600">Please sign in to continue</p>
           </div>
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email address
+                  Email Address
                 </label>
                 <Input
                   id="email"
@@ -103,10 +103,10 @@ export const Login = () => {
 
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-blue-600 hover:bg-blue-700" 
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="mt-4 text-center text-sm">

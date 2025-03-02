@@ -2,7 +2,7 @@
 import { useState, Dispatch, SetStateAction } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
-  Laptop,
+  LayoutDashboard,
   LineChart,
   Settings,
   FileUp,
@@ -11,9 +11,11 @@ import {
   ChevronRight,
   PieChart,
   BarChart3,
+  Database,
+  TrendingUp,
+  Clock,
+  LogOut,
 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { useIsMobile } from '../../hooks/use-mobile';
 
 interface SidebarProps {
   isMobileMenuOpen: boolean;
@@ -23,7 +25,6 @@ interface SidebarProps {
 export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useIsMobile();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const isActive = (path: string) => {
@@ -38,119 +39,110 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
     setOpenSubmenu(openSubmenu === menu ? null : menu);
   };
 
-  const sidebarItems = [
-    {
-      name: 'Dashboard',
-      path: '/dashboard',
-      icon: Laptop,
-    },
-    {
-      name: 'Upload Files',
-      path: '/upload',
-      icon: FileUp,
-    },
-    {
-      name: 'View Files',
-      path: '/files',
-      icon: FileText,
-    },
-    {
-      name: 'Edit Files',
-      path: '/edit',
-      icon: Edit,
-    },
-    {
-      name: 'Analytics',
-      path: '/analytics',
-      icon: LineChart,
-      submenu: [
-        {
-          name: 'Usage Statistics',
-          path: '/analytics/usage',
-          icon: BarChart3,
-        },
-        {
-          name: 'Trends',
-          path: '/analytics/trends',
-          icon: LineChart,
-        },
-        {
-          name: 'Distribution',
-          path: '/analytics/distribution',
-          icon: PieChart,
-        },
-      ],
-    },
-    {
-      name: 'Settings',
-      path: '/settings',
-      icon: Settings,
-    },
-  ];
-
   return (
-    <div className={`min-h-screen bg-white shadow-sm border-r fixed lg:relative z-50 transition-all duration-300 ${
-      isMobileMenuOpen ? 'left-0' : '-left-64 lg:left-0'
-    } w-64 lg:w-auto`}>
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-bold text-gray-900">Enterprise File Manager</h2>
+    <div 
+      className={`enterprise-sidebar transition-all duration-300 ${
+        isMobileMenuOpen ? 'left-0' : '-left-64 lg:left-0'
+      } w-64`}
+    >
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
+        <h2 className="text-xl font-bold text-white">Enterprise</h2>
+        <button 
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="lg:hidden text-gray-400 hover:text-white"
+        >
+          &times;
+        </button>
       </div>
-      <div className="py-2">
-        {sidebarItems.map((item) => (
-          <div key={item.name}>
-            {item.submenu ? (
-              <div>
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-between px-4 py-2 ${
-                    isSubmenuActive(item.path) ? 'bg-gray-50 text-gray-900' : ''
-                  }`}
-                  onClick={() => toggleSubmenu(item.name)}
-                >
-                  <div className="flex items-center">
-                    <item.icon className="mr-2 h-5 w-5" />
-                    <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
-                  </div>
-                  <ChevronRight
-                    className={`h-4 w-4 transition-transform ${
-                      openSubmenu === item.name ? 'rotate-90' : ''
-                    }`}
-                  />
-                </Button>
-                {openSubmenu === item.name && (
-                  <div className="pl-8 py-1">
-                    {item.submenu.map((submenuItem) => (
-                      <Link
-                        to={submenuItem.path}
-                        key={submenuItem.path}
-                        className={`flex items-center px-4 py-2 text-sm rounded-md ${
-                          isActive(submenuItem.path)
-                            ? 'bg-gray-100 text-gray-900'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <submenuItem.icon className="mr-2 h-4 w-4" />
-                        <span className={isMobile ? 'sr-only' : ''}>{submenuItem.name}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to={item.path}
-                className={`flex items-center px-4 py-2 ${
-                  isActive(item.path)
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <item.icon className="mr-2 h-5 w-5" />
-                <span className={isMobile ? 'sr-only' : ''}>{item.name}</span>
-              </Link>
-            )}
-          </div>
-        ))}
+
+      <div className="px-3 py-4">
+        <div className="nav-section">
+          <p className="nav-section-title">Main</p>
+          <nav className="mt-2 space-y-1">
+            <Link 
+              to="/dashboard" 
+              className={`nav-item ${isActive('/dashboard') ? 'active' : ''}`}
+            >
+              <LayoutDashboard className="mr-3 h-5 w-5" />
+              <span>Dashboard</span>
+            </Link>
+          </nav>
+        </div>
+
+        <div className="nav-section">
+          <p className="nav-section-title">File Management</p>
+          <nav className="mt-2 space-y-1">
+            <Link 
+              to="/upload" 
+              className={`nav-item ${isActive('/upload') ? 'active' : ''}`}
+            >
+              <FileUp className="mr-3 h-5 w-5" />
+              <span>Upload Files</span>
+            </Link>
+            <Link 
+              to="/files" 
+              className={`nav-item ${isActive('/files') ? 'active' : ''}`}
+            >
+              <FileText className="mr-3 h-5 w-5" />
+              <span>View Files</span>
+            </Link>
+            <Link 
+              to="/edit" 
+              className={`nav-item ${isActive('/edit') ? 'active' : ''}`}
+            >
+              <Edit className="mr-3 h-5 w-5" />
+              <span>Edit Files</span>
+            </Link>
+            <Link 
+              to="/consolidated" 
+              className={`nav-item ${isActive('/consolidated') ? 'active' : ''}`}
+            >
+              <Database className="mr-3 h-5 w-5" />
+              <span>Consolidated Data View</span>
+            </Link>
+          </nav>
+        </div>
+
+        <div className="nav-section">
+          <p className="nav-section-title">Analytics</p>
+          <nav className="mt-2 space-y-1">
+            <Link 
+              to="/analytics/usage" 
+              className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''}`}
+            >
+              <BarChart3 className="mr-3 h-5 w-5" />
+              <span>Usage Stats</span>
+            </Link>
+            <Link 
+              to="/analytics/trends" 
+              className={`nav-item ${isActive('/analytics/trends') ? 'active' : ''}`}
+            >
+              <TrendingUp className="mr-3 h-5 w-5" />
+              <span>Trends</span>
+            </Link>
+            <Link 
+              to="/analytics/distribution" 
+              className={`nav-item ${isActive('/analytics/distribution') ? 'active' : ''}`}
+            >
+              <PieChart className="mr-3 h-5 w-5" />
+              <span>Distribution</span>
+            </Link>
+          </nav>
+        </div>
+
+        <div className="mt-auto pt-8">
+          <Link 
+            to="/login" 
+            className="nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/login');
+            }}
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            <span>Logout</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <div className="flex h-screen w-full bg-gray-50">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-gray-800 z-40 flex items-center justify-between px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#1a202c] z-40 flex items-center justify-between px-4">
         <span className="text-white text-xl font-semibold">Enterprise</span>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -24,8 +24,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       </div>
 
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'lg:ml-52' : 'lg:ml-12'}`}>
-        <main className={`px-6 py-8 mt-16 lg:mt-0 ${isMobileMenuOpen ? 'lg:opacity-100' : 'lg:opacity-100'} transition-opacity duration-300`}>
+      
+      <div className="flex-1 lg:ml-64">
+        <main className="px-6 py-8 mt-16 lg:mt-0 h-full overflow-auto">
           {children}
         </main>
       </div>

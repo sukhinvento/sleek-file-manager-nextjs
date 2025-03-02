@@ -13,6 +13,7 @@ import { Settings } from "./pages/Settings";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
+// Create a client
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,6 +43,11 @@ const App = () => (
           <Route path="/edit" element={
             <AppLayout>
               <EditFiles />
+            </AppLayout>
+          } />
+          <Route path="/consolidated" element={
+            <AppLayout>
+              <div className="p-4">Consolidated Data View</div>
             </AppLayout>
           } />
           <Route path="/settings" element={

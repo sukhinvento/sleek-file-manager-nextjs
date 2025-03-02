@@ -11,7 +11,6 @@ const QuickActionCard = ({
   uploadButton,
   IllustrationIcon,
   illustrationColor = "#E5DEFF",
-  illustrationWidth = "30%"
 }: { 
   icon: typeof FileUp; 
   title: string; 
@@ -20,7 +19,6 @@ const QuickActionCard = ({
   uploadButton?: boolean;
   IllustrationIcon: typeof FileAxis3d;
   illustrationColor?: string;
-  illustrationWidth?: string;
 }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -30,15 +28,17 @@ const QuickActionCard = ({
   };
 
   return (
-    <div className="relative p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 text-left w-full overflow-hidden group">
+    <div className="bg-white rounded-lg shadow-sm p-6 relative overflow-hidden">
       <div className="flex">
-        {/* Content */}
-        <div className="relative z-10 flex-1 pr-4" style={{ width: "70%" }}>
-          <Icon className="w-8 h-8 text-primary mb-4" />
-          <h3 className="text-lg font-semibold text-enterprise-900 mb-2">{title}</h3>
-          <p className="text-enterprise-500 mb-4">{description}</p>
+        <div className="relative z-10 pr-4 flex-1">
+          <Icon className="w-8 h-8 text-blue-600 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-500 mb-4">{description}</p>
           <div className="flex gap-2">
-            <Button onClick={onClick}>
+            <Button 
+              onClick={onClick}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               {title}
             </Button>
             {uploadButton && (
@@ -56,22 +56,11 @@ const QuickActionCard = ({
             )}
           </div>
         </div>
-
-        {/* Vector Illustration */}
-        <div className="relative flex items-start justify-end" style={{ width: illustrationWidth }}>
-          <div className="absolute inset-0 bg-enterprise-100/30 opacity-10 group-hover:opacity-20 transition-opacity duration-200" />
-          <div className="relative">
-            {/* Background glow effect - more subtle */}
-            <div 
-              className="absolute inset-0 blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-200"
-              style={{ backgroundColor: illustrationColor }}
-            />
-            <IllustrationIcon 
-              className="w-28 h-28 transition-all duration-200 group-hover:scale-105" 
-              strokeWidth={0.8}
-              style={{ color: illustrationColor }}
-            />
-          </div>
+        <div className="relative flex items-start justify-end">
+          <IllustrationIcon 
+            className="w-28 h-28 text-purple-100" 
+            strokeWidth={0.8}
+          />
         </div>
       </div>
     </div>
@@ -84,8 +73,8 @@ export const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-enterprise-900">Welcome back</h1>
-        <p className="text-enterprise-500 mt-2">Manage your files efficiently</p>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
+        <p className="text-gray-500 mt-2">Manage your files efficiently</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -96,7 +85,6 @@ export const Dashboard = () => {
           onClick={() => navigate('/upload')}
           uploadButton={true}
           IllustrationIcon={FileAxis3d}
-          illustrationColor="#E5DEFF"
         />
         <QuickActionCard
           icon={FileText}
@@ -104,7 +92,6 @@ export const Dashboard = () => {
           description="View and manage existing files"
           onClick={() => navigate('/files')}
           IllustrationIcon={FolderKanban}
-          illustrationColor="#E5DEFF"
         />
         <QuickActionCard
           icon={Edit}
@@ -112,7 +99,6 @@ export const Dashboard = () => {
           description="Make changes to your files"
           onClick={() => navigate('/edit')}
           IllustrationIcon={FileCode2}
-          illustrationColor="#E5DEFF"
         />
       </div>
     </div>
