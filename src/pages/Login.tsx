@@ -36,9 +36,29 @@ export const Login = () => {
   return (
     <div className="flex h-screen">
       <div className="w-full md:w-1/2 bg-[#1a2155] bg-gradient-to-br from-[#1a2155] to-[#283593] flex items-center justify-center">
-        <div className="px-12 w-full max-w-lg">
-          <h1 className="text-5xl font-bold text-white mb-4">Enterprise Portal</h1>
-          <p className="text-xl text-gray-300">
+        <div className="px-12 w-full max-w-lg relative">
+          {/* Vector Graphics */}
+          <div className="absolute inset-0 overflow-hidden opacity-20">
+            <svg className="absolute top-10 left-0" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="40" r="40" fill="white" />
+            </svg>
+            <svg className="absolute bottom-20 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="120" height="120" rx="24" fill="white" />
+            </svg>
+            <svg className="absolute top-40 right-10" width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="30,0 60,52 0,52" fill="white" />
+            </svg>
+            <svg className="absolute top-10 right-20" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" fill="white" />
+            </svg>
+            <svg className="absolute bottom-10 right-40" width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="50" fill="white" />
+            </svg>
+          </div>
+          
+          {/* Content */}
+          <h1 className="text-5xl font-bold text-white mb-4 relative z-10">Enterprise Portal</h1>
+          <p className="text-xl text-gray-300 relative z-10">
             Streamline your workflow with our powerful file management system
           </p>
         </div>
@@ -103,7 +123,7 @@ export const Login = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700" 
+              className="w-full" 
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
