@@ -1,7 +1,6 @@
 
 import { useState, Dispatch, SetStateAction } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Laptop,
   LineChart,
@@ -22,16 +21,17 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) => {
-  const router = useRouter();
+  const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const isActive = (path: string) => {
-    return router.pathname === path;
+    return location.pathname === path;
   };
 
   const isSubmenuActive = (basePath: string) => {
-    return router.pathname.startsWith(basePath);
+    return location.pathname.startsWith(basePath);
   };
 
   const toggleSubmenu = (menu: string) => {
@@ -121,7 +121,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
                   <div className="pl-8 py-1">
                     {item.submenu.map((submenuItem) => (
                       <Link
-                        href={submenuItem.path}
+                        to={submenuItem.path}
                         key={submenuItem.path}
                         className={`flex items-center px-4 py-2 text-sm rounded-md ${
                           isActive(submenuItem.path)
@@ -138,7 +138,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
               </div>
             ) : (
               <Link
-                href={item.path}
+                to={item.path}
                 className={`flex items-center px-4 py-2 ${
                   isActive(item.path)
                     ? 'bg-gray-100 text-gray-900'
