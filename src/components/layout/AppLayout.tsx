@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 
 interface AppLayoutProps {
@@ -9,6 +9,11 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
     <div className="flex h-screen w-full bg-gray-50">
@@ -31,9 +36,25 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         </button>
       </div>
 
-      <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+      <Sidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        setIsMobileMenuOpen={setIsMobileMenuOpen} 
+        isCollapsed={isCollapsed} 
+      />
       
-      <div className="flex-1 lg:ml-64 transition-all duration-300">
+      {/* Sidebar toggle button (only visible on desktop) */}
+      <button 
+        onClick={toggleSidebar}
+        className="hidden lg:flex fixed bottom-8 bg-[#1a202c] text-white p-2 rounded-r-md z-50 transition-all duration-300"
+        style={{ 
+          left: isCollapsed ? '4rem' : '16rem', 
+          transform: 'translateX(-2px)'
+        }}
+      >
+        {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+      </button>
+      
+      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <main className="px-6 py-8 mt-16 lg:mt-0 h-full overflow-auto">
           {children}
         </main>

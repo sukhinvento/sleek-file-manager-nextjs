@@ -74,6 +74,8 @@
 .enterprise-sidebar {
   @apply bg-[#1a202c] text-white;
   backface-visibility: hidden;
+  will-change: transform, width;
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .nav-item {
