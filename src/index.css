@@ -76,10 +76,11 @@
   backface-visibility: hidden;
   will-change: transform, width;
   transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+  overflow-x: hidden;
 }
 
 .nav-item {
-  @apply flex items-center px-4 py-2 text-gray-300 hover:bg-[#2d3748] rounded-md transition-colors;
+  @apply flex items-center px-4 py-2 text-gray-300 hover:bg-[#2d3748] rounded-md transition-colors relative;
 }
 
 .nav-item.active {

@@ -9,6 +9,7 @@ import {
   FileText,
   Edit,
   ChevronRight,
+  ChevronLeft,
   PieChart,
   BarChart3,
   Database,
@@ -21,12 +22,14 @@ interface SidebarProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: Dispatch<SetStateAction<boolean>>;
   isCollapsed?: boolean;
+  toggleSidebar: () => void;
 }
 
 export const Sidebar = ({ 
   isMobileMenuOpen, 
   setIsMobileMenuOpen, 
-  isCollapsed = false 
+  isCollapsed = false,
+  toggleSidebar 
 }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,16 +53,26 @@ export const Sidebar = ({
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
     >
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800">
         {!isCollapsed && (
           <h2 className="text-xl font-bold text-white whitespace-nowrap">Enterprise</h2>
         )}
-        <button 
-          onClick={() => setIsMobileMenuOpen(false)}
-          className={`lg:hidden text-gray-400 hover:text-white ${isCollapsed ? 'mx-auto' : ''}`}
-        >
-          &times;
-        </button>
+        <div className="flex items-center">
+          {/* Toggle button moved to header */}
+          <button 
+            onClick={toggleSidebar}
+            className="hidden lg:flex text-white p-1 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+          
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden text-gray-400 hover:text-white ml-2"
+          >
+            &times;
+          </button>
+        </div>
       </div>
 
       <div className="px-3 py-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
@@ -74,7 +87,7 @@ export const Sidebar = ({
               title="Dashboard"
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Dashboard</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Dashboard</span>
             </Link>
           </nav>
         </div>
@@ -90,7 +103,7 @@ export const Sidebar = ({
               title="Upload Files"
             >
               <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Upload Files</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Upload Files</span>
             </Link>
             <Link 
               to="/files" 
@@ -100,7 +113,7 @@ export const Sidebar = ({
               title="View Files"
             >
               <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>View Files</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>View Files</span>
             </Link>
             <Link 
               to="/edit" 
@@ -110,7 +123,7 @@ export const Sidebar = ({
               title="Edit Files"
             >
               <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Edit Files</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Edit Files</span>
             </Link>
             <Link 
               to="/consolidated" 
@@ -120,7 +133,7 @@ export const Sidebar = ({
               title="Consolidated Data View"
             >
               <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Consolidated Data View</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Consolidated Data View</span>
             </Link>
           </nav>
         </div>
@@ -136,7 +149,7 @@ export const Sidebar = ({
               title="Usage Stats"
             >
               <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Usage Stats</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Usage Stats</span>
             </Link>
             <Link 
               to="/analytics/trends" 
@@ -146,7 +159,7 @@ export const Sidebar = ({
               title="Trends"
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Trends</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Trends</span>
             </Link>
             <Link 
               to="/analytics/distribution" 
@@ -156,7 +169,7 @@ export const Sidebar = ({
               title="Distribution"
             >
               <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-              {!isCollapsed && <span>Distribution</span>}
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Distribution</span>
             </Link>
           </nav>
         </div>
@@ -172,7 +185,7 @@ export const Sidebar = ({
             }}
           >
             <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5`} />
-            {!isCollapsed && <span>Logout</span>}
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0 absolute' : 'opacity-100'}`}>Logout</span>
           </Link>
         </div>
       </div>
