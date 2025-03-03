@@ -41,12 +41,12 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
 
   return (
     <div 
-      className={`enterprise-sidebar transition-all duration-300 ${
-        isMobileMenuOpen ? 'left-0' : '-left-64 lg:left-0'
-      } w-64`}
+      className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-transform duration-300 ease-in-out will-change-transform ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } w-64 z-50`}
     >
       <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-        <h2 className="text-xl font-bold text-white">Enterprise</h2>
+        <h2 className="text-xl font-bold text-white whitespace-nowrap">Enterprise</h2>
         <button 
           onClick={() => setIsMobileMenuOpen(false)}
           className="lg:hidden text-gray-400 hover:text-white"
@@ -55,7 +55,7 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         </button>
       </div>
 
-      <div className="px-3 py-4">
+      <div className="px-3 py-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
         <div className="nav-section">
           <p className="nav-section-title">Main</p>
           <nav className="mt-2 space-y-1">

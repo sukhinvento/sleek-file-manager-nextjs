@@ -72,7 +72,8 @@
 
 /* Enterprise styles */
 .enterprise-sidebar {
-  @apply bg-[#1a202c] text-white h-screen fixed left-0 top-0 z-50 w-64;
+  @apply bg-[#1a202c] text-white;
+  backface-visibility: hidden;
 }
 
 .nav-item {
