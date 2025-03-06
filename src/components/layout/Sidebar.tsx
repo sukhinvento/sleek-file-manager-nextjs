@@ -133,7 +133,7 @@ export const Sidebar = ({
               title="Consolidated Data View"
             >
               <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data View</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Consolidated Data View</span>
             </Link>
           </nav>
         </div>
@@ -149,7 +149,7 @@ export const Sidebar = ({
               title="Usage Stats"
             >
               <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Usage Stats</span>
             </Link>
             <Link 
               to="/analytics/trends" 
@@ -159,7 +159,7 @@ export const Sidebar = ({
               title="Trends"
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Trends</span>
             </Link>
             <Link 
               to="/analytics/distribution" 
@@ -169,7 +169,7 @@ export const Sidebar = ({
               title="Distribution"
             >
               <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Distribution</span>
             </Link>
           </nav>
         </div>
@@ -185,7 +185,7 @@ export const Sidebar = ({
             }}
           >
             <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-            <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
+            <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Logout</span>
           </Link>
         </div>
       </div>
