@@ -49,15 +49,13 @@ export const Sidebar = ({
 
   return (
     <div 
-      className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-all duration-300 ease-in-out will-change-transform ${
+      className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-all duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
     >
       <div className="flex items-center h-16 px-4 border-b border-gray-800">
         <div className="flex-1 overflow-hidden">
-          {!isCollapsed && (
-            <h2 className="text-xl font-bold text-white whitespace-nowrap">Enterprise</h2>
-          )}
+          <h2 className={`text-xl font-bold text-white whitespace-nowrap nav-text ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>Enterprise</h2>
         </div>
         <div className="flex items-center flex-shrink-0">
           <button 
@@ -89,7 +87,7 @@ export const Sidebar = ({
               title="Dashboard"
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Dashboard</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
             </Link>
           </nav>
         </div>
@@ -105,7 +103,7 @@ export const Sidebar = ({
               title="Upload Files"
             >
               <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Upload Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
             </Link>
             <Link 
               to="/files" 
@@ -115,7 +113,7 @@ export const Sidebar = ({
               title="View Files"
             >
               <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>View Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
             </Link>
             <Link 
               to="/edit" 
@@ -125,7 +123,7 @@ export const Sidebar = ({
               title="Edit Files"
             >
               <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Edit Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
             </Link>
             <Link 
               to="/consolidated" 
@@ -135,7 +133,7 @@ export const Sidebar = ({
               title="Consolidated Data View"
             >
               <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Consolidated Data View</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data View</span>
             </Link>
           </nav>
         </div>
@@ -151,7 +149,7 @@ export const Sidebar = ({
               title="Usage Stats"
             >
               <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Usage Stats</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
             </Link>
             <Link 
               to="/analytics/trends" 
@@ -161,7 +159,7 @@ export const Sidebar = ({
               title="Trends"
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Trends</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
             </Link>
             <Link 
               to="/analytics/distribution" 
@@ -171,7 +169,7 @@ export const Sidebar = ({
               title="Distribution"
             >
               <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Distribution</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
             </Link>
           </nav>
         </div>
@@ -187,7 +185,7 @@ export const Sidebar = ({
             }}
           >
             <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-            <span className={`whitespace-nowrap transition-opacity duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100'}`}>Logout</span>
+            <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
           </Link>
         </div>
       </div>

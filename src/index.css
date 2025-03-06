@@ -76,7 +76,7 @@
   backface-visibility: hidden;
   will-change: transform, width;
   transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .nav-item {
@@ -96,6 +96,12 @@
 
 .nav-section-title {
   @apply px-4 text-xs uppercase tracking-wider text-gray-500 font-semibold;
+}
+
+/* Text transition for sidebar items */
+.nav-text {
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
 }
 
 /* Button styles */
