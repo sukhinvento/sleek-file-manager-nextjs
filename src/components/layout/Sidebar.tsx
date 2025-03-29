@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Clock,
   LogOut,
+  ShoppingCart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -87,7 +88,18 @@ export const Sidebar = ({
               title="Dashboard"
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Dashboard</span>
+            </Link>
+            
+            <Link 
+              to="/purchase-orders" 
+              className={`nav-item ${isActive('/purchase-orders') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Purchase Orders"
+            >
+              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Purchase Orders</span>
             </Link>
           </nav>
         </div>
@@ -103,7 +115,7 @@ export const Sidebar = ({
               title="Upload Files"
             >
               <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Upload Files</span>
             </Link>
             <Link 
               to="/files" 
@@ -113,7 +125,7 @@ export const Sidebar = ({
               title="View Files"
             >
               <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>View Files</span>
             </Link>
             <Link 
               to="/edit" 
@@ -123,7 +135,7 @@ export const Sidebar = ({
               title="Edit Files"
             >
               <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
+              <span className={`nav-text ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100 w-full truncate'}`}>Edit Files</span>
             </Link>
             <Link 
               to="/consolidated" 
