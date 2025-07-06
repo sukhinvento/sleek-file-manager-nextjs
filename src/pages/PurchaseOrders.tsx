@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MapPin, User, Calendar, Edit, Package, X, Attachment, Copy, Print, Mail, FileText } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, User, Calendar, Edit, Package, X, Paperclip, Printer, Mail, FileText, Copy } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -85,9 +85,9 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
               {isEdit ? 'Edit Purchase Order' : 'Purchase Order Details'}
             </SheetTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm"><Attachment className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm"><Paperclip className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm"><Copy className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm"><Print className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm"><Printer className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm"><Mail className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm"><FileText className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm" onClick={onClose}><X className="h-4 w-4" /></Button>
