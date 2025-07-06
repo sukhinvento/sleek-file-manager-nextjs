@@ -1,12 +1,12 @@
-
 import { useState } from 'react';
-import { Search, Plus, Filter, ArrowRight, MapPin, Package } from 'lucide-react';
+import { Search, Plus, Filter, ArrowRight, MapPin, Package, X } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectLabel, Label, Textarea } from "@/components/ui/select";
 
 // Sample stock transfer data
 const stockTransfersData = [
@@ -98,18 +98,79 @@ export const StockTransfer = () => {
               <Plus className="mr-2 h-4 w-4" /> New Transfer Request
             </Button>
           </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>New Stock Transfer</SheetTitle>
+          <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
+            <SheetHeader className="border-b pb-4">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-xl font-semibold">New Stock Transfer</SheetTitle>
+                <Button variant="ghost" size="sm" onClick={() => setIsNewTransferOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </SheetHeader>
-            <div className="space-y-4 mt-6">
-              <Input placeholder="From Location" />
-              <Input placeholder="To Location" />
-              <Input placeholder="Item Name" />
-              <Input placeholder="Quantity" type="number" />
-              <Input placeholder="Reason for Transfer" />
-              <div className="flex gap-2 pt-4">
-                <Button className="flex-1">Create Transfer</Button>
+            
+            <div className="space-y-6 pt-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="from-location">From Location *</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main-warehouse">Main Warehouse</SelectItem>
+                      <SelectItem value="eastern-warehouse">Eastern Warehouse</SelectItem>
+                      <SelectItem value="western-warehouse">Western Warehouse</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="to-location">To Location *</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select destination location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="emergency-room">Emergency Room</SelectItem>
+                      <SelectItem value="icu">ICU</SelectItem>
+                      <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                      <SelectItem value="surgery">Surgery Department</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="item-name">Item Name *</Label>
+                  <Input id="item-name" placeholder="Enter item name" />
+                </div>
+                <div>
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input id="quantity" type="number" placeholder="Enter quantity" />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="reason">Reason for Transfer</Label>
+                  <Textarea id="reason" placeholder="Enter reason for transfer..." rows={3} />
+                </div>
+                <div>
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="expected-date">Expected Completion Date</Label>
+                  <Input id="expected-date" type="date" />
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4 border-t">
+                <Button className="flex-1 bg-enterprise-700 hover:bg-enterprise-800">Create Transfer Request</Button>
                 <Button variant="outline" onClick={() => setIsNewTransferOpen(false)}>Cancel</Button>
               </div>
             </div>

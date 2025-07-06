@@ -97,10 +97,10 @@ const DetailedVendorOverlay = ({ vendor, isOpen, onClose, isEdit = false }: {
 }) => {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-3xl overflow-y-auto">
+      <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
         <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-semibold">
+            <SheetTitle className="text-xl font-semibold">
               {isEdit ? 'Edit Vendor' : 'Add New Vendor'}
             </SheetTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>

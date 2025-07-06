@@ -131,16 +131,16 @@ const DetailedSOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-4xl overflow-y-auto">
+      <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
         <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-semibold">
+            <SheetTitle className="text-xl font-semibold">
               {isEdit ? 'Edit Sales Order' : 'Sales Order Details'}
             </SheetTitle>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm"><FileText className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm"><Mail className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm"><Truck className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm"><Package className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm" onClick={onClose}><X className="h-4 w-4" /></Button>
             </div>
           </div>
