@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, Plus, Filter, ArrowRight, MapPin, Package, X } from 'lucide-react';
 import { Input } from "@/components/ui/input";
@@ -100,7 +101,7 @@ export const StockTransfer = () => {
               <Plus className="mr-2 h-4 w-4" /> New Transfer Request
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
+          <SheetContent className="w-[75vw] max-w-[75vw] overflow-y-auto">
             <SheetHeader className="border-b pb-4">
               <div className="flex items-center justify-between">
                 <SheetTitle className="text-xl font-semibold">New Stock Transfer</SheetTitle>
