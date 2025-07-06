@@ -140,7 +140,7 @@ const AutosuggestInput = ({ onSelect, placeholder }: { onSelect: (item: any) => 
         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
       />
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-[100] w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
           {suggestions.map((item) => (
             <div
               key={item.id}
@@ -167,6 +167,7 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
   const [selectedTaxSlab, setSelectedTaxSlab] = useState<number>(18);
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>('net-30');
   
   const addItem = (stockItem?: any) => {
     if (stockItem) {
@@ -253,6 +254,7 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
               <p><strong>Vendor:</strong> ${order?.vendorName || ''}</p>
               <p><strong>Order Date:</strong> ${order?.orderDate || ''}</p>
               <p><strong>Delivery Date:</strong> ${order?.deliveryDate || ''}</p>
+              <p><strong>Payment Method:</strong> ${paymentMethod}</p>
             </div>
             <table>
               <tr>
@@ -575,31 +577,70 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
             </div>
           </div>
 
-          {/* Payment & Shipping */}
+          {/* Enhanced Payment & Shipping */}
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
               <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded-lg" />
               <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-                <h4 className="font-semibold mb-3">Payment Terms</h4>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment terms" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="net-30">Net 30</SelectItem>
-                    <SelectItem value="net-15">Net 15</SelectItem>
-                    <SelectItem value="cod">Cash on Delivery</SelectItem>
-                  </SelectContent>
-                </Select>
+                <h4 className="font-semibold mb-3">Payment Terms & Methods</h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Payment Terms</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment terms" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="net-30">Net 30 (Payment due in 30 days)</SelectItem>
+                        <SelectItem value="net-15">Net 15 (Payment due in 15 days)</SelectItem>
+                        <SelectItem value="net-7">Net 7 (Payment due in 7 days)</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                        <SelectItem value="advance">Advance Payment (100% upfront)</SelectItem>
+                        <SelectItem value="pos">POS - Credit/Debit Card</SelectItem>
+                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {paymentMethod === 'pos' && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <h5 className="font-medium text-blue-800 mb-2">POS Payment Details</h5>
+                      <div className="space-y-2 text-sm text-blue-700">
+                        <p>• Accepts Visa, MasterCard, American Express</p>
+                        <p>• Processing fee: 2.9% + ₹30 per transaction</p>
+                        <p>• Instant payment confirmation</p>
+                        <p>• Automatic receipt generation</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p><strong>Payment Terms Explained:</strong></p>
+                    <p>• <strong>Net 30:</strong> Payment is due within 30 days of invoice date</p>
+                    <p>• <strong>Net 15:</strong> Payment is due within 15 days of invoice date</p>
+                    <p>• <strong>COD:</strong> Payment collected upon delivery</p>
+                    <p>• <strong>Advance:</strong> Full payment before order processing</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="relative">
               <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-orange-200 to-red-200 rounded-lg" />
               <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-                <h4 className="font-semibold mb-3">Include Shipping</h4>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="include-shipping" defaultChecked />
-                  <Label htmlFor="include-shipping">Include shipping costs</Label>
+                <h4 className="font-semibold mb-3">Shipping & Delivery</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="include-shipping" defaultChecked />
+                    <Label htmlFor="include-shipping">Include shipping costs (₹500)</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="express-delivery" />
+                    <Label htmlFor="express-delivery">Express delivery (+₹200)</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="insurance" />
+                    <Label htmlFor="insurance">Insurance coverage (+₹100)</Label>
+                  </div>
                 </div>
               </div>
             </div>
