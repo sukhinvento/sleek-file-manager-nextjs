@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, Plus, Filter, Calendar, User, Package, X, Truck, FileText, Mail, CreditCard, MapPin } from 'lucide-react';
 import { Input } from "@/components/ui/input";
@@ -131,7 +130,7 @@ const DetailedSOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
+      <SheetContent className="w-[75vw] overflow-y-auto">
         <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-xl font-semibold">
