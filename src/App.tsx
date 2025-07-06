@@ -14,6 +14,9 @@ import { PurchaseOrders } from "./pages/PurchaseOrders";
 import { Inventory } from "./pages/Inventory";
 import { Billing } from "./pages/Billing";
 import { Patients } from "./pages/Patients";
+import { VendorManagement } from "./pages/VendorManagement";
+import { SalesOrders } from "./pages/SalesOrders";
+import { StockTransfer } from "./pages/StockTransfer";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +50,21 @@ const App = () => (
           <Route path="/purchase-orders" element={
             <AppLayout>
               <PurchaseOrders />
+            </AppLayout>
+          } />
+          <Route path="/sales-orders" element={
+            <AppLayout>
+              <SalesOrders />
+            </AppLayout>
+          } />
+          <Route path="/vendors" element={
+            <AppLayout>
+              <VendorManagement />
+            </AppLayout>
+          } />
+          <Route path="/stock-transfer" element={
+            <AppLayout>
+              <StockTransfer />
             </AppLayout>
           } />
           <Route path="/billing" element={

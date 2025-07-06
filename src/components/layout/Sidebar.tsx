@@ -1,4 +1,3 @@
-
 import { useState, Dispatch, SetStateAction } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
@@ -130,6 +129,39 @@ export const Sidebar = ({
             >
               <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
+            </Link>
+
+            <Link 
+              to="/sales-orders" 
+              className={`nav-item ${isActive('/sales-orders') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Sales Orders"
+            >
+              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
+            </Link>
+
+            <Link 
+              to="/vendors" 
+              className={`nav-item ${isActive('/vendors') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Vendor Management"
+            >
+              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
+            </Link>
+
+            <Link 
+              to="/stock-transfer" 
+              className={`nav-item ${isActive('/stock-transfer') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Stock Transfer"
+            >
+              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
             </Link>
           </nav>
         </div>
