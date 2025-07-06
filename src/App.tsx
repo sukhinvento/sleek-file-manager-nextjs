@@ -11,6 +11,9 @@ import { ViewFiles } from "./pages/ViewFiles";
 import { EditFiles } from "./pages/EditFiles";
 import { Settings } from "./pages/Settings";
 import { PurchaseOrders } from "./pages/PurchaseOrders";
+import { Inventory } from "./pages/Inventory";
+import { Billing } from "./pages/Billing";
+import { Patients } from "./pages/Patients";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +34,26 @@ const App = () => (
               <Dashboard />
             </AppLayout>
           } />
+          <Route path="/patients" element={
+            <AppLayout>
+              <Patients />
+            </AppLayout>
+          } />
+          <Route path="/inventory" element={
+            <AppLayout>
+              <Inventory />
+            </AppLayout>
+          } />
+          <Route path="/purchase-orders" element={
+            <AppLayout>
+              <PurchaseOrders />
+            </AppLayout>
+          } />
+          <Route path="/billing" element={
+            <AppLayout>
+              <Billing />
+            </AppLayout>
+          } />
           <Route path="/upload" element={
             <AppLayout>
               <UploadFiles />
@@ -44,11 +67,6 @@ const App = () => (
           <Route path="/edit" element={
             <AppLayout>
               <EditFiles />
-            </AppLayout>
-          } />
-          <Route path="/purchase-orders" element={
-            <AppLayout>
-              <PurchaseOrders />
             </AppLayout>
           } />
           <Route path="/consolidated" element={
