@@ -7,6 +7,9 @@ import { PurchaseOrder } from '../../types/purchaseOrder';
 
 interface RemarksSectionProps {
   order: PurchaseOrder | null;
+  isEditMode?: boolean;
+  remarks?: string;
+  setRemarks?: (remarks: string) => void;
 }
 
 export const RemarksSection = ({ order }: RemarksSectionProps) => {

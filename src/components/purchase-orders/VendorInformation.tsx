@@ -5,6 +5,9 @@ import { PurchaseOrder } from '../../types/purchaseOrder';
 
 interface VendorInformationProps {
   order: PurchaseOrder | null;
+  isEditMode?: boolean;
+  shippingAddress?: string;
+  setShippingAddress?: (address: string) => void;
 }
 
 export const VendorInformation = ({ order }: VendorInformationProps) => {

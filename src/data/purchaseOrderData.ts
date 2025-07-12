@@ -2,7 +2,7 @@ import { PurchaseOrder, StockItem, TaxSlab, Offer } from '../types/purchaseOrder
 
 export const purchaseOrdersData: PurchaseOrder[] = [
   {
-    id: 1,
+    id: "1",
     poNumber: 'PO-2024-001',
     vendorName: 'Cuisine Supply Inc.',
     vendorContact: 'John Smith',
@@ -31,7 +31,7 @@ export const purchaseOrdersData: PurchaseOrder[] = [
     ]
   },
   {
-    id: 2,
+    id: "2",
     poNumber: 'PO-2024-002',
     vendorName: 'Medical Equipment Co.',
     vendorContact: 'Sarah Johnson',
@@ -60,7 +60,7 @@ export const purchaseOrdersData: PurchaseOrder[] = [
     ]
   },
   {
-    id: 3,
+    id: "3",
     poNumber: 'PO-2024-003',
     vendorName: 'Pharma Distributors Ltd.',
     vendorContact: 'Michael Brown',

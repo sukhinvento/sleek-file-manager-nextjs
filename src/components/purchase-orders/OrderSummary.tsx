@@ -12,6 +12,13 @@ interface OrderSummaryProps {
   };
   paymentMethod: string;
   getPaymentMethodDisplay: (method: string) => string;
+  isEditMode?: boolean;
+  vendorName?: string;
+  setVendorName?: (name: string) => void;
+  orderDate?: string;
+  setOrderDate?: (date: string) => void;
+  deliveryDate?: string;
+  setDeliveryDate?: (date: string) => void;
 }
 
 export const OrderSummary = ({ order, totals, paymentMethod, getPaymentMethodDisplay }: OrderSummaryProps) => {

@@ -14,7 +14,7 @@ export interface PurchaseOrderRemark {
 }
 
 export interface PurchaseOrder {
-  id: number;
+  id: string;
   poNumber: string;
   vendorName: string;
   vendorContact: string;

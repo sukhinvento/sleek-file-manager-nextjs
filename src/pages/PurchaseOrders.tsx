@@ -201,12 +201,15 @@ export const PurchaseOrders = () => {
         </Table>
       </div>
 
-      {/* Detailed Overlays */}
+      {/* Enhanced State Management */}
       <DetailedPOOverlay
         order={null}
         isOpen={isNewOrderOpen}
         onClose={() => setIsNewOrderOpen(false)}
-        isEdit={false}
+        isEdit={true}
+        onSave={(newOrder) => {
+          setPurchaseOrders([...purchaseOrders, newOrder]);
+        }}
       />
 
       <DetailedPOOverlay
@@ -214,6 +217,16 @@ export const PurchaseOrders = () => {
         isOpen={!!editingOrder}
         onClose={() => setEditingOrder(null)}
         isEdit={true}
+        onUpdate={(updatedOrder) => {
+          setPurchaseOrders(purchaseOrders.map(order => 
+            order.id === updatedOrder.id ? updatedOrder : order
+          ));
+          setEditingOrder(null);
+        }}
+        onDelete={(orderId) => {
+          setPurchaseOrders(purchaseOrders.filter(order => order.id !== orderId));
+          setEditingOrder(null);
+        }}
       />
     </div>
   );
