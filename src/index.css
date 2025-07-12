@@ -24,6 +24,42 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    
+    /* Inventory Management Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 355 100% 97%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 25 95% 53%;
+    --info: 213 93% 68%;
+    --info-foreground: 210 40% 98%;
+    
+    /* Status Colors */
+    --status-pending: 43 96% 56%;
+    --status-pending-bg: 48 100% 96%;
+    --status-approved: 213 93% 68%;
+    --status-approved-bg: 214 100% 97%;
+    --status-delivered: 142 76% 36%;
+    --status-delivered-bg: 143 85% 96%;
+    --status-cancelled: 0 84% 60%;
+    --status-cancelled-bg: 0 93% 94%;
+    
+    /* Inventory Status Colors */
+    --stock-critical: 0 84% 60%;
+    --stock-critical-bg: 0 93% 94%;
+    --stock-low: 43 96% 56%;
+    --stock-low-bg: 48 100% 96%;
+    --stock-normal: 142 76% 36%;
+    --stock-normal-bg: 143 85% 96%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(221.2 83.2% 40%));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 76% 25%));
+    --gradient-subtle: linear-gradient(135deg, hsl(var(--muted)), hsl(var(--background)));
+    
+    /* Shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-card: 0 4px 6px -1px hsl(222.2 84% 4.9% / 0.1);
+    --shadow-overlay: 0 20px 50px -10px hsl(222.2 84% 4.9% / 0.25);
   }
  
   .dark {
@@ -105,6 +141,95 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+}
+
+/* Overlay & Modal Enhancements */
+.overlay-content {
+  @apply bg-card border shadow-overlay rounded-lg;
+  animation: overlayContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overlay-backdrop {
+  @apply bg-black/50 backdrop-blur-sm;
+  animation: overlayBackdropShow 0.3s ease;
+}
+
+.status-badge-pending {
+  @apply bg-status-pending-bg text-status-pending border border-status-pending/20;
+}
+
+.status-badge-approved {
+  @apply bg-status-approved-bg text-status-approved border border-status-approved/20;
+}
+
+.status-badge-delivered {
+  @apply bg-status-delivered-bg text-status-delivered border border-status-delivered/20;
+}
+
+.status-badge-cancelled {
+  @apply bg-status-cancelled-bg text-status-cancelled border border-status-cancelled/20;
+}
+
+.stock-badge-critical {
+  @apply bg-stock-critical-bg text-stock-critical border border-stock-critical/20;
+}
+
+.stock-badge-low {
+  @apply bg-stock-low-bg text-stock-low border border-stock-low/20;
+}
+
+.stock-badge-normal {
+  @apply bg-stock-normal-bg text-stock-normal border border-stock-normal/20;
+}
+
+.section-header {
+  @apply flex items-center gap-3 text-lg font-semibold text-foreground mb-4;
+}
+
+.section-icon {
+  @apply h-5 w-5 text-primary;
+}
+
+.summary-card {
+  @apply bg-gradient-subtle border border-border/50 shadow-card rounded-lg p-4;
+}
+
+.action-button-primary {
+  @apply bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-lg transition-all duration-300;
+}
+
+.action-button-secondary {
+  @apply bg-gradient-subtle border border-border/50 hover:bg-muted/50 transition-all duration-300;
+}
+
+/* Animation Keyframes */
+@keyframes overlayContentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes overlayBackdropShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Interactive Elements */
+.interactive-card {
+  @apply cursor-pointer transition-all duration-300 hover:shadow-card hover:scale-[1.01];
+}
+
+.icon-accent {
+  @apply text-primary/80 group-hover:text-primary transition-colors duration-300;
 }
 
 /* Button styles */

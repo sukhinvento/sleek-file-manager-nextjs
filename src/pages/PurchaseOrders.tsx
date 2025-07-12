@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MapPin, Calendar, Package } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from '../components/purchase-orders/StatusBadge';
 import { DetailedPOOverlay } from '../components/purchase-orders/DetailedPOOverlay';
+import { SummaryCard } from '../components/inventory/SummaryCard';
 import { purchaseOrdersData } from '../data/purchaseOrderData';
 import { PurchaseOrder } from '../types/purchaseOrder';
 
@@ -30,12 +30,21 @@ export const PurchaseOrders = () => {
   const pendingOrders = purchaseOrders.filter(o => o.status === 'Pending').length;
   const deliveredOrders = purchaseOrders.filter(o => o.status === 'Delivered').length;
 
+  const totalValue = purchaseOrders.reduce((sum, order) => sum + order.total, 0);
+
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Purchase Orders</h1>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Purchase Orders
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage and track all your purchase orders
+          </p>
+        </div>
         <Button
-          className="bg-enterprise-700 hover:bg-enterprise-800"
+          className="action-button-primary"
           onClick={() => setIsNewOrderOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> New Purchase Order
@@ -43,32 +52,34 @@ export const PurchaseOrders = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{deliveredOrders}</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <SummaryCard
+          title="Total Orders"
+          value={totalOrders}
+          icon={Package}
+          gradient={true}
+        />
+        <SummaryCard
+          title="Pending Orders"
+          value={pendingOrders}
+          icon={AlertTriangle}
+          badge={{
+            text: pendingOrders > 10 ? 'High' : 'Normal',
+            variant: pendingOrders > 10 ? 'destructive' : 'outline'
+          }}
+        />
+        <SummaryCard
+          title="Delivered Orders"
+          value={deliveredOrders}
+          icon={Package}
+          subtitle="This month"
+        />
+        <SummaryCard
+          title="Total Value"
+          value={`₹${totalValue.toLocaleString('en-IN')}`}
+          icon={TrendingUp}
+          gradient={true}
+        />
       </div>
 
       {/* Filters and Search */}
@@ -78,7 +89,11 @@ export const PurchaseOrders = () => {
             <Button
               key={status}
               variant={selectedStatus === status ? 'default' : 'outline'}
-              className={`rounded-full whitespace-nowrap ${selectedStatus === status ? 'bg-enterprise-700' : ''}`}
+              className={`rounded-full whitespace-nowrap transition-all duration-300 ${
+                selectedStatus === status 
+                  ? 'action-button-primary scale-105' 
+                  : 'action-button-secondary hover:scale-105'
+              }`}
               onClick={() => setSelectedStatus(status)}
             >
               {status}
@@ -97,58 +112,66 @@ export const PurchaseOrders = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline">
+          <Button variant="outline" className="action-button-secondary">
             <Filter className="mr-2 h-4 w-4" /> Filters
           </Button>
         </div>
       </div>
 
       {/* Purchase Orders Table */}
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-lg border border-border/50 overflow-hidden shadow-card bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Order Details</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead>Shipping Address</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-muted/30">
+              <TableHead className="font-semibold">Order Details</TableHead>
+              <TableHead className="font-semibold">Vendor</TableHead>
+              <TableHead className="font-semibold">Shipping Address</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Items</TableHead>
+              <TableHead className="font-semibold">Total</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
-              <TableRow key={order.id} className="cursor-pointer hover:bg-muted/30">
+            {filteredOrders.map((order, index) => (
+              <TableRow 
+                key={order.id} 
+                className="interactive-card border-b border-border/30 hover:bg-muted/20 transition-all duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <TableCell>
-                  <div>
-                    <div className="font-medium">{order.poNumber}</div>
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
+                  <div className="space-y-1">
+                    <div className="font-semibold text-foreground">{order.poNumber}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
                       {order.orderDate}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       Delivery: {order.deliveryDate}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {order.vendorName}
+                  <div className="font-medium text-foreground">{order.vendorName}</div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {order.shippingAddress}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm text-foreground truncate max-w-[200px]">
+                      {order.shippingAddress}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={order.status} />
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{order.items.length} items</Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                  </Badge>
                 </TableCell>
                 <TableCell>
-                  <span className="font-medium">
+                  <span className="font-bold text-foreground">
                     ₹{order.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </span>
                 </TableCell>
@@ -157,6 +180,7 @@ export const PurchaseOrders = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="hover:bg-primary/10 hover:text-primary transition-colors duration-300"
                       onClick={() => setEditingOrder(order)}
                     >
                       View
@@ -164,6 +188,7 @@ export const PurchaseOrders = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="hover:bg-info/10 hover:text-info transition-colors duration-300"
                       onClick={() => setEditingOrder(order)}
                     >
                       Edit
