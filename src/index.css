@@ -192,15 +192,24 @@
 }
 
 .summary-card {
-  @apply bg-gradient-subtle border border-border/50 shadow-card rounded-lg p-4;
+  @apply border border-border/50 rounded-lg p-4;
+  background: var(--gradient-subtle);
+  box-shadow: var(--shadow-card);
 }
 
 .action-button-primary {
-  @apply bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-lg transition-all duration-300;
+  @apply text-primary-foreground transition-all duration-300;
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-elegant);
+}
+
+.action-button-primary:hover {
+  box-shadow: var(--shadow-elegant), 0 15px 35px -10px hsl(var(--primary) / 0.3);
 }
 
 .action-button-secondary {
-  @apply bg-gradient-subtle border border-border/50 hover:bg-muted/50 transition-all duration-300;
+  @apply border border-border/50 hover:bg-muted/50 transition-all duration-300;
+  background: var(--gradient-subtle);
 }
 
 /* Animation Keyframes */
@@ -226,7 +235,11 @@
 
 /* Interactive Elements */
 .interactive-card {
-  @apply cursor-pointer transition-all duration-300 hover:shadow-card hover:scale-[1.01];
+  @apply cursor-pointer transition-all duration-300 hover:scale-[1.01];
+}
+
+.interactive-card:hover {
+  box-shadow: var(--shadow-card);
 }
 
 .icon-accent {
