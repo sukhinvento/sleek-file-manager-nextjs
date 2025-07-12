@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MapPin, User, Calendar, Edit, Package, X, Paperclip, Printer, Mail, FileText, Copy, QrCode, Scan, Camera } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, User, Calendar, Edit, Package, X, Paperclip, Printer, Mail, FileText, Copy, QrCode, Scan, Camera, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -16,55 +16,89 @@ const purchaseOrdersData = [
     id: 1,
     poNumber: 'PO-2024-001',
     vendorName: 'Cuisine Supply Inc.',
+    vendorContact: 'John Smith',
+    vendorPhone: '+1-555-0123',
+    vendorEmail: 'john@cuisinesupply.com',
+    vendorAddress: '123 Supply Street, Business District',
     shippingAddress: '456 Warehouse Rd, Anytown',
     orderDate: '2024-01-20',
     deliveryDate: '2024-02-15',
+    fulfilmentDate: null,
     status: 'Pending',
     items: [
       { name: 'Chef Knives', qty: 10, unitPrice: 150.00, discount: 0, subtotal: 1500.00 },
       { name: 'Cutting Boards', qty: 20, unitPrice: 30.00, discount: 5, subtotal: 570.00 }
     ],
     total: 2070.00,
+    paidAmount: 0,
     createdBy: 'John Doe',
     approvedBy: 'Jane Smith',
     notes: 'Please ensure knives are high quality.',
-    attachments: 2
+    attachments: 2,
+    paymentMethod: 'net-30',
+    remarks: [
+      { date: '2024-01-20', user: 'John Doe', message: 'Order created and sent to vendor' },
+      { date: '2024-01-21', user: 'Jane Smith', message: 'Order approved for processing' }
+    ]
   },
   {
     id: 2,
     poNumber: 'PO-2024-002',
     vendorName: 'Medical Equipment Co.',
+    vendorContact: 'Sarah Johnson',
+    vendorPhone: '+1-555-0456',
+    vendorEmail: 'sarah@medequip.com',
+    vendorAddress: '456 Medical Plaza, Healthcare District',
     shippingAddress: '789 Hospital Ln, Anytown',
     orderDate: '2024-01-22',
     deliveryDate: '2024-02-20',
+    fulfilmentDate: null,
     status: 'Approved',
     items: [
       { name: 'Surgical Masks', qty: 500, unitPrice: 1.00, discount: 10, subtotal: 450.00 },
       { name: 'Gloves', qty: 1000, unitPrice: 0.50, discount: 0, subtotal: 500.00 }
     ],
     total: 950.00,
+    paidAmount: 475.00,
     createdBy: 'Alice Johnson',
     approvedBy: 'Bob Williams',
     notes: 'Gloves must be latex-free.',
-    attachments: 0
+    attachments: 0,
+    paymentMethod: 'pos',
+    remarks: [
+      { date: '2024-01-22', user: 'Alice Johnson', message: 'Order created with urgent priority' },
+      { date: '2024-01-23', user: 'Bob Williams', message: 'Approved with 50% advance payment' }
+    ]
   },
   {
     id: 3,
     poNumber: 'PO-2024-003',
     vendorName: 'Pharma Distributors Ltd.',
+    vendorContact: 'Michael Brown',
+    vendorPhone: '+1-555-0789',
+    vendorEmail: 'michael@pharmadist.com',
+    vendorAddress: '789 Pharma Complex, Medical City',
     shippingAddress: '321 Pharmacy St, Anytown',
     orderDate: '2024-01-25',
     deliveryDate: '2024-03-01',
+    fulfilmentDate: '2024-02-28',
     status: 'Delivered',
     items: [
       { name: 'Antibiotics', qty: 100, unitPrice: 25.00, discount: 5, subtotal: 2375.00 },
       { name: 'Pain Relievers', qty: 50, unitPrice: 15.00, discount: 0, subtotal: 750.00 }
     ],
     total: 3125.00,
+    paidAmount: 3125.00,
     createdBy: 'Carol Davis',
     approvedBy: 'Ted Brown',
     notes: 'Verify expiration dates on delivery.',
-    attachments: 1
+    attachments: 1,
+    paymentMethod: 'bank-transfer',
+    remarks: [
+      { date: '2024-01-25', user: 'Carol Davis', message: 'Order placed for Q1 stock replenishment' },
+      { date: '2024-01-26', user: 'Ted Brown', message: 'Approved after budget verification' },
+      { date: '2024-02-28', user: 'Delivery Team', message: 'Order delivered successfully. All items verified.' }
+    ]
   }
 ];
 
@@ -97,10 +131,23 @@ const StatusBadge = ({ status }: { status: string }) => {
     'Pending': 'bg-yellow-100 text-yellow-800',
     'Approved': 'bg-blue-100 text-blue-800',
     'Delivered': 'bg-green-100 text-green-800',
-    'Cancelled': 'bg-red-100 text-red-800'
+    'Cancelled': 'bg-red-100 text-red-800',
+    'Partial': 'bg-orange-100 text-orange-800'
   };
+  
+  const icons = {
+    'Pending': Clock,
+    'Approved': CheckCircle,
+    'Delivered': CheckCircle,
+    'Cancelled': X,
+    'Partial': AlertCircle
+  };
+  
+  const Icon = icons[status as keyof typeof icons] || Clock;
+  
   return (
-    <Badge className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+    <Badge className={`${variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'} flex items-center gap-1`}>
+      <Icon className="h-3 w-3" />
       {status}
     </Badge>
   );
@@ -167,9 +214,17 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
   const [selectedTaxSlab, setSelectedTaxSlab] = useState<number>(18);
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
   const [showScanner, setShowScanner] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>('net-30');
+  const [paymentMethod, setPaymentMethod] = useState<string>(order?.paymentMethod || 'net-30');
+  const [newRemark, setNewRemark] = useState('');
+  
+  // Determine if order can be edited based on status
+  const isQuotation = order?.status === 'Pending';
+  const isPartiallyFulfilled = order?.status === 'Partial';
+  const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
   
   const addItem = (stockItem?: any) => {
+    if (isReadOnly) return;
+    
     if (stockItem) {
       setItems([...items, { 
         name: stockItem.name, 
@@ -185,10 +240,14 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
   };
 
   const removeItem = (index: number) => {
+    if (isReadOnly || isPartiallyFulfilled) return;
     setItems(items.filter((_: any, i: number) => i !== index));
   };
 
   const updateItem = (index: number, field: string, value: any) => {
+    if (isReadOnly) return;
+    if (isPartiallyFulfilled && field !== 'qty') return; // Only allow qty changes for partial fulfillment
+    
     const updatedItems = [...items];
     updatedItems[index][field] = value;
     
@@ -227,6 +286,20 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
   };
 
   const totals = calculateTotals();
+  const pendingBalance = (order?.total || totals.total) - (order?.paidAmount || 0);
+
+  const addRemark = () => {
+    if (!newRemark.trim()) return;
+    
+    const newRemarkObj = {
+      date: new Date().toISOString().split('T')[0],
+      user: 'Current User', // In real app, get from auth context
+      message: newRemark
+    };
+    
+    // In real app, this would be saved to backend
+    setNewRemark('');
+  };
 
   const handlePrintInvoice = () => {
     const printWindow = window.open('', '_blank');
@@ -288,6 +361,19 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
     }
   };
 
+  const getPaymentMethodDisplay = (method: string) => {
+    const methods = {
+      'net-30': 'Net 30 Days',
+      'net-15': 'Net 15 Days',
+      'net-7': 'Net 7 Days',
+      'cod': 'Cash on Delivery',
+      'advance': 'Advance Payment',
+      'pos': 'POS (Credit/Debit Card)',
+      'bank-transfer': 'Bank Transfer'
+    };
+    return methods[method as keyof typeof methods] || method;
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-[75vw] overflow-y-auto">
@@ -308,179 +394,136 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
         </SheetHeader>
 
         <div className="space-y-6 pt-6">
-          {/* Order Summary Card - Move to Top */}
-          <div className="relative">
-            <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg" />
-            <Card className="relative bg-white/95 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center justify-between">
-                  Order Summary
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={order?.status || 'Pending'} />
-                    <Button size="sm" className="bg-enterprise-700 hover:bg-enterprise-800">
-                      Update Status
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Sub Total</span>
-                    <span>₹{totals.subTotal.toFixed(2)}</span>
-                  </div>
-                  
-                  {totals.offerDiscount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Offer Discount</span>
-                      <span>-₹{totals.offerDiscount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between">
-                    <span>Tax ({selectedTaxSlab}%)</span>
-                    <span>₹{totals.tax.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>Freight (Shipping cost)</span>
-                    <span>₹{totals.shipping.toFixed(2)}</span>
-                  </div>
-                  
-                  <hr />
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Balance</span>
-                    <span>₹{totals.total.toFixed(2)}</span>
-                  </div>
+          {/* Order Summary - Split into two sections */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Section - Order Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Order Details</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">PO Number:</span>
+                  <span className="font-medium">{order?.poNumber || 'PO-2024-XXX'}</span>
                 </div>
-                
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Placed Date:</span>
+                  <span className="font-medium">{order?.orderDate || ''}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Expected Delivery:</span>
+                  <span className="font-medium">{order?.deliveryDate || ''}</span>
+                </div>
+                {order?.fulfilmentDate && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Fulfilled Date:</span>
+                    <span className="font-medium text-green-600">{order.fulfilmentDate}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Section - Status Card */}
+            <Card className="bg-gradient-to-br from-blue-50 to-purple-50">
+              <CardContent className="p-4">
                 <div className="space-y-4">
-                  <div>
-                    <Label>Apply Offer</Label>
-                    <Select value={selectedOffer?.toString()} onValueChange={(value) => setSelectedOffer(Number(value))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select offer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {offers.map(offer => (
-                          <SelectItem key={offer.id} value={offer.id.toString()}>
-                            {offer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Status</span>
+                    <StatusBadge status={order?.status || 'Pending'} />
                   </div>
                   
-                  <div>
-                    <Label>Tax Slab</Label>
-                    <Select value={selectedTaxSlab.toString()} onValueChange={(value) => setSelectedTaxSlab(Number(value))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {taxSlabs.map(tax => (
-                          <SelectItem key={tax.id} value={tax.rate.toString()}>
-                            {tax.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Total Amount</span>
+                    <span className="font-bold text-lg">₹{(order?.total || totals.total).toFixed(2)}</span>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
-                      Save
-                    </Button>
-                    <Button onClick={handlePrintInvoice} className="flex-1" variant="outline">
-                      <Printer className="h-4 w-4 mr-2" />
-                      Print Invoice
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Paid Amount</span>
+                    <span className="font-medium text-green-600">₹{(order?.paidAmount || 0).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Pending Balance</span>
+                    <span className={`font-bold ${pendingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      ₹{pendingBalance.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Payment Method</span>
+                    <span className="font-medium">{getPaymentMethodDisplay(order?.paymentMethod || paymentMethod)}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* PO Header */}
-          <div className="relative">
-            <div 
-              className="absolute inset-0 opacity-10 bg-cover bg-center rounded-lg"
-              style={{ backgroundImage: 'url(/lovable-uploads/8f700d6f-8b2a-4f5e-ae00-9221ad241b62.png)' }}
-            />
-            <div className="relative bg-white/90 backdrop-blur-sm p-4 rounded-lg border">
-              <h3 className="text-lg font-semibold mb-4">{order?.poNumber || 'PO-2024-XXX'}</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="order-date">Order Date</Label>
-                  <Input id="order-date" type="date" defaultValue={order?.orderDate || ''} />
-                </div>
-                <div>
-                  <Label htmlFor="delivery-date">Delivery Date</Label>
-                  <Input id="delivery-date" type="date" defaultValue={order?.deliveryDate || ''} />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Vendor Information */}
-          <div className="relative">
-            <div 
-              className="absolute inset-0 opacity-5 bg-gradient-to-r from-blue-200 to-purple-200 rounded-lg"
-            />
-            <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-              <h4 className="text-lg font-semibold mb-4 flex items-center">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
                 <User className="h-5 w-5 mr-2" />
                 Vendor Information
-              </h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="vendor-name">Vendor Name</Label>
-                  <Input id="vendor-name" defaultValue={order?.vendorName || ''} />
-                </div>
-                <div>
-                  <Label htmlFor="vendor-contact">Contact</Label>
-                  <Input id="vendor-contact" placeholder="Contact person" />
-                </div>
-                <div>
-                  <Label htmlFor="vendor-phone">Phone</Label>
-                  <Input id="vendor-phone" placeholder="Phone number" />
-                </div>
-                <div>
-                  <Label htmlFor="vendor-email">Email</Label>
-                  <Input id="vendor-email" placeholder="Email address" />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="shipping-address">Vendor Address</Label>
-                  <Input id="shipping-address" defaultValue={order?.shippingAddress || ''} />
-                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm text-gray-600">Vendor Name</Label>
+                <p className="font-medium">{order?.vendorName || ''}</p>
               </div>
-            </div>
-          </div>
+              <div>
+                <Label className="text-sm text-gray-600">Contact Person</Label>
+                <p className="font-medium">{order?.vendorContact || 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600">Phone</Label>
+                <p className="font-medium">{order?.vendorPhone || 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600">Email</Label>
+                <p className="font-medium">{order?.vendorEmail || 'N/A'}</p>
+              </div>
+              <div className="col-span-2">
+                <Label className="text-sm text-gray-600">Address</Label>
+                <p className="font-medium">{order?.vendorAddress || order?.shippingAddress || ''}</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Items Section */}
-          <div className="relative">
-            <div 
-              className="absolute inset-0 opacity-5 bg-gradient-to-r from-green-200 to-blue-200 rounded-lg"
-            />
-            <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold flex items-center">
+          {/* Order Items */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center">
                   <Package className="h-5 w-5 mr-2" />
                   Order Items
-                </h4>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowScanner(!showScanner)}>
-                    <QrCode className="h-4 w-4 mr-2" />
-                    Scanner
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => addItem()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
-                </div>
+                </CardTitle>
+                {!isReadOnly && (
+                  <div className="flex items-center gap-2">
+                    {isQuotation && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => setShowScanner(!showScanner)}>
+                          <QrCode className="h-4 w-4 mr-2" />
+                          Scanner
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => addItem()}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Item
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {showScanner && (
+              
+              {isPartiallyFulfilled && (
+                <div className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+                  <AlertCircle className="h-4 w-4 inline mr-2" />
+                  Order is partially fulfilled. You can only adjust quantities for returns or damaged items.
+                </div>
+              )}
+            </CardHeader>
+            
+            <CardContent>
+              {showScanner && isQuotation && (
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-medium">Scan Options:</span>
@@ -508,156 +551,223 @@ const DetailedPOOverlay = ({ order, isOpen, onClose, isEdit = false }: {
                     <TableRow>
                       <TableHead>Product</TableHead>
                       <TableHead>Qty</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Discount</TableHead>
+                      {!isReadOnly && <TableHead>Unit Price</TableHead>}
+                      {!isReadOnly && <TableHead>Discount</TableHead>}
                       <TableHead>Subtotal</TableHead>
-                      <TableHead></TableHead>
+                      {!isReadOnly && <TableHead></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {items.map((item: any, index: number) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <AutosuggestInput
-                            onSelect={(stockItem) => updateItem(index, 'name', stockItem.name)}
-                            placeholder="Search products..."
-                          />
+                          {isQuotation ? (
+                            <AutosuggestInput
+                              onSelect={(stockItem) => updateItem(index, 'name', stockItem.name)}
+                              placeholder="Search products..."
+                            />
+                          ) : (
+                            <span className="font-medium">{item.name}</span>
+                          )}
                         </TableCell>
                         <TableCell>
-                          <Input 
-                            type="number" 
-                            value={item.qty} 
-                            onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                            className="w-20" 
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input 
-                            type="number" 
-                            value={item.unitPrice} 
-                            onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                            className="w-24" 
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                          {isReadOnly ? (
+                            <span>{item.qty}</span>
+                          ) : (
                             <Input 
                               type="number" 
-                              value={item.discount} 
-                              onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
-                              className="w-16" 
+                              value={item.qty} 
+                              onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                              className="w-20" 
                             />
-                            <span className="text-sm">%</span>
-                          </div>
+                          )}
                         </TableCell>
+                        {!isReadOnly && (
+                          <TableCell>
+                            <Input 
+                              type="number" 
+                              value={item.unitPrice} 
+                              onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                              className="w-24"
+                              disabled={isPartiallyFulfilled}
+                            />
+                          </TableCell>
+                        )}
+                        {!isReadOnly && (
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Input 
+                                type="number" 
+                                value={item.discount} 
+                                onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                                className="w-16"
+                                disabled={isPartiallyFulfilled}
+                              />
+                              <span className="text-sm">%</span>
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <span className="font-medium">₹{item.subtotal?.toFixed(2)}</span>
                         </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                        {!isReadOnly && (
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeItem(index)}
+                              disabled={isPartiallyFulfilled}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
 
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={() => addItem()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Product
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Scan className="h-4 w-4 mr-2" />
-                  Scan Product
-                </Button>
-              </div>
-            </div>
+              {isQuotation && (
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" size="sm" onClick={() => addItem()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Scan className="h-4 w-4 mr-2" />
+                    Scan Product
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment Terms & Shipping */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Payment Terms & Methods</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label>Payment Terms</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={isReadOnly}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment terms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="net-30">Net 30 (Payment due in 30 days)</SelectItem>
+                      <SelectItem value="net-15">Net 15 (Payment due in 15 days)</SelectItem>
+                      <SelectItem value="net-7">Net 7 (Payment due in 7 days)</SelectItem>
+                      <SelectItem value="cod">Cash on Delivery</SelectItem>
+                      <SelectItem value="advance">Advance Payment (100% upfront)</SelectItem>
+                      <SelectItem value="pos">POS - Credit/Debit Card</SelectItem>
+                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {paymentMethod === 'pos' && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <h5 className="font-medium text-blue-800 mb-2">POS Payment Details</h5>
+                    <div className="space-y-2 text-sm text-blue-700">
+                      <p>• Accepts Visa, MasterCard, American Express</p>
+                      <p>• Processing fee: 2.9% + ₹30 per transaction</p>
+                      <p>• Instant payment confirmation</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Shipping & Delivery</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="include-shipping" defaultChecked disabled={isReadOnly} />
+                  <Label htmlFor="include-shipping">Include shipping costs (₹500)</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="express-delivery" disabled={isReadOnly} />
+                  <Label htmlFor="express-delivery">Express delivery (+₹200)</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="insurance" disabled={isReadOnly} />
+                  <Label htmlFor="insurance">Insurance coverage (+₹100)</Label>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Enhanced Payment & Shipping */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded-lg" />
-              <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-                <h4 className="font-semibold mb-3">Payment Terms & Methods</h4>
+          {/* Remarks Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Remarks & History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Existing remarks */}
                 <div className="space-y-3">
-                  <div>
-                    <Label>Payment Terms</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment terms" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="net-30">Net 30 (Payment due in 30 days)</SelectItem>
-                        <SelectItem value="net-15">Net 15 (Payment due in 15 days)</SelectItem>
-                        <SelectItem value="net-7">Net 7 (Payment due in 7 days)</SelectItem>
-                        <SelectItem value="cod">Cash on Delivery</SelectItem>
-                        <SelectItem value="advance">Advance Payment (100% upfront)</SelectItem>
-                        <SelectItem value="pos">POS - Credit/Debit Card</SelectItem>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {paymentMethod === 'pos' && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <h5 className="font-medium text-blue-800 mb-2">POS Payment Details</h5>
-                      <div className="space-y-2 text-sm text-blue-700">
-                        <p>• Accepts Visa, MasterCard, American Express</p>
-                        <p>• Processing fee: 2.9% + ₹30 per transaction</p>
-                        <p>• Instant payment confirmation</p>
-                        <p>• Automatic receipt generation</p>
+                  <h4 className="font-medium text-sm text-gray-600">Order History</h4>
+                  {order?.remarks?.map((remark: any, index: number) => (
+                    <div key={index} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{remark.user}</span>
+                          <span className="text-xs text-gray-500">{remark.date}</span>
+                        </div>
+                        <p className="text-sm">{remark.message}</p>
                       </div>
                     </div>
-                  )}
-                  
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p><strong>Payment Terms Explained:</strong></p>
-                    <p>• <strong>Net 30:</strong> Payment is due within 30 days of invoice date</p>
-                    <p>• <strong>Net 15:</strong> Payment is due within 15 days of invoice date</p>
-                    <p>• <strong>COD:</strong> Payment collected upon delivery</p>
-                    <p>• <strong>Advance:</strong> Full payment before order processing</p>
-                  </div>
+                  ))}
                 </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-orange-200 to-red-200 rounded-lg" />
-              <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-                <h4 className="font-semibold mb-3">Shipping & Delivery</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="include-shipping" defaultChecked />
-                    <Label htmlFor="include-shipping">Include shipping costs (₹500)</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="express-delivery" />
-                    <Label htmlFor="express-delivery">Express delivery (+₹200)</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="insurance" />
-                    <Label htmlFor="insurance">Insurance coverage (+₹100)</Label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Notes */}
-          <div className="relative">
-            <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-gray-200 to-blue-200 rounded-lg" />
-            <div className="relative bg-white/95 backdrop-blur-sm p-4 rounded-lg border">
-              <Label htmlFor="notes">Remarks</Label>
-              <Textarea
-                id="notes"
-                defaultValue={order?.notes || ''}
-                placeholder="Additional notes about the order..."
-                rows={3}
-              />
-            </div>
+                {/* Add new remark */}
+                <div className="space-y-2">
+                  <Label htmlFor="new-remark">Add Remark</Label>
+                  <div className="flex gap-2">
+                    <Textarea
+                      id="new-remark"
+                      value={newRemark}
+                      onChange={(e) => setNewRemark(e.target.value)}
+                      placeholder="Add a comment about this order..."
+                      rows={2}
+                      className="flex-1"
+                    />
+                    <Button onClick={addRemark} disabled={!newRemark.trim()}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Original notes */}
+                {order?.notes && (
+                  <div className="pt-3 border-t">
+                    <Label className="text-sm text-gray-600">Original Notes</Label>
+                    <p className="text-sm mt-1">{order.notes}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button className="bg-blue-600 hover:bg-blue-700" disabled={isReadOnly}>
+              {isQuotation ? 'Save Order' : 'Update Order'}
+            </Button>
+            <Button onClick={handlePrintInvoice} variant="outline">
+              <Printer className="h-4 w-4 mr-2" />
+              Print Invoice
+            </Button>
+            {order?.status === 'Approved' && (
+              <Button variant="outline" className="text-green-600 border-green-600">
+                Mark as Delivered
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>
