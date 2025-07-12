@@ -145,7 +145,8 @@
 
 /* Overlay & Modal Enhancements */
 .overlay-content {
-  @apply bg-card border shadow-overlay rounded-lg;
+  @apply bg-card border rounded-lg;
+  box-shadow: var(--shadow-overlay);
   animation: overlayContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
