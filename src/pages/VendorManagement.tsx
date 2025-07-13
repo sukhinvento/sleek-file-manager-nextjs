@@ -268,7 +268,7 @@ export const VendorManagement = () => {
         onClose={() => setIsAddVendorOpen(false)}
         isEdit={false}
         onSave={(vendor) => {
-          setVendors([...vendors, { ...vendor, id: vendors.length + 1 }]);
+          setVendors([...vendors, { ...vendor, id: vendors.length + 1 } as any]);
         }}
       />
       
@@ -280,7 +280,7 @@ export const VendorManagement = () => {
           setSelectedVendor(null);
         }}
         onUpdate={(vendor) => {
-          setVendors(vendors.map(v => v.id === vendor.id ? vendor : v));
+          setVendors(vendors.map(v => v.id === vendor.id ? vendor as any : v));
         }}
       />
     </div>
