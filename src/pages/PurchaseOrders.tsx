@@ -6,6 +6,9 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { FilterModal } from "@/components/ui/filter-modal";
 import { StatusBadge } from '../components/purchase-orders/StatusBadge';
 import { DetailedPOOverlay } from '../components/purchase-orders/DetailedPOOverlay';
 import { purchaseOrdersData } from '../data/purchaseOrderData';
@@ -17,12 +20,16 @@ export const PurchaseOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedVendor, setSelectedVendor] = useState<string>('All');
+  const [selectedPriority, setSelectedPriority] = useState<string>('All');
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const statuses = ['All', 'Pending', 'Approved', 'Delivered', 'Cancelled'];
   const vendors = ['All', ...Array.from(new Set(purchaseOrders.map(o => o.vendorName)))];
+  const priorities = ['All', 'High', 'Medium', 'Low'];
 
   const filteredOrders = purchaseOrders.filter(order => {
     const matchesSearch = order.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,7 +37,8 @@ export const PurchaseOrders = () => {
       order.shippingAddress.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'All' || order.status === selectedStatus;
     const matchesVendor = selectedVendor === 'All' || order.vendorName === selectedVendor;
-    return matchesSearch && matchesStatus && matchesVendor;
+    const matchesPriority = selectedPriority === 'All' || (order as any).priority === selectedPriority;
+    return matchesSearch && matchesStatus && matchesVendor && matchesPriority;
   });
 
   const totalOrders = purchaseOrders.length;
@@ -69,7 +77,7 @@ export const PurchaseOrders = () => {
           </p>
         </div>
         <Button
-          className="bg-primary hover:bg-primary/90 shadow-lg"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
           onClick={() => setIsNewOrderOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> New Purchase Order
@@ -168,10 +176,10 @@ export const PurchaseOrders = () => {
             </div>
 
             {/* Filter Chips */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
               {/* Status Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Status:</span>
+              <div className="flex gap-2 items-center">
+                <span className="text-sm font-medium text-muted-foreground">Status:</span>
                 {statuses.map(status => (
                   <Button
                     key={status}
@@ -187,23 +195,50 @@ export const PurchaseOrders = () => {
                 ))}
               </div>
 
-              {/* Vendor Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Vendor:</span>
-                {vendors.slice(0, 4).map(vendor => (
-                  <Button
-                    key={vendor}
-                    variant={selectedVendor === vendor ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedVendor === vendor ? 'bg-primary text-primary-foreground' : ''
-                    }`}
-                    onClick={() => setSelectedVendor(vendor)}
-                  >
-                    {vendor}
+              {/* More Filters Modal */}
+              <FilterModal isOpen={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="vendor-filter">Vendor</Label>
+                    <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                      <SelectTrigger id="vendor-filter">
+                        <SelectValue placeholder="Select vendor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendors.map(vendor => (
+                          <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="priority-filter">Priority</Label>
+                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                      <SelectTrigger id="priority-filter">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {priorities.map(priority => (
+                          <SelectItem key={priority} value={priority}>{priority}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => {
+                    setSelectedVendor('All');
+                    setSelectedPriority('All');
+                  }}>
+                    Reset Filters
                   </Button>
-                ))}
-              </div>
+                  <Button onClick={() => setIsFilterModalOpen(false)}>
+                    Apply Filters
+                  </Button>
+                </div>
+              </FilterModal>
             </div>
 
             {/* Results Summary */}
@@ -247,7 +282,10 @@ export const PurchaseOrders = () => {
               {filteredOrders.map((order, index) => (
                 <TableRow 
                   key={order.id} 
-                  className="hover:bg-muted/30 transition-colors border-border/50"
+                  className={`hover:bg-muted/30 transition-colors border-border/50 cursor-pointer ${
+                    selectedOrderId === order.id ? 'bg-primary/5 border-primary/30' : ''
+                  }`}
+                  onClick={() => setSelectedOrderId(selectedOrderId === order.id ? null : order.id)}
                 >
                   {/* Order Details */}
                   <TableCell className="py-4">

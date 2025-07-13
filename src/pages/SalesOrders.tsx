@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from '../components/inventory/StatusBadge';
 import { DetailedSOOverlay } from '../components/sales-orders/DetailedSOOverlay';
+import { FilterModal } from "@/components/ui/filter-modal";
 import { salesOrdersData } from '../data/inventoryData';
 import { SalesOrder } from '../types/inventory';
 import { toast } from "@/hooks/use-toast";
@@ -68,8 +69,8 @@ export const SalesOrders = () => {
             Manage and track all your sales orders and customer deliveries
           </p>
         </div>
-        <Button 
-          className="bg-primary hover:bg-primary/90 shadow-lg"
+        <Button
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
           onClick={() => setIsNewOrderOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> New Sales Order
@@ -166,10 +167,10 @@ export const SalesOrders = () => {
             </div>
 
             {/* Filter Chips */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
               {/* Status Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Status:</span>
+              <div className="flex gap-2 items-center">
+                <span className="text-sm font-medium text-muted-foreground">Status:</span>
                 {statuses.map(status => (
                   <Button
                     key={status}
@@ -184,6 +185,11 @@ export const SalesOrders = () => {
                   </Button>
                 ))}
               </div>
+
+              {/* More Filters Modal */}
+              <FilterModal isOpen={false} onOpenChange={() => {}}>
+                <div className="text-muted-foreground">Additional filters coming soon...</div>
+              </FilterModal>
 
               {/* Payment Status Filter */}
               <div className="flex gap-2">

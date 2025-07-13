@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ModernInventoryOverlay } from "@/components/inventory/ModernInventoryOverlay";
+import { InventoryFormOverlay } from "@/components/inventory/InventoryFormOverlay";
+import { FilterModal } from "@/components/ui/filter-modal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
 // Enhanced inventory data
@@ -125,7 +129,10 @@ export const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedStockStatus, setSelectedStockStatus] = useState<string>('All');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -179,8 +186,12 @@ export const Inventory = () => {
           </p>
         </div>
         <Button 
-          className="bg-primary hover:bg-primary/90 shadow-lg"
-          onClick={() => setIsNewItemOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+          onClick={() => {
+            setSelectedItem(null);
+            setIsEditMode(false);
+            setIsFormOpen(true);
+          }}
         >
           <Plus className="mr-2 h-4 w-4" /> Add New Item
         </Button>
@@ -353,7 +364,13 @@ export const Inventory = () => {
               {filteredItems.map((item) => {
                 const stockStatus = getStockStatus(item.currentStock, item.minStock, item.reorderPoint);
                 return (
-                  <TableRow key={item.id} className="hover:bg-muted/30 transition-colors border-border/50">
+                  <TableRow 
+                    key={item.id} 
+                    className={`hover:bg-muted/30 transition-colors border-border/50 cursor-pointer ${
+                      selectedItemId === item.id.toString() ? 'bg-primary/5 border-primary/30' : ''
+                    }`}
+                    onClick={() => setSelectedItemId(selectedItemId === item.id.toString() ? null : item.id.toString())}
+                  >
                     {/* Item Details */}
                     <TableCell className="py-4">
                       <div className="space-y-2">
@@ -480,32 +497,62 @@ export const Inventory = () => {
         </div>
       </Card>
 
-      {/* Enhanced Inventory Overlays */}
-      <ModernInventoryOverlay
-        isOpen={isNewItemOpen}
-        onClose={() => setIsNewItemOpen(false)}
-        title="New Inventory Item"
-        subtitle="Add a new item to your inventory"
-        size="large"
-      >
-        <div className="p-6">
-          <p className="text-muted-foreground">Add new inventory item form would go here...</p>
-        </div>
-      </ModernInventoryOverlay>
+      {/* Inventory Form Overlay */}
+      <InventoryFormOverlay
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        item={selectedItem}
+        isEdit={isEditMode}
+        onSave={(item) => {
+          const newItem = { 
+            ...item, 
+            id: parseInt(item.id),
+            lastRestocked: new Date().toISOString().split('T')[0],
+            reorderPoint: item.minStock || 0,
+            expiryDate: item.expiryDate || '',
+            location: item.location || '',
+            description: item.description || '',
+            manufacturer: item.manufacturer || ''
+          };
+          setItems([...items, newItem]);
+          toast({
+            title: "Item Created",
+            description: "Inventory item has been successfully created.",
+          });
+        }}
+        onUpdate={(item) => {
+          const updatedItem = { 
+            ...item, 
+            id: parseInt(item.id),
+            lastRestocked: new Date().toISOString().split('T')[0],
+            reorderPoint: item.minStock || 0,
+            expiryDate: item.expiryDate || '',
+            location: item.location || '',
+            description: item.description || '',
+            manufacturer: item.manufacturer || ''
+          };
+          setItems(items.map(i => i.id === parseInt(item.id) ? updatedItem : i));
+          toast({
+            title: "Item Updated",
+            description: "Inventory item has been successfully updated.",
+          });
+        }}
+      />
 
+      {/* View Details Overlay */}
       <ModernInventoryOverlay
-        isOpen={!!editingItem}
+        isOpen={!!editingItem && !isEditMode}
         onClose={() => {
           setEditingItem(null);
           setIsEditMode(false);
         }}
-        title={editingItem ? `${isEditMode ? 'Edit' : 'View'} Item` : ''}
+        title={editingItem ? `View Item Details` : ''}
         subtitle={editingItem ? editingItem.name : ''}
         size="large"
       >
         <div className="p-6">
           <p className="text-muted-foreground">
-            {isEditMode ? 'Edit' : 'View'} inventory item details would go here...
+            View inventory item details would go here...
           </p>
         </div>
       </ModernInventoryOverlay>
