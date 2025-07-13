@@ -94,10 +94,16 @@ export const purchaseOrdersData: PurchaseOrder[] = [
 export const availableStock: StockItem[] = [
   { id: 1, name: 'Chef Knives', brand: 'Professional', stock: 25, unitPrice: 150.00 },
   { id: 2, name: 'Cutting Boards', brand: 'Premium Wood', stock: 50, unitPrice: 30.00 },
-  { id: 3, name: 'Surgical Masks', brand: 'Medical Grade', stock: 1000, unitPrice: 1.00 },
-  { id: 4, name: 'Latex Gloves', brand: 'SafeGuard', stock: 500, unitPrice: 0.50 },
-  { id: 5, name: 'Antibiotics', brand: 'PharmaCorp', stock: 200, unitPrice: 25.00 },
-  { id: 6, name: 'Pain Relievers', brand: 'MediCare', stock: 150, unitPrice: 15.00 }
+  { id: 3, name: 'Commercial Blender', brand: 'KitchenPro', stock: 15, unitPrice: 450.00 },
+  { id: 4, name: 'Coffee Machine', brand: 'BrewMaster', stock: 8, unitPrice: 1200.00 },
+  { id: 5, name: 'Surgical Masks', brand: 'Medical Grade', stock: 1000, unitPrice: 1.00 },
+  { id: 6, name: 'Latex Gloves', brand: 'SafeGuard', stock: 500, unitPrice: 0.50 },
+  { id: 7, name: 'Antibiotics', brand: 'PharmaCorp', stock: 200, unitPrice: 25.00 },
+  { id: 8, name: 'Pain Relievers', brand: 'MediCare', stock: 150, unitPrice: 15.00 },
+  { id: 9, name: 'Calcium Tablets', brand: 'HealthPlus', stock: 300, unitPrice: 12.00 },
+  { id: 10, name: 'Ceramic Plates', brand: 'DiningWare', stock: 100, unitPrice: 8.50 },
+  { id: 11, name: 'Stainless Steel Pots', brand: 'CookWell', stock: 35, unitPrice: 85.00 },
+  { id: 12, name: 'Cleaning Supplies', brand: 'CleanPro', stock: 80, unitPrice: 15.50 }
 ];
 
 export const taxSlabs: TaxSlab[] = [

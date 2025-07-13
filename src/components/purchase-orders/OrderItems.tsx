@@ -107,7 +107,15 @@ export const OrderItems = ({
                   <TableCell>
                     {isQuotation ? (
                       <AutosuggestInput
-                        onSelect={(stockItem) => updateItem(index, 'name', stockItem.name)}
+                        value={item.name}
+                        onChange={(value) => updateItem(index, 'name', value)}
+                        onSelect={(stockItem) => {
+                          // Update all item fields when a stock item is selected
+                          updateItem(index, 'name', stockItem.name);
+                          updateItem(index, 'unitPrice', stockItem.unitPrice);
+                          updateItem(index, 'qty', 1);
+                          updateItem(index, 'discount', 0);
+                        }}
                         placeholder="Search products..."
                       />
                     ) : (
