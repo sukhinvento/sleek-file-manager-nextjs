@@ -196,49 +196,32 @@ export const PurchaseOrders = () => {
               </div>
 
               {/* More Filters Modal */}
-              <FilterModal isOpen={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="vendor-filter">Vendor</Label>
-                    <Select value={selectedVendor} onValueChange={setSelectedVendor}>
-                      <SelectTrigger id="vendor-filter">
-                        <SelectValue placeholder="Select vendor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vendors.map(vendor => (
-                          <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="priority-filter">Priority</Label>
-                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-                      <SelectTrigger id="priority-filter">
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {priorities.map(priority => (
-                          <SelectItem key={priority} value={priority}>{priority}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button variant="outline" onClick={() => {
-                    setSelectedVendor('All');
-                    setSelectedPriority('All');
-                  }}>
-                    Reset Filters
-                  </Button>
-                  <Button onClick={() => setIsFilterModalOpen(false)}>
-                    Apply Filters
-                  </Button>
-                </div>
-              </FilterModal>
+              <FilterModal 
+                isOpen={isFilterModalOpen} 
+                onOpenChange={setIsFilterModalOpen}
+                filters={{
+                  vendors,
+                  selectedVendor,
+                  onVendorChange: setSelectedVendor,
+                  priorities,
+                  selectedPriority,
+                  onPriorityChange: setSelectedPriority,
+                  priceRange: { min: 0, max: 100000 },
+                  toggles: [
+                    {
+                      id: 'urgent-only',
+                      label: 'Urgent Orders Only',
+                      value: false,
+                      onChange: () => {},
+                      isNew: true
+                    }
+                  ]
+                }}
+                onClear={() => {
+                  setSelectedVendor('All');
+                  setSelectedPriority('All');
+                }}
+              />
             </div>
 
             {/* Results Summary */}
