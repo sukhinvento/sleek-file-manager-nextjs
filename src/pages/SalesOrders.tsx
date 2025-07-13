@@ -187,9 +187,24 @@ export const SalesOrders = () => {
               </div>
 
               {/* More Filters Modal */}
-              <FilterModal isOpen={false} onOpenChange={() => {}}>
-                <div className="text-muted-foreground">Additional filters coming soon...</div>
-              </FilterModal>
+              <FilterModal 
+                isOpen={false} 
+                onOpenChange={() => {}}
+                filters={{
+                  categories: ['All', 'Medical', 'Equipment', 'Supplies'],
+                  selectedCategory: 'All',
+                  onCategoryChange: () => {},
+                  toggles: [
+                    {
+                      id: 'priority-orders',
+                      label: 'Priority Orders Only',
+                      value: false,
+                      onChange: () => {},
+                      isNew: true
+                    }
+                  ]
+                }}
+              />
 
               {/* Payment Status Filter */}
               <div className="flex gap-2">
