@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Plus, Edit3, CheckCircle, Printer, Mail, Copy, Truck } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { InventoryOverlay } from '../inventory/InventoryOverlay';
 import { SalesOrder, SalesOrderItem } from '../../types/inventory';
@@ -215,69 +216,64 @@ export const DetailedSOOverlay = ({
     }
   };
 
-  const footerActions = (
-    <div className="flex justify-between items-center w-full">
-      <div className="flex gap-3">
-        <button className="action-button-secondary flex items-center gap-2">
-          <Printer className="h-4 w-4" />
-          Print
-        </button>
-        <button className="action-button-secondary flex items-center gap-2">
-          <Mail className="h-4 w-4" />
-          Email
-        </button>
-        <button className="action-button-secondary flex items-center gap-2">
-          <Copy className="h-4 w-4" />
-          Duplicate
-        </button>
-      </div>
-
-      <div className="flex gap-3">
-        {order && order.status === 'Processing' && !isEditMode && (
-          <button 
-            onClick={handleShipOrder}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      {/* Primary Action CTAs */}
+      {(isEditMode || !order) && (
+        <>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (order) {
+                setIsEditMode(false);
+              } else {
+                onClose();
+              }
+            }}
+            disabled={isSaving}
           >
-            <Truck className="h-4 w-4" />
-            Ship Order
-          </button>
-        )}
-        
-        {(isEditMode || !order) && (
-          <>
-            <button 
-              onClick={() => {
-                if (order) {
-                  setIsEditMode(false);
-                } else {
-                  onClose();
-                }
-              }}
-              disabled={isSaving}
-              className="action-button-secondary"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSaveOrder}
-              disabled={isSaving || isReadOnly}
-              className="action-button-primary min-w-[120px] flex items-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  {order ? 'Update Order' : 'Save Order'}
-                </>
-              )}
-            </button>
-          </>
-        )}
-      </div>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveOrder}
+            disabled={isSaving || isReadOnly}
+            className="action-button-primary"
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {order ? 'Update Order' : 'Save Order'}
+              </>
+            )}
+          </Button>
+        </>
+      )}
+      
+      {!isEditMode && order && !isReadOnly && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsEditMode(true)}
+        >
+          <Edit3 className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+      )}
+
+      {order && order.status === 'Processing' && !isEditMode && (
+        <Button 
+          onClick={handleShipOrder}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Truck className="h-4 w-4 mr-2" />
+          Ship Order
+        </Button>
+      )}
     </div>
   );
 
@@ -287,51 +283,57 @@ export const DetailedSOOverlay = ({
       onClose={onClose}
       title={order ? (isEditMode ? 'Edit Sales Order' : 'Sales Order Details') : 'New Sales Order'}
       size="xl"
-      footerActions={footerActions}
+      headerActions={headerActions}
     >
-      <div className="space-y-6">
-        <OrderSummary 
-          order={order}
-          totals={totals}
-          isEditMode={isEditMode}
-          orderDate={orderDate}
-          setOrderDate={setOrderDate}
-          deliveryDate={deliveryDate}
-          setDeliveryDate={setDeliveryDate}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Order & Customer Info */}
+        <div className="lg:col-span-1 space-y-4">
+          <OrderSummary 
+            order={order}
+            totals={totals}
+            isEditMode={isEditMode}
+            orderDate={orderDate}
+            setOrderDate={setOrderDate}
+            deliveryDate={deliveryDate}
+            setDeliveryDate={setDeliveryDate}
+          />
 
-        <CustomerInformation
-          order={order}
-          isEditMode={isEditMode}
-          customerName={customerName}
-          setCustomerName={setCustomerName}
-          customerEmail={customerEmail}
-          setCustomerEmail={setCustomerEmail}
-          customerPhone={customerPhone}
-          setCustomerPhone={setCustomerPhone}
-          customerAddress={customerAddress}
-          setCustomerAddress={setCustomerAddress}
-        />
+          <CustomerInformation
+            order={order}
+            isEditMode={isEditMode}
+            customerName={customerName}
+            setCustomerName={setCustomerName}
+            customerEmail={customerEmail}
+            setCustomerEmail={setCustomerEmail}
+            customerPhone={customerPhone}
+            setCustomerPhone={setCustomerPhone}
+            customerAddress={customerAddress}
+            setCustomerAddress={setCustomerAddress}
+          />
 
-        <OrderItems
-          items={items}
-          isEditMode={isEditMode}
-          isReadOnly={isReadOnly}
-          updateItem={updateItem}
-          addItem={addItem}
-          removeItem={removeItem}
-        />
+          <ShippingAndPayment
+            order={order}
+            isEditMode={isEditMode}
+            shippingAddress={shippingAddress}
+            setShippingAddress={setShippingAddress}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            notes={notes}
+            setNotes={setNotes}
+          />
+        </div>
 
-        <ShippingAndPayment
-          order={order}
-          isEditMode={isEditMode}
-          shippingAddress={shippingAddress}
-          setShippingAddress={setShippingAddress}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          notes={notes}
-          setNotes={setNotes}
-        />
+        {/* Right Column - Items */}
+        <div className="lg:col-span-2">
+          <OrderItems
+            items={items}
+            isEditMode={isEditMode}
+            isReadOnly={isReadOnly}
+            updateItem={updateItem}
+            addItem={addItem}
+            removeItem={removeItem}
+          />
+        </div>
       </div>
     </InventoryOverlay>
   );

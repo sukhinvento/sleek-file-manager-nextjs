@@ -340,28 +340,90 @@ export const DetailedPOOverlay = ({
     }
   };
 
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      {/* Primary Action CTAs */}
+      {(isEditMode || !order) && (
+        <>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (order) {
+                setIsEditMode(false);
+              } else {
+                onClose();
+              }
+            }}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveOrder}
+            disabled={isSaving || isReadOnly}
+            className="action-button-primary"
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {order ? 'Update Order' : 'Save Order'}
+              </>
+            )}
+          </Button>
+        </>
+      )}
+      
+      {!isEditMode && order && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsEditMode(true)}
+          disabled={isReadOnly}
+        >
+          <Edit3 className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+      )}
+
+      {order && order.status === 'Approved' && !isEditMode && (
+        <Button 
+          onClick={handleMarkAsDelivered}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Mark as Delivered
+        </Button>
+      )}
+
+      {order && !isEditMode && order.status === 'Pending' && (
+        <Button 
+          onClick={handleDeleteOrder}
+          variant="destructive"
+        >
+          Delete Order
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[85vw] max-w-6xl overflow-y-auto">
-        <SheetHeader className="border-b pb-4">
+      <SheetContent className="w-[95vw] max-w-[1400px] overflow-y-auto flex flex-col h-full">
+        <SheetHeader className="border-b pb-4 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <SheetTitle className="text-xl font-semibold">
-                {order ? (isEditMode ? 'Edit Purchase Order' : 'Purchase Order Details') : 'New Purchase Order'}
-              </SheetTitle>
-              {!isEditMode && order && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditMode(true)}
-                  disabled={isReadOnly}
-                >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
-            </div>
+            <SheetTitle className="text-xl font-semibold">
+              {order ? (isEditMode ? 'Edit Purchase Order' : 'Purchase Order Details') : 'New Purchase Order'}
+            </SheetTitle>
             <div className="flex items-center gap-2">
+              {/* Primary CTAs in Header */}
+              {headerActions}
+              
+              {/* Secondary Actions */}
               <Button variant="ghost" size="sm"><Paperclip className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm"><Copy className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm" onClick={handlePrintInvoice}><Printer className="h-4 w-4" /></Button>
@@ -372,132 +434,59 @@ export const DetailedPOOverlay = ({
           </div>
         </SheetHeader>
 
-        <div className="space-y-6 pt-6">
-          <OrderSummary 
-            order={order} 
-            totals={totals} 
-            paymentMethod={paymentMethod} 
-            getPaymentMethodDisplay={getPaymentMethodDisplay}
-            isEditMode={isEditMode}
-            vendorName={vendorName}
-            setVendorName={setVendorName}
-            orderDate={orderDate}
-            setOrderDate={setOrderDate}
-            deliveryDate={deliveryDate}
-            setDeliveryDate={setDeliveryDate}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 flex-1 min-h-0 overflow-y-auto">
+          {/* Left Column - Order & Vendor Info */}
+          <div className="lg:col-span-1 space-y-4">
+            <OrderSummary 
+              order={order} 
+              totals={totals} 
+              paymentMethod={paymentMethod} 
+              getPaymentMethodDisplay={getPaymentMethodDisplay}
+              isEditMode={isEditMode}
+              vendorName={vendorName}
+              setVendorName={setVendorName}
+              orderDate={orderDate}
+              setOrderDate={setOrderDate}
+              deliveryDate={deliveryDate}
+              setDeliveryDate={setDeliveryDate}
+            />
 
-          <VendorInformation 
-            order={order} 
-            isEditMode={isEditMode}
-            shippingAddress={shippingAddress}
-            setShippingAddress={setShippingAddress}
-          />
+            <VendorInformation 
+              order={order} 
+              isEditMode={isEditMode}
+              shippingAddress={shippingAddress}
+              setShippingAddress={setShippingAddress}
+            />
 
-          <OrderItems 
-            items={items}
-            setItems={setItems}
-            selectedTaxSlab={selectedTaxSlab}
-            showScanner={showScanner}
-            setShowScanner={setShowScanner}
-            isQuotation={isEditMode || !order}
-            isPartiallyFulfilled={isPartiallyFulfilled}
-            isReadOnly={isReadOnly && !isEditMode}
-            updateItem={updateItem}
-            addItem={addItem}
-            removeItem={removeItem}
-          />
+            <PaymentAndShipping 
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              isReadOnly={isReadOnly && !isEditMode}
+            />
+          </div>
 
-          <PaymentAndShipping 
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            isReadOnly={isReadOnly && !isEditMode}
-          />
+          {/* Right Column - Items & Remarks */}
+          <div className="lg:col-span-2 space-y-4">
+            <OrderItems 
+              items={items}
+              setItems={setItems}
+              selectedTaxSlab={selectedTaxSlab}
+              showScanner={showScanner}
+              setShowScanner={setShowScanner}
+              isQuotation={isEditMode || !order}
+              isPartiallyFulfilled={isPartiallyFulfilled}
+              isReadOnly={isReadOnly && !isEditMode}
+              updateItem={updateItem}
+              addItem={addItem}
+              removeItem={removeItem}
+            />
 
-          <RemarksSection 
-            order={order} 
-            isEditMode={isEditMode}
-            remarks={remarks}
-            setRemarks={setRemarks}
-          />
-
-          {/* Enhanced Action Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t">
-            <div className="flex gap-3">
-              <Button 
-                onClick={handlePrintInvoice} 
-                variant="outline"
-                className="action-button-secondary"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Print Invoice
-              </Button>
-              <Button variant="outline" className="action-button-secondary">
-                <Mail className="h-4 w-4 mr-2" />
-                Email Order
-              </Button>
-              <Button variant="outline" className="action-button-secondary">
-                <Copy className="h-4 w-4 mr-2" />
-                Duplicate
-              </Button>
-            </div>
-
-            <div className="flex gap-3">
-              {order && order.status === 'Approved' && !isEditMode && (
-                <Button 
-                  onClick={handleMarkAsDelivered}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Mark as Delivered
-                </Button>
-              )}
-              
-              {(isEditMode || !order) && (
-                <>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      if (order) {
-                        setIsEditMode(false);
-                      } else {
-                        onClose();
-                      }
-                    }}
-                    disabled={isSaving}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSaveOrder}
-                    disabled={isSaving || isReadOnly}
-                    className="action-button-primary min-w-[120px]"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        {order ? 'Update Order' : 'Save Order'}
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-              
-              {order && !isEditMode && order.status === 'Pending' && (
-                <Button 
-                  onClick={handleDeleteOrder}
-                  variant="destructive"
-                  className="ml-2"
-                >
-                  Delete Order
-                </Button>
-              )}
-            </div>
+            <RemarksSection 
+              order={order} 
+              isEditMode={isEditMode}
+              remarks={remarks}
+              setRemarks={setRemarks}
+            />
           </div>
         </div>
       </SheetContent>

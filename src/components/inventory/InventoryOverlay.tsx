@@ -14,10 +14,10 @@ interface InventoryOverlayProps {
 }
 
 const sizeClasses = {
-  sm: 'w-[50vw] max-w-[600px]',
-  md: 'w-[65vw] max-w-[800px]',
-  lg: 'w-[75vw] max-w-[1000px]',
-  xl: 'w-[85vw] max-w-[1200px]'
+  sm: 'w-[60vw] max-w-[700px]',
+  md: 'w-[75vw] max-w-[900px]',
+  lg: 'w-[85vw] max-w-[1100px]',
+  xl: 'w-[95vw] max-w-[1400px]'
 };
 
 export const InventoryOverlay = ({ 
@@ -32,13 +32,16 @@ export const InventoryOverlay = ({
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className={`${sizeClasses[size]} overflow-y-auto overlay-content`}>
-        <SheetHeader className="border-b border-border/50 pb-4 mb-6">
+        <SheetHeader className="border-b border-border/50 pb-4 mb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="section-header text-xl">
               {title}
             </SheetTitle>
             <div className="flex items-center gap-2">
-              {/* Default header actions */}
+              {/* Custom header actions - Primary CTAs first */}
+              {headerActions}
+              
+              {/* Secondary actions */}
               <Button variant="ghost" size="sm" className="hover:bg-muted/50">
                 <FileText className="h-4 w-4 icon-accent" />
               </Button>
@@ -52,9 +55,6 @@ export const InventoryOverlay = ({
                 <Copy className="h-4 w-4 icon-accent" />
               </Button>
               
-              {/* Custom header actions */}
-              {headerActions}
-              
               {/* Close button */}
               <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-muted/50">
                 <X className="h-4 w-4" />
@@ -63,12 +63,12 @@ export const InventoryOverlay = ({
           </div>
         </SheetHeader>
 
-        <div className="space-y-6 animate-slide-up">
+        <div className="space-y-4 animate-slide-up flex-1 min-h-0">
           {children}
         </div>
 
         {footerActions && (
-          <div className="flex justify-end gap-3 pt-6 border-t border-border/50 mt-8">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border/50 mt-6 bg-background sticky bottom-0">
             {footerActions}
           </div>
         )}
