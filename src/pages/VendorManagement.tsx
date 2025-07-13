@@ -1,15 +1,12 @@
 
 import { useState } from 'react';
-import { Search, Plus, Filter, MapPin, Phone, Mail, Edit, Trash2, X, Building2, User, Calendar, Package, CreditCard } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, Phone, Mail, Building2, User, CreditCard } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ModernVendorOverlay } from "@/components/vendor/ModernVendorOverlay";
 
 // Sample vendor data
 const vendorsData = [
@@ -89,257 +86,14 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-const DetailedVendorOverlay = ({ vendor, isOpen, onClose, isEdit = false }: {
-  vendor: any;
-  isOpen: boolean;
-  onClose: () => void;
-  isEdit?: boolean;
-}) => {
-  return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[75vw] max-w-none overflow-y-auto">
-        <SheetHeader className="border-b pb-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-xl font-semibold">
-              {isEdit ? 'Edit Vendor' : 'Add New Vendor'}
-            </SheetTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </SheetHeader>
-
-        <div className="space-y-6 pt-6">
-          {/* Basic Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Building2 className="h-5 w-5 mr-2" />
-              Basic Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="vendor-name">Vendor Name *</Label>
-                <Input 
-                  id="vendor-name" 
-                  defaultValue={vendor?.name || ''} 
-                  placeholder="Enter vendor name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="vendor-id">Vendor ID</Label>
-                <Input 
-                  id="vendor-id" 
-                  defaultValue={vendor?.vendorId || ''} 
-                  placeholder="Auto-generated"
-                  disabled
-                />
-              </div>
-              <div>
-                <Label htmlFor="category">Category *</Label>
-                <Select defaultValue={vendor?.category || ''}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
-                    <SelectItem value="Medical Equipment">Medical Equipment</SelectItem>
-                    <SelectItem value="Pharmaceuticals">Pharmaceuticals</SelectItem>
-                    <SelectItem value="Office Supplies">Office Supplies</SelectItem>
-                    <SelectItem value="Cleaning Supplies">Cleaning Supplies</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={vendor?.status || 'Active'}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="website">Website</Label>
-                <Input 
-                  id="website" 
-                  defaultValue={vendor?.website || ''} 
-                  placeholder="www.example.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="tax-id">Tax ID</Label>
-                <Input 
-                  id="tax-id" 
-                  defaultValue={vendor?.taxId || ''} 
-                  placeholder="Enter tax identification number"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Contact Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="contact-person">Contact Person *</Label>
-                <Input 
-                  id="contact-person" 
-                  defaultValue={vendor?.contactPerson || ''} 
-                  placeholder="Enter contact person name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone Number *</Label>
-                <Input 
-                  id="phone" 
-                  defaultValue={vendor?.phone || ''} 
-                  placeholder="+91-XXXXXXXXXX"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input 
-                  id="email" 
-                  type="email"
-                  defaultValue={vendor?.email || ''} 
-                  placeholder="contact@vendor.com"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="address">Address *</Label>
-                <Textarea 
-                  id="address" 
-                  defaultValue={vendor?.address || ''} 
-                  placeholder="Enter complete address"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Financial Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <CreditCard className="h-5 w-5 mr-2" />
-              Financial Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="payment-terms">Payment Terms</Label>
-                <Select defaultValue={vendor?.paymentTerms || 'Net 30'}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Net 15">Net 15 Days</SelectItem>
-                    <SelectItem value="Net 30">Net 30 Days</SelectItem>
-                    <SelectItem value="Net 45">Net 45 Days</SelectItem>
-                    <SelectItem value="COD">Cash on Delivery</SelectItem>
-                    <SelectItem value="Advance">Advance Payment</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="credit-limit">Credit Limit</Label>
-                <Input 
-                  id="credit-limit" 
-                  type="number"
-                  defaultValue={vendor?.creditLimit || ''} 
-                  placeholder="Enter credit limit"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="bank-details">Bank Details</Label>
-                <Input 
-                  id="bank-details" 
-                  defaultValue={vendor?.bankDetails || ''} 
-                  placeholder="Bank Name - Account Number"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics (Show only for edit mode) */}
-          {isEdit && vendor && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Package className="h-5 w-5 mr-2" />
-                Order Statistics
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">{vendor.totalOrders}</div>
-                    <div className="text-sm text-muted-foreground">Total Orders</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      ₹{vendor.totalValue?.toLocaleString('en-IN')}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Total Value</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-orange-600">
-                      ₹{vendor.outstandingBalance?.toLocaleString('en-IN')}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Outstanding Balance</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-sm font-medium">Last Order Date</div>
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {vendor.lastOrderDate}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* Additional Notes */}
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea 
-              id="notes" 
-              defaultValue={vendor?.notes || ''} 
-              placeholder="Additional notes about the vendor..."
-              rows={3}
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button className="bg-enterprise-700 hover:bg-enterprise-800">
-              {isEdit ? 'Update Vendor' : 'Add Vendor'}
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-};
 
 export const VendorManagement = () => {
   const [vendors, setVendors] = useState(vendorsData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<any>(null);
+  const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [isViewVendorOpen, setIsViewVendorOpen] = useState(false);
 
   const statuses = ['All', 'Active', 'Inactive'];
   
@@ -360,7 +114,7 @@ export const VendorManagement = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Vendor Management</h1>
         <Button 
-          className="bg-enterprise-700 hover:bg-enterprise-800"
+          className="bg-primary hover:bg-primary/90"
           onClick={() => setIsAddVendorOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> Add New Vendor
@@ -407,7 +161,7 @@ export const VendorManagement = () => {
             <Button
               key={status}
               variant={selectedStatus === status ? 'default' : 'outline'}
-              className={`rounded-full whitespace-nowrap ${selectedStatus === status ? 'bg-enterprise-700' : ''}`}
+              className={`rounded-full whitespace-nowrap ${selectedStatus === status ? 'bg-primary' : ''}`}
               onClick={() => setSelectedStatus(status)}
             >
               {status}
@@ -492,12 +246,12 @@ export const VendorManagement = () => {
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => setEditingVendor(vendor)}
+                      onClick={() => {
+                        setSelectedVendor(vendor);
+                        setIsViewVendorOpen(true);
+                      }}
                     >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                      <Trash2 className="h-4 w-4" />
+                      View
                     </Button>
                   </div>
                 </TableCell>
@@ -507,19 +261,27 @@ export const VendorManagement = () => {
         </Table>
       </div>
 
-      {/* Detailed Overlays */}
-      <DetailedVendorOverlay 
+      {/* Modern Vendor Overlays */}
+      <ModernVendorOverlay 
         vendor={null}
         isOpen={isAddVendorOpen}
         onClose={() => setIsAddVendorOpen(false)}
         isEdit={false}
+        onSave={(vendor) => {
+          setVendors([...vendors, { ...vendor, id: vendors.length + 1 }]);
+        }}
       />
       
-      <DetailedVendorOverlay 
-        vendor={editingVendor}
-        isOpen={!!editingVendor}
-        onClose={() => setEditingVendor(null)}
-        isEdit={true}
+      <ModernVendorOverlay 
+        vendor={selectedVendor}
+        isOpen={isViewVendorOpen}
+        onClose={() => {
+          setIsViewVendorOpen(false);
+          setSelectedVendor(null);
+        }}
+        onUpdate={(vendor) => {
+          setVendors(vendors.map(v => v.id === vendor.id ? vendor : v));
+        }}
       />
     </div>
   );

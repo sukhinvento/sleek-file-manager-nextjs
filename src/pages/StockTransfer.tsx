@@ -1,15 +1,12 @@
 
 import { useState } from 'react';
-import { Search, Plus, Filter, ArrowRight, MapPin, Package, X } from 'lucide-react';
+import { Search, Plus, Filter, ArrowRight, MapPin, Package } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectLabel } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ModernStockTransferOverlay } from "@/components/stock-transfer/ModernStockTransferOverlay";
 
 // Sample stock transfer data
 const stockTransfersData = [
@@ -76,6 +73,8 @@ export const StockTransfer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
+  const [selectedTransfer, setSelectedTransfer] = useState<any>(null);
+  const [isViewTransferOpen, setIsViewTransferOpen] = useState(false);
 
   const statuses = ['All', 'Pending', 'In Transit', 'Completed', 'Cancelled'];
   
@@ -95,90 +94,12 @@ export const StockTransfer = () => {
     <div className="w-full space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Stock Transfer</h1>
-        <Sheet open={isNewTransferOpen} onOpenChange={setIsNewTransferOpen}>
-          <SheetTrigger asChild>
-            <Button className="bg-enterprise-700 hover:bg-enterprise-800">
-              <Plus className="mr-2 h-4 w-4" /> New Transfer Request
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-[75vw] max-w-[75vw] overflow-y-auto">
-            <SheetHeader className="border-b pb-4">
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-xl font-semibold">New Stock Transfer</SheetTitle>
-                <Button variant="ghost" size="sm" onClick={() => setIsNewTransferOpen(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </SheetHeader>
-            
-            <div className="space-y-6 pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="from-location">From Location *</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select source location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="main-warehouse">Main Warehouse</SelectItem>
-                      <SelectItem value="eastern-warehouse">Eastern Warehouse</SelectItem>
-                      <SelectItem value="western-warehouse">Western Warehouse</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="to-location">To Location *</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select destination location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="emergency-room">Emergency Room</SelectItem>
-                      <SelectItem value="icu">ICU</SelectItem>
-                      <SelectItem value="pharmacy">Pharmacy</SelectItem>
-                      <SelectItem value="surgery">Surgery Department</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="item-name">Item Name *</Label>
-                  <Input id="item-name" placeholder="Enter item name" />
-                </div>
-                <div>
-                  <Label htmlFor="quantity">Quantity *</Label>
-                  <Input id="quantity" type="number" placeholder="Enter quantity" />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="reason">Reason for Transfer</Label>
-                  <Textarea id="reason" placeholder="Enter reason for transfer..." rows={3} />
-                </div>
-                <div>
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="expected-date">Expected Completion Date</Label>
-                  <Input id="expected-date" type="date" />
-                </div>
-              </div>
-              
-              <div className="flex gap-2 pt-4 border-t">
-                <Button className="flex-1 bg-enterprise-700 hover:bg-enterprise-800">Create Transfer Request</Button>
-                <Button variant="outline" onClick={() => setIsNewTransferOpen(false)}>Cancel</Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button 
+          className="bg-primary hover:bg-primary/90"
+          onClick={() => setIsNewTransferOpen(true)}
+        >
+          <Plus className="mr-2 h-4 w-4" /> New Transfer Request
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -303,8 +224,26 @@ export const StockTransfer = () => {
                 <TableCell>{transfer.requestedBy}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTransfer(transfer);
+                        setIsViewTransferOpen(true);
+                      }}
+                    >
+                      View
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTransfer(transfer);
+                        setIsViewTransferOpen(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -312,6 +251,29 @@ export const StockTransfer = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Modern Stock Transfer Overlays */}
+      <ModernStockTransferOverlay
+        transfer={null}
+        isOpen={isNewTransferOpen}
+        onClose={() => setIsNewTransferOpen(false)}
+        isEdit={false}
+        onSave={(transfer) => {
+          setTransfers([...transfers, { ...transfer, id: transfers.length + 1 } as any]);
+        }}
+      />
+
+      <ModernStockTransferOverlay
+        transfer={selectedTransfer}
+        isOpen={isViewTransferOpen}
+        onClose={() => {
+          setIsViewTransferOpen(false);
+          setSelectedTransfer(null);
+        }}
+        onUpdate={(transfer) => {
+          setTransfers(transfers.map(t => t.id === transfer.id ? transfer as any : t));
+        }}
+      />
     </div>
   );
 };
