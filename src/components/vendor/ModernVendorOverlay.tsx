@@ -755,7 +755,7 @@ export const ModernVendorOverlay = ({
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="border-border/30">
                       <CardContent className="p-4">
-                        <div className="text-2xl font-bold text-blue-600">{vendor.totalOrders || 0}</div>
+                        <div className="text-2xl font-bold text-slate-600">{vendor.totalOrders || 0}</div>
                         <div className="text-sm text-muted-foreground">Total Orders</div>
                       </CardContent>
                     </Card>

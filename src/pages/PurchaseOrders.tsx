@@ -113,10 +113,10 @@ export const PurchaseOrders = () => {
         <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-blue-500" />
+            <CheckCircle className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{approvedOrders}</div>
+            <div className="text-2xl font-bold text-slate-600">{approvedOrders}</div>
             <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
           </CardContent>
         </Card>
@@ -135,10 +135,10 @@ export const PurchaseOrders = () => {
         <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-500" />
+            <TrendingUp className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-slate-600">
               ₹{(totalValue / 1000).toFixed(0)}K
             </div>
             <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>

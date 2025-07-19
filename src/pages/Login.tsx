@@ -130,14 +130,14 @@ export const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-slate-600 focus:ring-slate-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
                   Forgot your password?
                 </a>
               </div>
@@ -154,7 +154,7 @@ export const Login = () => {
             <div className="mt-4 text-center text-sm">
               <p className="text-gray-600">
                 Don't have an account?{" "}
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
                   Sign up
                 </a>
               </p>

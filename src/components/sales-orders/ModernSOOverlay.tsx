@@ -295,7 +295,7 @@ export const ModernSOOverlay = ({
         <Button 
           size="sm"
           onClick={handleShipOrder}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-slate-600 hover:bg-slate-700 text-white"
         >
           <Truck className="h-4 w-4 mr-1" />
           Ship
