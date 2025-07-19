@@ -277,7 +277,7 @@ export const VendorManagement = () => {
           </p>
         </div>
         <Button 
-          className="bg-primary hover:bg-primary/90 shadow-lg"
+          className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => setIsAddVendorOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> Add New Vendor
@@ -386,7 +386,7 @@ export const VendorManagement = () => {
                     variant={selectedStatus === status ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStatus === status ? 'bg-primary text-primary-foreground' : ''
+                      selectedStatus === status ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedStatus(status)}
                   >
@@ -404,7 +404,7 @@ export const VendorManagement = () => {
                     variant={selectedCategory === category ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedCategory === category ? 'bg-primary text-primary-foreground' : ''
+                      selectedCategory === category ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedCategory(category)}
                   >
@@ -422,7 +422,7 @@ export const VendorManagement = () => {
                     variant={selectedRisk === risk ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedRisk === risk ? 'bg-primary text-primary-foreground' : ''
+                      selectedRisk === risk ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedRisk(risk)}
                   >
@@ -480,8 +480,8 @@ export const VendorManagement = () => {
                   <TableCell className="py-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-5 w-5 text-primary" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-slate-600" />
                         </div>
                         <div>
                           <div className="font-semibold text-foreground text-base">

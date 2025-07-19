@@ -77,7 +77,7 @@ export const PurchaseOrders = () => {
           </p>
         </div>
         <Button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+          className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => setIsNewOrderOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> New Purchase Order
@@ -186,7 +186,7 @@ export const PurchaseOrders = () => {
                     variant={selectedStatus === status ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStatus === status ? 'bg-primary text-primary-foreground' : ''
+                      selectedStatus === status ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedStatus(status)}
                   >
@@ -266,7 +266,7 @@ export const PurchaseOrders = () => {
                 <TableRow 
                   key={order.id} 
                   className={`hover:bg-muted/30 transition-colors border-border/50 cursor-pointer ${
-                    selectedOrderId === order.id ? 'bg-primary/5 border-primary/30' : ''
+                    selectedOrderId === order.id ? 'bg-slate-50 border-slate-300' : ''
                   }`}
                   onClick={() => setSelectedOrderId(selectedOrderId === order.id ? null : order.id)}
                 >
@@ -274,8 +274,8 @@ export const PurchaseOrders = () => {
                   <TableCell className="py-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Package className="h-5 w-5 text-primary" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <Package className="h-5 w-5 text-slate-600" />
                         </div>
                         <div>
                           <div className="font-semibold text-foreground text-base">

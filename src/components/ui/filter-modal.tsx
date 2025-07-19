@@ -91,7 +91,7 @@ export const FilterModal = ({
                     size="sm"
                     className={`rounded-full text-xs ${
                       filters.selectedCategory === category 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                        ? 'bg-slate-600 text-white hover:bg-slate-700' 
                         : 'border-border/50 hover:bg-accent hover:text-accent-foreground'
                     }`}
                     onClick={() => filters.onCategoryChange?.(category)}
@@ -117,7 +117,7 @@ export const FilterModal = ({
               <Switch
                 checked={toggle.value}
                 onCheckedChange={toggle.onChange}
-                className="data-[state=checked]:bg-primary"
+                className="data-[state=checked]:bg-slate-600"
               />
             </div>
           ))}
@@ -208,7 +208,7 @@ export const FilterModal = ({
             Clear
           </Button>
           <Button 
-            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="flex-1 bg-slate-600 hover:bg-slate-700 text-white"
             onClick={handleApply}
           >
             Apply

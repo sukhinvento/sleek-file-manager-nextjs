@@ -295,7 +295,7 @@ export const Inventory = () => {
                     variant={selectedCategory === category ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedCategory === category ? 'bg-primary text-primary-foreground' : ''
+                      selectedCategory === category ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedCategory(category)}
                   >
@@ -313,7 +313,7 @@ export const Inventory = () => {
                     variant={selectedStockStatus === status ? 'default' : 'outline'}
                     size="sm"
                     className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStockStatus === status ? 'bg-primary text-primary-foreground' : ''
+                      selectedStockStatus === status ? 'bg-slate-600 text-white' : ''
                     }`}
                     onClick={() => setSelectedStockStatus(status)}
                   >
@@ -367,7 +367,7 @@ export const Inventory = () => {
                   <TableRow 
                     key={item.id} 
                     className={`hover:bg-muted/30 transition-colors border-border/50 cursor-pointer ${
-                      selectedItemId === item.id.toString() ? 'bg-primary/5 border-primary/30' : ''
+                      selectedItemId === item.id.toString() ? 'bg-slate-50 border-slate-300' : ''
                     }`}
                     onClick={() => setSelectedItemId(selectedItemId === item.id.toString() ? null : item.id.toString())}
                   >
@@ -375,8 +375,8 @@ export const Inventory = () => {
                     <TableCell className="py-4">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Package className="h-5 w-5 text-primary" />
+                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <Package className="h-5 w-5 text-slate-600" />
                           </div>
                           <div>
                             <div className="font-semibold text-foreground text-base">

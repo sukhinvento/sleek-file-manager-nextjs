@@ -238,7 +238,7 @@ export const ModernPOOverlay = ({
           }}>
             Cancel
           </Button>
-          <Button onClick={handleSaveOrder} disabled={isSaving} className="bg-primary hover:bg-primary/90">
+          <Button onClick={handleSaveOrder} disabled={isSaving} className="bg-slate-600 hover:bg-slate-700 text-white">
             {isSaving ? (
               <>
                 <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />

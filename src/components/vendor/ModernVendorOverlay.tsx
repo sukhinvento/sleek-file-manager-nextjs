@@ -387,7 +387,7 @@ export const ModernVendorOverlay = ({
             size="sm"
             onClick={handleSaveVendor}
             disabled={isSaving}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-slate-600 hover:bg-slate-700 text-white"
           >
             {isSaving ? (
               <>

@@ -263,7 +263,7 @@ export const ModernSOOverlay = ({
             size="sm"
             onClick={handleSaveOrder}
             disabled={isSaving || isReadOnly}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-slate-600 hover:bg-slate-700 text-white"
           >
             {isSaving ? (
               <>

@@ -92,7 +92,7 @@ export const InventoryFormOverlay = ({
         <X className="mr-2 h-4 w-4" />
         Cancel
       </Button>
-      <Button type="submit" form="inventory-form" className="bg-primary hover:bg-primary/90">
+      <Button type="submit" form="inventory-form" className="bg-slate-600 hover:bg-slate-700 text-white">
         <Save className="mr-2 h-4 w-4" />
         {isEdit ? 'Update' : 'Create'} Item
       </Button>

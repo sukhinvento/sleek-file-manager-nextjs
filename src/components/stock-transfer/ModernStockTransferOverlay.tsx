@@ -259,7 +259,7 @@ export const ModernStockTransferOverlay = ({
             size="sm"
             onClick={handleSaveTransfer}
             disabled={isSaving || isReadOnly}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-slate-600 hover:bg-slate-700 text-white"
           >
             {isSaving ? (
               <>
