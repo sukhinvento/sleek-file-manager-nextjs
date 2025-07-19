@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ModernVendorOverlay } from "@/components/vendor/ModernVendorOverlay";
+import { FilterModal } from "@/components/ui/filter-modal";
 import { toast } from "@/hooks/use-toast";
 
 // Extended vendor data with additional fields
@@ -223,6 +224,7 @@ export const VendorManagement = () => {
   const [isViewVendorOpen, setIsViewVendorOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const statuses = ['All', 'Active', 'Inactive', 'Pending'];
   const categories = ['All', ...Array.from(new Set(vendors.map(v => v.category)))];
@@ -430,6 +432,32 @@ export const VendorManagement = () => {
                   </Button>
                 ))}
               </div>
+
+              {/* More Filters Modal */}
+              <FilterModal 
+                isOpen={isFilterModalOpen} 
+                onOpenChange={setIsFilterModalOpen}
+                filters={{
+                  categories,
+                  selectedCategory,
+                  onCategoryChange: setSelectedCategory,
+                  toggles: [
+                    {
+                      id: 'high-risk-only',
+                      label: 'High Risk Vendors Only',
+                      value: false,
+                      onChange: () => {},
+                      isNew: true
+                    }
+                  ]
+                }}
+                onClear={() => {
+                  setSelectedStatus('All');
+                  setSelectedCategory('All');
+                  setSelectedRisk('All');
+                }}
+                onApply={() => {}}
+              />
             </div>
 
             {/* Results Summary */}

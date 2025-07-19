@@ -64,26 +64,29 @@ export const FilterModal = ({
           More Filters
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md mx-auto bg-background border-border sm:max-w-lg">
+      <DialogContent className="max-w-md mx-auto bg-background border-border sm:max-w-lg p-0 overflow-hidden">
         {/* Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b border-border/30">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <SlidersHorizontal className="h-4 w-4 text-slate-600" />
+        <div className="bg-slate-600 text-white px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <SlidersHorizontal className="h-4 w-4 text-white" />
+              </div>
+              <DialogTitle className="text-xl font-semibold text-white">Apply Filters</DialogTitle>
             </div>
-            <DialogTitle className="text-xl font-semibold text-foreground">Apply Filters</DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0 hover:bg-white/10 rounded-full text-white hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onOpenChange(false)}
-            className="h-8 w-8 p-0 hover:bg-accent rounded-full"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
+        </div>
 
-        <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+        {/* Content */}
+        <div className="px-6 py-4 space-y-6 max-h-96 overflow-y-auto">
           {/* Category Filter */}
           {filters.categories && (
             <div className="space-y-3">
@@ -204,20 +207,22 @@ export const FilterModal = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex gap-3 pt-4 border-t border-border">
-          <Button 
-            variant="outline" 
-            className="flex-1 border-border/50 hover:bg-accent hover:text-accent-foreground"
-            onClick={handleClear}
-          >
-            Clear
-          </Button>
-          <Button 
-            className="flex-1 bg-slate-600 hover:bg-slate-700 text-white"
-            onClick={handleApply}
-          >
-            Apply
-          </Button>
+        <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-t border-border">
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              className="flex-1 border-border/50 hover:bg-accent hover:text-accent-foreground"
+              onClick={handleClear}
+            >
+              Clear All
+            </Button>
+            <Button 
+              className="flex-1 bg-slate-600 hover:bg-slate-700 text-white"
+              onClick={handleApply}
+            >
+              Apply Filters
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

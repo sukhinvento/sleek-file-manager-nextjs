@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ModernStockTransferOverlay } from "@/components/stock-transfer/ModernStockTransferOverlay";
+import { FilterModal } from "@/components/ui/filter-modal";
 import { toast } from "@/hooks/use-toast";
 
 // Enhanced stock transfer data
@@ -146,6 +147,7 @@ export const StockTransfer = () => {
   const [selectedTransfer, setSelectedTransfer] = useState<any>(null);
   const [isViewTransferOpen, setIsViewTransferOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const statuses = ['All', 'Pending', 'Approved', 'In Transit', 'Completed', 'Cancelled'];
   const priorities = ['All', 'Low', 'Normal', 'High', 'Critical'];
@@ -330,6 +332,31 @@ export const StockTransfer = () => {
                   </Button>
                 ))}
               </div>
+
+              {/* More Filters Modal */}
+              <FilterModal 
+                isOpen={isFilterModalOpen} 
+                onOpenChange={setIsFilterModalOpen}
+                filters={{
+                  priorities,
+                  selectedPriority,
+                  onPriorityChange: setSelectedPriority,
+                  toggles: [
+                    {
+                      id: 'high-priority',
+                      label: 'High Priority Only',
+                      value: false,
+                      onChange: () => {},
+                      isNew: true
+                    }
+                  ]
+                }}
+                onClear={() => {
+                  setSelectedStatus('All');
+                  setSelectedPriority('All');
+                }}
+                onApply={() => {}}
+              />
             </div>
 
             {/* Results Summary */}
