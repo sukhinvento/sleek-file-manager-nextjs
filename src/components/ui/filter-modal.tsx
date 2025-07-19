@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Filter, X } from 'lucide-react';
+import { Filter, X, SlidersHorizontal } from 'lucide-react';
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -66,13 +66,18 @@ export const FilterModal = ({
       </DialogTrigger>
       <DialogContent className="max-w-md mx-auto bg-background border-border sm:max-w-lg">
         {/* Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border">
-          <DialogTitle className="text-xl font-semibold text-foreground">Filters</DialogTitle>
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b border-border/30">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <SlidersHorizontal className="h-4 w-4 text-slate-600" />
+            </div>
+            <DialogTitle className="text-xl font-semibold text-foreground">Apply Filters</DialogTitle>
+          </div>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => onOpenChange(false)}
-            className="h-6 w-6 p-0 hover:bg-accent"
+            className="h-8 w-8 p-0 hover:bg-accent rounded-full"
           >
             <X className="h-4 w-4" />
           </Button>
