@@ -186,7 +186,7 @@ export const Inventory = () => {
           </p>
         </div>
         <Button 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+          className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => {
             setSelectedItem(null);
             setIsEditMode(false);
