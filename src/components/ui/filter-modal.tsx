@@ -58,9 +58,10 @@ export const FilterModal = ({
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
-          className="border-border/50 hover:bg-accent hover:text-accent-foreground"
+          size="sm"
+          className="rounded-full h-8 px-3 text-xs border-border/50 hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
         >
-          <Filter className="mr-2 h-4 w-4" />
+          <Filter className="mr-1 h-3 w-3" />
           More Filters
         </Button>
       </DialogTrigger>

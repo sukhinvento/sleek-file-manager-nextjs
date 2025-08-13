@@ -3,7 +3,6 @@ import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterModal } from "@/components/ui/filter-modal";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FilterItem {
   id: string;
@@ -49,24 +48,24 @@ export const FilterLayout = ({
 }: FilterLayoutProps) => {
   return (
     <div className="space-y-4">
-      {/* Primary Filter Row - Horizontal scrolling on mobile */}
-      <div className="flex items-center gap-4 overflow-x-auto pb-2">
-        {/* More Filters Button */}
-        {filterModalConfig && (
-          <div className="flex-shrink-0">
-            <FilterModal 
-              isOpen={filterModalConfig.isOpen} 
-              onOpenChange={filterModalConfig.onOpenChange}
-              filters={filterModalConfig.filters}
-              onClear={filterModalConfig.onClear}
-              onApply={filterModalConfig.onApply}
-            />
-          </div>
-        )}
+      {/* Primary Filter Row - Horizontal scrolling container */}
+      <div className="w-full overflow-hidden">
+        <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-2">
+          {/* More Filters Button */}
+          {filterModalConfig && (
+            <div className="flex-shrink-0">
+              <FilterModal 
+                isOpen={filterModalConfig.isOpen} 
+                onOpenChange={filterModalConfig.onOpenChange}
+                filters={filterModalConfig.filters}
+                onClear={filterModalConfig.onClear}
+                onApply={filterModalConfig.onApply}
+              />
+            </div>
+          )}
 
-        {/* Quick Filter Groups */}
-        <ScrollArea className="flex-1">
-          <div className="flex items-center gap-6 min-w-max">
+          {/* Quick Filter Groups - Scrollable container */}
+          <div className="flex items-center gap-6 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {filterGroups.map((group) => (
               <div key={group.id} className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
@@ -92,18 +91,18 @@ export const FilterLayout = ({
               </div>
             ))}
           </div>
-        </ScrollArea>
 
-        {/* Search Bar */}
-        <div className="relative flex-shrink-0 w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
-          <Input
-            type="search"
-            placeholder={searchPlaceholder}
-            className="pl-10 h-10 border-border/50 focus:border-primary"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+          {/* Search Bar */}
+          <div className="relative flex-shrink-0 w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
+            <Input
+              type="search"
+              placeholder={searchPlaceholder}
+              className="pl-10 h-10 border-border/50 focus:border-primary"
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
