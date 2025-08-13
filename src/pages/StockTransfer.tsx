@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Plus, Filter, ArrowRight, MapPin, Package, Clock, CheckCircle, AlertTriangle, Eye, Edit, MoreVertical, Truck, User } from 'lucide-react';
+import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -279,106 +280,67 @@ export const StockTransfer = () => {
         </Card>
       </div>
 
-      {/* Enhanced Filters and Search */}
+      {/* Enhanced Filters Layout */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-6">
-          <div className="flex flex-col space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
-              <Input
-                type="search"
-                placeholder="Search by transfer ID, location, or requestor..."
-                className="pl-10 h-12 text-base border-border/50 focus:border-primary"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Filter Chips */}
-            <div className="flex flex-wrap gap-3">
-              {/* Status Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Status:</span>
-                {statuses.map(status => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStatus === status ? 'bg-slate-600 text-white' : ''
-                    }`}
-                    onClick={() => setSelectedStatus(status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Priority Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Priority:</span>
-                {priorities.map(priority => (
-                  <Button
-                    key={priority}
-                    variant={selectedPriority === priority ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedPriority === priority ? 'bg-slate-600 text-white' : ''
-                    }`}
-                    onClick={() => setSelectedPriority(priority)}
-                  >
-                    {priority}
-                  </Button>
-                ))}
-              </div>
-
-              {/* More Filters Modal */}
-              <FilterModal 
-                isOpen={isFilterModalOpen} 
-                onOpenChange={setIsFilterModalOpen}
-                filters={{
-                  priorities,
-                  selectedPriority,
-                  onPriorityChange: setSelectedPriority,
-                  toggles: [
-                    {
-                      id: 'high-priority',
-                      label: 'High Priority Only',
-                      value: false,
-                      onChange: () => {},
-                      isNew: true
-                    }
-                  ]
-                }}
-                onClear={() => {
-                  setSelectedStatus('All');
-                  setSelectedPriority('All');
-                }}
-                onApply={() => {}}
-              />
-            </div>
-
-            {/* Results Summary */}
-            <div className="flex justify-between items-center pt-2 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredTransfers.length} of {totalTransfers} stock transfers
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedStatus('All');
-                    setSelectedPriority('All');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FilterLayout
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search by transfer ID, location, or requestor..."
+            filterGroups={[
+              {
+                id: 'status',
+                label: 'Status',
+                items: statuses.map(status => ({
+                  id: status,
+                  label: status,
+                  isActive: selectedStatus === status,
+                  onClick: () => setSelectedStatus(status)
+                }))
+              },
+              {
+                id: 'priority',
+                label: 'Priority',
+                items: priorities.map(priority => ({
+                  id: priority,
+                  label: priority,
+                  isActive: selectedPriority === priority,
+                  onClick: () => setSelectedPriority(priority)
+                }))
+              }
+            ]}
+            filterModalConfig={{
+              isOpen: isFilterModalOpen,
+              onOpenChange: setIsFilterModalOpen,
+              filters: {
+                priorities,
+                selectedPriority,
+                onPriorityChange: setSelectedPriority,
+                toggles: [
+                  {
+                    id: 'high-priority',
+                    label: 'High Priority Only',
+                    value: false,
+                    onChange: () => {},
+                    isNew: true
+                  }
+                ]
+              },
+              onClear: () => {
+                setSelectedStatus('All');
+                setSelectedPriority('All');
+              },
+              onApply: () => {}
+            }}
+            resultsCount={filteredTransfers.length}
+            totalCount={totalTransfers}
+            itemLabel="stock transfers"
+            onClearAll={() => {
+              setSearchTerm('');
+              setSelectedStatus('All');
+              setSelectedPriority('All');
+            }}
+          />
         </CardContent>
       </Card>
 

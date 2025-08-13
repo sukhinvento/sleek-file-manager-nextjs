@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Plus, Filter, Calendar, User, Package, TrendingUp, DollarSign, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, Truck } from 'lucide-react';
+import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -150,101 +151,62 @@ export const SalesOrders = () => {
         </Card>
       </div>
 
-      {/* Enhanced Filters and Search */}
+      {/* Enhanced Filters Layout */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-6">
-          <div className="flex flex-col space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
-              <Input
-                type="search"
-                placeholder="Search by order number, customer name..."
-                className="pl-10 h-12 text-base border-border/50 focus:border-primary"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Filter Chips */}
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Status Filter */}
-              <div className="flex gap-2 items-center">
-                <span className="text-sm font-medium text-muted-foreground">Status:</span>
-                {statuses.map(status => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStatus === status ? 'bg-slate-600 text-white' : ''
-                    }`}
-                    onClick={() => setSelectedStatus(status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-
-              {/* More Filters Modal */}
-              <FilterModal 
-                isOpen={false} 
-                onOpenChange={() => {}}
-                filters={{
-                  categories: ['All', 'Medical', 'Equipment', 'Supplies'],
-                  selectedCategory: 'All',
-                  onCategoryChange: () => {},
-                  toggles: [
-                    {
-                      id: 'priority-orders',
-                      label: 'Priority Orders Only',
-                      value: false,
-                      onChange: () => {},
-                      isNew: true
-                    }
-                  ]
-                }}
-              />
-
-              {/* Payment Status Filter */}
-              <div className="flex gap-2">
-                <span className="text-sm font-medium text-muted-foreground self-center">Payment:</span>
-                {paymentStatuses.map(paymentStatus => (
-                  <Button
-                    key={paymentStatus}
-                    variant={selectedPaymentStatus === paymentStatus ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedPaymentStatus === paymentStatus ? 'bg-slate-600 text-white' : ''
-                    }`}
-                    onClick={() => setSelectedPaymentStatus(paymentStatus)}
-                  >
-                    {paymentStatus}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Results Summary */}
-            <div className="flex justify-between items-center pt-2 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredOrders.length} of {totalOrders} sales orders
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedStatus('All');
-                    setSelectedPaymentStatus('All');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FilterLayout
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search by order number, customer name..."
+            filterGroups={[
+              {
+                id: 'status',
+                label: 'Status',
+                items: statuses.map(status => ({
+                  id: status,
+                  label: status,
+                  isActive: selectedStatus === status,
+                  onClick: () => setSelectedStatus(status)
+                }))
+              },
+              {
+                id: 'payment',
+                label: 'Payment',
+                items: paymentStatuses.map(paymentStatus => ({
+                  id: paymentStatus,
+                  label: paymentStatus,
+                  isActive: selectedPaymentStatus === paymentStatus,
+                  onClick: () => setSelectedPaymentStatus(paymentStatus)
+                }))
+              }
+            ]}
+            filterModalConfig={{
+              isOpen: false,
+              onOpenChange: () => {},
+              filters: {
+                categories: ['All', 'Medical', 'Equipment', 'Supplies'],
+                selectedCategory: 'All',
+                onCategoryChange: () => {},
+                toggles: [
+                  {
+                    id: 'priority-orders',
+                    label: 'Priority Orders Only',
+                    value: false,
+                    onChange: () => {},
+                    isNew: true
+                  }
+                ]
+              }
+            }}
+            resultsCount={filteredOrders.length}
+            totalCount={totalOrders}
+            itemLabel="sales orders"
+            onClearAll={() => {
+              setSearchTerm('');
+              setSelectedStatus('All');
+              setSelectedPaymentStatus('All');
+            }}
+          />
         </CardContent>
       </Card>
 

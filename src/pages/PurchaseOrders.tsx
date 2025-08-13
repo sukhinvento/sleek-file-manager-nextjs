@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical } from 'lucide-react';
+import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -159,91 +160,61 @@ export const PurchaseOrders = () => {
         </Card>
       </div>
 
-      {/* Enhanced Filters and Search */}
+      {/* Enhanced Filters Layout */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-6">
-          <div className="flex flex-col space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
-              <Input
-                type="search"
-                placeholder="Search by PO number, vendor, or address..."
-                className="pl-10 h-12 text-base border-border/50 focus:border-primary"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Filter Chips */}
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Status Filter */}
-              <div className="flex gap-2 items-center">
-                <span className="text-sm font-medium text-muted-foreground">Status:</span>
-                {statuses.map(status => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    size="sm"
-                    className={`rounded-full h-8 px-3 text-xs ${
-                      selectedStatus === status ? 'bg-slate-600 text-white' : ''
-                    }`}
-                    onClick={() => setSelectedStatus(status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-
-              {/* More Filters Modal */}
-              <FilterModal 
-                isOpen={isFilterModalOpen} 
-                onOpenChange={setIsFilterModalOpen}
-                filters={{
-                  vendors,
-                  selectedVendor,
-                  onVendorChange: setSelectedVendor,
-                  priorities,
-                  selectedPriority,
-                  onPriorityChange: setSelectedPriority,
-                  priceRange: { min: 0, max: 100000 },
-                  toggles: [
-                    {
-                      id: 'urgent-only',
-                      label: 'Urgent Orders Only',
-                      value: false,
-                      onChange: () => {},
-                      isNew: true
-                    }
-                  ]
-                }}
-                onClear={() => {
-                  setSelectedVendor('All');
-                  setSelectedPriority('All');
-                }}
-              />
-            </div>
-
-            {/* Results Summary */}
-            <div className="flex justify-between items-center pt-2 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredOrders.length} of {totalOrders} purchase orders
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedStatus('All');
-                    setSelectedVendor('All');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FilterLayout
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search by PO number, vendor, or address..."
+            filterGroups={[
+              {
+                id: 'status',
+                label: 'Status',
+                items: statuses.map(status => ({
+                  id: status,
+                  label: status,
+                  isActive: selectedStatus === status,
+                  onClick: () => setSelectedStatus(status)
+                }))
+              }
+            ]}
+            filterModalConfig={{
+              isOpen: isFilterModalOpen,
+              onOpenChange: setIsFilterModalOpen,
+              filters: {
+                vendors,
+                selectedVendor,
+                onVendorChange: setSelectedVendor,
+                priorities,
+                selectedPriority,
+                onPriorityChange: setSelectedPriority,
+                priceRange: { min: 0, max: 100000 },
+                toggles: [
+                  {
+                    id: 'urgent-only',
+                    label: 'Urgent Orders Only',
+                    value: false,
+                    onChange: () => {},
+                    isNew: true
+                  }
+                ]
+              },
+              onClear: () => {
+                setSelectedVendor('All');
+                setSelectedPriority('All');
+              }
+            }}
+            resultsCount={filteredOrders.length}
+            totalCount={totalOrders}
+            itemLabel="purchase orders"
+            onClearAll={() => {
+              setSearchTerm('');
+              setSelectedStatus('All');
+              setSelectedVendor('All');
+              setSelectedPriority('All');
+            }}
+          />
         </CardContent>
       </Card>
 
