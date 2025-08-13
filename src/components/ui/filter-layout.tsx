@@ -48,8 +48,8 @@ export const FilterLayout = ({
 }: FilterLayoutProps) => {
   return (
     <div className="space-y-4">
-      {/* Primary Filter Row - Properly contained horizontal scrolling */}
-      <div className="w-full">
+      {/* Primary Filter Row - Fixed horizontal scroll containment */}
+      <div className="w-full overflow-hidden">
         <div className="flex items-center gap-4">
           {/* More Filters Button */}
           {filterModalConfig && (
@@ -64,9 +64,9 @@ export const FilterLayout = ({
             </div>
           )}
 
-          {/* Quick Filter Groups - Contained scrollable area */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-2 pr-4">
+          {/* Quick Filter Groups - Properly contained scrollable area */}
+          <div className="flex-1 max-w-0 overflow-hidden">
+            <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide py-1">
               {filterGroups.map((group) => (
                 <div key={group.id} className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
