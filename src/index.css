@@ -1,264 +1,48 @@
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Import Bootstrap styles */
+@import '../styles/bootstrap-custom.scss';
 
-@layer utilities {
-  /* Hide scrollbar for WebKit browsers */
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+/* Additional Global Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-    
-    /* Inventory Management Colors */
-    --success: 142 76% 36%;
-    --success-foreground: 355 100% 97%;
-    --warning: 43 96% 56%;
-    --warning-foreground: 25 95% 53%;
-    --info: 213 93% 68%;
-    --info-foreground: 210 40% 98%;
-    
-    /* Status Colors */
-    --status-pending: 43 96% 56%;
-    --status-pending-bg: 48 100% 96%;
-    --status-approved: 213 93% 68%;
-    --status-approved-bg: 214 100% 97%;
-    --status-delivered: 142 76% 36%;
-    --status-delivered-bg: 143 85% 96%;
-    --status-cancelled: 0 84% 60%;
-    --status-cancelled-bg: 0 93% 94%;
-    
-    /* Inventory Status Colors */
-    --stock-critical: 0 84% 60%;
-    --stock-critical-bg: 0 93% 94%;
-    --stock-low: 43 96% 56%;
-    --stock-low-bg: 48 100% 96%;
-    --stock-normal: 142 76% 36%;
-    --stock-normal-bg: 143 85% 96%;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(221.2 83.2% 40%));
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 76% 25%));
-    --gradient-subtle: linear-gradient(135deg, hsl(var(--muted)), hsl(var(--background)));
-    
-    /* Shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
-    --shadow-card: 0 4px 6px -1px hsl(222.2 84% 4.9% / 0.1);
-    --shadow-overlay: 0 20px 50px -10px hsl(222.2 84% 4.9% / 0.25);
-  }
- 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-  }
+/* Global reset for consistency */
+* {
+  box-sizing: border-box;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.glass {
-  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg;
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
-.fade-in {
-  @apply animate-fade-in;
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
 }
 
-.slide-in {
-  @apply animate-slide-in;
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
 
-/* Enterprise styles */
-.enterprise-sidebar {
-  @apply bg-[#1a202c] text-white;
-  backface-visibility: hidden;
-  will-change: transform, width;
-  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
-  overflow: hidden;
+/* Additional utility classes */
+.cursor-pointer {
+  cursor: pointer;
 }
 
-.nav-item {
-  @apply flex items-center px-4 py-2 text-gray-300 hover:bg-[#2d3748] rounded-md transition-colors relative;
-  height: 40px; /* Fixed height to prevent vertical shifting */
-  display: flex;
-  align-items: center;
+.user-select-none {
+  user-select: none;
 }
 
-.nav-item.active {
-  @apply bg-[#2d3748] text-white;
-}
-
-.nav-section {
-  @apply pt-6 pb-2;
-}
-
-.nav-section-title {
-  @apply px-4 text-xs uppercase tracking-wider text-gray-500 font-semibold;
-}
-
-/* Text transition for sidebar items */
-.nav-text {
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-/* Overlay & Modal Enhancements */
-.overlay-content {
-  @apply bg-card border rounded-lg;
-  box-shadow: var(--shadow-overlay);
-  animation: overlayContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.overlay-backdrop {
-  @apply bg-black/50 backdrop-blur-sm;
-  animation: overlayBackdropShow 0.3s ease;
-}
-
-.status-badge-pending {
-  @apply bg-status-pending-bg text-status-pending border border-status-pending/20;
-}
-
-.status-badge-approved {
-  @apply bg-status-approved-bg text-status-approved border border-status-approved/20;
-}
-
-.status-badge-delivered {
-  @apply bg-status-delivered-bg text-status-delivered border border-status-delivered/20;
-}
-
-.status-badge-cancelled {
-  @apply bg-status-cancelled-bg text-status-cancelled border border-status-cancelled/20;
-}
-
-.stock-badge-critical {
-  @apply bg-stock-critical-bg text-stock-critical border border-stock-critical/20;
-}
-
-.stock-badge-low {
-  @apply bg-stock-low-bg text-stock-low border border-stock-low/20;
-}
-
-.stock-badge-normal {
-  @apply bg-stock-normal-bg text-stock-normal border border-stock-normal/20;
-}
-
-.section-header {
-  @apply flex items-center gap-3 text-lg font-semibold text-foreground mb-4;
-}
-
-.section-icon {
-  @apply h-5 w-5 text-primary;
-}
-
-.summary-card {
-  @apply border border-border/50 rounded-lg p-4;
-  background: var(--gradient-subtle);
-  box-shadow: var(--shadow-card);
-}
-
-.action-button-primary {
-  @apply text-primary-foreground transition-all duration-300;
-  background: var(--gradient-primary);
-  box-shadow: var(--shadow-elegant);
-}
-
-.action-button-primary:hover {
-  box-shadow: var(--shadow-elegant), 0 15px 35px -10px hsl(var(--primary) / 0.3);
-}
-
-.action-button-secondary {
-  @apply border border-border/50 hover:bg-muted/50 transition-all duration-300;
-  background: var(--gradient-subtle);
-}
-
-/* Animation Keyframes */
-@keyframes overlayContentShow {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -48%) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-@keyframes overlayBackdropShow {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Interactive Elements */
-.interactive-card {
-  @apply cursor-pointer transition-all duration-300 hover:scale-[1.01];
-}
-
-.interactive-card:hover {
-  box-shadow: var(--shadow-card);
-}
-
-.icon-accent {
-  @apply text-primary/80 group-hover:text-primary transition-colors duration-300;
-}
-
-/* Button styles */
-.btn-blue {
-  @apply bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded;
+.transition-all {
+  transition: all 0.2s ease-in-out;
 }
