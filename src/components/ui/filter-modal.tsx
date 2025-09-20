@@ -55,7 +55,7 @@ export const FilterModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button 
           variant="outline" 
           size="sm"
