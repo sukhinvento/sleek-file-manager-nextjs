@@ -1,52 +1,39 @@
-// Import Bootstrap variables first
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
+/* Custom Bootstrap Theme using CSS Custom Properties */
+:root {
+  --bs-primary: #3d62f0;
+  --bs-secondary: #6c757d;
+  --bs-success: #22c55e;
+  --bs-info: #3b82f6;
+  --bs-warning: #f59e0b;
+  --bs-danger: #ef4444;
+  --bs-light: #f8f9fa;
+  --bs-dark: #1a202c;
+  
+  /* Enterprise Colors */
+  --enterprise-50: #f8fafc;
+  --enterprise-100: #f1f5f9;
+  --enterprise-200: #e2e8f0;
+  --enterprise-300: #cbd5e1;
+  --enterprise-400: #94a3b8;
+  --enterprise-500: #64748b;
+  --enterprise-600: #475569;
+  --enterprise-700: #334155;
+  --enterprise-800: #1e293b;
+  --enterprise-900: #0f172a;
+  
+  /* Status Colors */
+  --status-pending: #f59e0b;
+  --status-approved: #3b82f6;
+  --status-delivered: #22c55e;
+  --status-cancelled: #ef4444;
+  --stock-critical: #ef4444;
+  --stock-low: #f59e0b;
+  --stock-normal: #22c55e;
+}
 
-// Custom Bootstrap Variables
-$primary: #3d62f0;
-$secondary: #6c757d;
-$success: #22c55e;
-$info: #3b82f6;
-$warning: #f59e0b;
-$danger: #ef4444;
-$light: #f8f9fa;
-$dark: #1a202c;
-
-// Enterprise Theme Colors
-$enterprise-colors: (
-  "enterprise-50": #f8fafc,
-  "enterprise-100": #f1f5f9,
-  "enterprise-200": #e2e8f0,
-  "enterprise-300": #cbd5e1,
-  "enterprise-400": #94a3b8,
-  "enterprise-500": #64748b,
-  "enterprise-600": #475569,
-  "enterprise-700": #334155,
-  "enterprise-800": #1e293b,
-  "enterprise-900": #0f172a,
-);
-
-// Status Colors
-$status-colors: (
-  "status-pending": #f59e0b,
-  "status-approved": #3b82f6,
-  "status-delivered": #22c55e,
-  "status-cancelled": #ef4444,
-  "stock-critical": #ef4444,
-  "stock-low": #f59e0b,
-  "stock-normal": #22c55e,
-);
-
-// Merge with Bootstrap's theme colors
-$theme-colors: map-merge($theme-colors, $enterprise-colors);
-$theme-colors: map-merge($theme-colors, $status-colors);
-
-// Import remaining Bootstrap
-@import "~bootstrap/scss/bootstrap";
-
-// Custom CSS classes for enterprise styling
+/* Custom CSS classes for enterprise styling */
 .enterprise-sidebar {
-  background-color: $dark;
+  background-color: var(--bs-dark);
   color: white;
   transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
@@ -60,17 +47,17 @@ $theme-colors: map-merge($theme-colors, $status-colors);
   transition: all 0.2s ease;
   text-decoration: none;
   height: 40px;
-  
-  &:hover {
-    background-color: rgba(45, 55, 72, 0.8);
-    color: white;
-    text-decoration: none;
-  }
-  
-  &.active {
-    background-color: rgba(45, 55, 72, 0.8);
-    color: white;
-  }
+}
+
+.nav-item:hover {
+  background-color: rgba(45, 55, 72, 0.8);
+  color: white;
+  text-decoration: none;
+}
+
+.nav-item.active {
+  background-color: rgba(45, 55, 72, 0.8);
+  color: white;
 }
 
 .nav-section {
@@ -87,62 +74,66 @@ $theme-colors: map-merge($theme-colors, $status-colors);
   font-weight: 600;
 }
 
-// Status badges
+/* Status badges */
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
   border: 1px solid;
-  
-  &.pending {
-    background-color: rgba(251, 191, 36, 0.1);
-    color: #f59e0b;
-    border-color: rgba(251, 191, 36, 0.2);
-  }
-  
-  &.approved {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border-color: rgba(59, 130, 246, 0.2);
-  }
-  
-  &.delivered {
-    background-color: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.2);
-  }
-  
-  &.cancelled {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.2);
-  }
+}
+
+.status-badge.pending {
+  background-color: rgba(251, 191, 36, 0.1);
+  color: var(--status-pending);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.status-badge.approved {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--status-approved);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.status-badge.delivered {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--status-delivered);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.status-badge.cancelled {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--status-cancelled);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .stock-badge {
-  @extend .status-badge;
-  
-  &.critical {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.2);
-  }
-  
-  &.low {
-    background-color: rgba(251, 191, 36, 0.1);
-    color: #f59e0b;
-    border-color: rgba(251, 191, 36, 0.2);
-  }
-  
-  &.normal {
-    background-color: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.2);
-  }
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
 }
 
-// Glass effect
+.stock-badge.critical {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--stock-critical);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.stock-badge.low {
+  background-color: rgba(251, 191, 36, 0.1);
+  color: var(--stock-low);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.stock-badge.normal {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--stock-normal);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* Glass effect */
 .glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -150,17 +141,17 @@ $theme-colors: map-merge($theme-colors, $status-colors);
   border-radius: 0.5rem;
 }
 
-// Hide scrollbar utility
+/* Hide scrollbar utility */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
-// Overlay animations
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Overlay animations */
 .overlay-backdrop {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
