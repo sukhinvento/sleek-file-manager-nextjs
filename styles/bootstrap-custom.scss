@@ -1,3 +1,7 @@
+// Import Bootstrap variables first
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
 // Custom Bootstrap Variables
 $primary: #3d62f0;
 $secondary: #6c757d;
@@ -37,7 +41,7 @@ $status-colors: (
 $theme-colors: map-merge($theme-colors, $enterprise-colors);
 $theme-colors: map-merge($theme-colors, $status-colors);
 
-// Import Bootstrap
+// Import remaining Bootstrap
 @import "~bootstrap/scss/bootstrap";
 
 // Custom CSS classes for enterprise styling
