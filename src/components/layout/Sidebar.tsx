@@ -1,5 +1,4 @@
 import { useState, Dispatch, SetStateAction } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   LineChart,
@@ -28,26 +27,52 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
+// SSR-safe Link component
+const SafeLink = ({ to, children, className, title, onClick }: any) => {
+  const handleClick = (e: any) => {
+    if (onClick) {
+      onClick(e);
+    } else if (typeof window !== 'undefined') {
+      e.preventDefault();
+      window.location.href = to;
+    }
+  };
+
+  return (
+    <a href={to} className={className} title={title} onClick={handleClick}>
+      {children}
+    </a>
+  );
+};
+
 export const Sidebar = ({ 
   isMobileMenuOpen, 
   setIsMobileMenuOpen, 
   isCollapsed = false,
   toggleSidebar 
 }: SidebarProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
+  // SSR-safe location pathname
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+
   const isActive = (path: string) => {
-    return location.pathname === path;
+    return pathname === path;
   };
 
   const isSubmenuActive = (basePath: string) => {
-    return location.pathname.startsWith(basePath);
+    return pathname.startsWith(basePath);
   };
 
   const toggleSubmenu = (menu: string) => {
     setOpenSubmenu(openSubmenu === menu ? null : menu);
+  };
+
+  const handleLogout = (e: any) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
   };
 
   return (
@@ -82,7 +107,7 @@ export const Sidebar = ({
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Main</p>}
           <nav className="mt-2 space-y-1">
-            <Link 
+            <SafeLink 
               to="/dashboard" 
               className={`nav-item ${isActive('/dashboard') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -91,9 +116,9 @@ export const Sidebar = ({
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
-            </Link>
+            </SafeLink>
             
-            <Link 
+            <SafeLink 
               to="/patients" 
               className={`nav-item ${isActive('/patients') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -102,14 +127,14 @@ export const Sidebar = ({
             >
               <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Patients</span>
-            </Link>
+            </SafeLink>
           </nav>
         </div>
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
           <nav className="mt-2 space-y-1">
-            <Link 
+            <SafeLink 
               to="/inventory" 
               className={`nav-item ${isActive('/inventory') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -118,9 +143,9 @@ export const Sidebar = ({
             >
               <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory</span>
-            </Link>
+            </SafeLink>
             
-            <Link 
+            <SafeLink 
               to="/purchase-orders" 
               className={`nav-item ${isActive('/purchase-orders') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -129,9 +154,9 @@ export const Sidebar = ({
             >
               <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
-            </Link>
+            </SafeLink>
 
-            <Link 
+            <SafeLink 
               to="/sales-orders" 
               className={`nav-item ${isActive('/sales-orders') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -140,9 +165,9 @@ export const Sidebar = ({
             >
               <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
-            </Link>
+            </SafeLink>
 
-            <Link 
+            <SafeLink 
               to="/vendors" 
               className={`nav-item ${isActive('/vendors') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -151,9 +176,9 @@ export const Sidebar = ({
             >
               <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
-            </Link>
+            </SafeLink>
 
-            <Link 
+            <SafeLink 
               to="/stock-transfer" 
               className={`nav-item ${isActive('/stock-transfer') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -162,14 +187,14 @@ export const Sidebar = ({
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
-            </Link>
+            </SafeLink>
           </nav>
         </div>
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Billing & Finance</p>}
           <nav className="mt-2 space-y-1">
-            <Link 
+            <SafeLink 
               to="/billing" 
               className={`nav-item ${isActive('/billing') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -178,14 +203,24 @@ export const Sidebar = ({
             >
               <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
-            </Link>
+            </SafeLink>
           </nav>
         </div>
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">File Management</p>}
           <nav className="mt-2 space-y-1">
-            <Link 
+            <SafeLink 
+              to="/file-dashboard" 
+              className={`nav-item ${isActive('/file-dashboard') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="File Dashboard"
+            >
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>File Dashboard</span>
+            </SafeLink>
+            <SafeLink 
               to="/upload" 
               className={`nav-item ${isActive('/upload') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -194,8 +229,8 @@ export const Sidebar = ({
             >
               <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
-            </Link>
-            <Link 
+            </SafeLink>
+            <SafeLink 
               to="/files" 
               className={`nav-item ${isActive('/files') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -204,8 +239,8 @@ export const Sidebar = ({
             >
               <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
-            </Link>
-            <Link 
+            </SafeLink>
+            <SafeLink 
               to="/edit" 
               className={`nav-item ${isActive('/edit') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -214,8 +249,8 @@ export const Sidebar = ({
             >
               <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
-            </Link>
-            <Link 
+            </SafeLink>
+            <SafeLink 
               to="/consolidated" 
               className={`nav-item ${isActive('/consolidated') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -224,14 +259,14 @@ export const Sidebar = ({
             >
               <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data</span>
-            </Link>
+            </SafeLink>
           </nav>
         </div>
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Analytics</p>}
           <nav className="mt-2 space-y-1">
-            <Link 
+            <SafeLink 
               to="/analytics/usage" 
               className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -240,8 +275,8 @@ export const Sidebar = ({
             >
               <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
-            </Link>
-            <Link 
+            </SafeLink>
+            <SafeLink 
               to="/analytics/trends" 
               className={`nav-item ${isActive('/analytics/trends') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -250,8 +285,8 @@ export const Sidebar = ({
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
-            </Link>
-            <Link 
+            </SafeLink>
+            <SafeLink 
               to="/analytics/distribution" 
               className={`nav-item ${isActive('/analytics/distribution') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
@@ -260,12 +295,12 @@ export const Sidebar = ({
             >
               <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
-            </Link>
+            </SafeLink>
           </nav>
         </div>
 
         <div className="mt-auto pt-8">
-          <Link 
+          <SafeLink 
             to="/settings" 
             className={`nav-item ${isActive('/settings') ? 'active' : ''} ${
               isCollapsed ? 'justify-center px-2' : ''
@@ -274,20 +309,17 @@ export const Sidebar = ({
           >
             <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Settings</span>
-          </Link>
+          </SafeLink>
           
-          <Link 
+          <SafeLink 
             to="/login" 
             className={`nav-item ${isCollapsed ? 'justify-center px-2' : ''}`}
             title="Logout"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/login');
-            }}
+            onClick={handleLogout}
           >
             <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
-          </Link>
+          </SafeLink>
         </div>
       </div>
     </div>
