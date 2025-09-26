@@ -1,11 +1,22 @@
+import Head from 'next/head';
+import dynamic from 'next/dynamic';
+import { EditFiles } from '@/pages/EditFiles';
 
-import { EditFiles } from '@/src/pages/EditFiles';
-import { AppLayout } from '@/src/components/layout/AppLayout';
+const ClientLayout = dynamic(
+  () => import('@/components/layout/ClientLayout').then(m => m.ClientLayout),
+  { ssr: false }
+);
 
 export default function EditPage() {
   return (
-    <AppLayout>
-      <EditFiles />
-    </AppLayout>
+    <>
+      <Head>
+        <title>Edit Files | Enterprise File Manager</title>
+        <meta name="description" content="Edit your files in the Enterprise File Manager" />
+      </Head>
+      <ClientLayout>
+        <EditFiles />
+      </ClientLayout>
+    </>
   );
 }
