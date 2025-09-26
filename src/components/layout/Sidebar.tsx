@@ -110,14 +110,25 @@ export const Sidebar = ({
           {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
           <nav className="mt-2 space-y-1">
             <Link 
+              to="/inventory-dashboard" 
+              className={`nav-item ${isActive('/inventory-dashboard') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Inventory Dashboard"
+            >
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Dashboard</span>
+            </Link>
+            
+            <Link 
               to="/inventory" 
               className={`nav-item ${isActive('/inventory') ? 'active' : ''} ${
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
-              title="Inventory"
+              title="Inventory Management"
             >
               <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory</span>
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Management</span>
             </Link>
             
             <Link 

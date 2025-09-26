@@ -12,6 +12,7 @@ import { EditFiles } from "./pages/EditFiles";
 import { Settings } from "./pages/Settings";
 import { PurchaseOrders } from "./pages/PurchaseOrders";
 import { Inventory } from "./pages/Inventory";
+import { InventoryDashboard } from "./pages/InventoryDashboard";
 import { Billing } from "./pages/Billing";
 import { Patients } from "./pages/Patients";
 import { VendorManagement } from "./pages/VendorManagement";
@@ -45,6 +46,11 @@ const App = () => (
           <Route path="/inventory" element={
             <AppLayout>
               <Inventory />
+            </AppLayout>
+          } />
+          <Route path="/inventory-dashboard" element={
+            <AppLayout>
+              <InventoryDashboard />
             </AppLayout>
           } />
           <Route path="/purchase-orders" element={
