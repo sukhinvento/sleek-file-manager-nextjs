@@ -29,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/file-dashboard" element={<Dashboard />} />
               <Route path="/inventory-dashboard" element={<InventoryDashboard />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/purchase-orders" element={<PurchaseOrders />} />
