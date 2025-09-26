@@ -12,14 +12,17 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger(),
+    mode === 'development' &&
+    componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    exclude: ["lovable-tagger"],
+  define: {
+    'process.env': {
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+    },
   },
 }));
