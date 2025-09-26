@@ -1,0 +1,118 @@
+
+@tailwind base;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 215 20.2% 65.1%;
+ 
+    --radius: 0.5rem;
+
+    --enterprise-50: #f5f7fa;
+    --enterprise-100: #e4e7eb;
+    --enterprise-200: #cbd2d9;
+    --enterprise-500: #718096;
+    --enterprise-600: #4a5568;
+    --enterprise-700: #2d3748;
+    --enterprise-800: #1a202c;
+    --enterprise-900: #171923;
+    
+    /* Adding blue colors for buttons */
+    --blue-500: #3182ce;
+    --blue-600: #2b6cb0;
+    --blue-700: #2c5282;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+ 
+    --ring: 217.2 32.6% 17.5%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Nav styles for sidebar */
+.enterprise-sidebar {
+  @apply bg-[#1a202c] text-white;
+}
+
+.nav-item {
+  @apply flex items-center px-4 py-2 text-gray-300 hover:bg-[#2d3748] rounded-md transition-colors;
+}
+
+.nav-item.active {
+  @apply bg-[#2d3748] text-white;
+}
+
+.nav-section {
+  @apply pt-6 pb-2;
+}
+
+.nav-section-title {
+  @apply px-4 text-xs uppercase tracking-wider text-gray-500 font-semibold;
+}
+
+/* Button styles */
+.btn-blue {
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+}

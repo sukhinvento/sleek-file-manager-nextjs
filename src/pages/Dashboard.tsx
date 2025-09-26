@@ -1,5 +1,5 @@
 
-import { FileUp, FileText, Edit, FileAxis3d, FolderKanban, FileCode2, Settings, Search, Archive } from 'lucide-react';
+import { FileUp, FileText, Edit, FileAxis3d, FolderKanban, FileCode2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 
@@ -72,19 +72,9 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">File Management</h1>
-          <p className="text-gray-500 mt-2">Upload, organize, and manage your files efficiently</p>
-        </div>
-        <Button 
-          variant="outline"
-          onClick={() => navigate('/inventory-dashboard')}
-          className="flex items-center gap-2"
-        >
-          <Archive className="w-4 h-4" />
-          Inventory Dashboard
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
+        <p className="text-gray-500 mt-2">Manage your files efficiently</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -110,31 +100,6 @@ export const Dashboard = () => {
           onClick={() => navigate('/edit')}
           IllustrationIcon={FileCode2}
         />
-      </div>
-
-      <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Search className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">File Management Tools</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Button 
-            variant="outline" 
-            className="justify-start"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            File Settings
-          </Button>
-          <Button 
-            variant="outline" 
-            className="justify-start"
-            onClick={() => navigate('/files')}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Advanced Search
-          </Button>
-        </div>
       </div>
     </div>
   );
