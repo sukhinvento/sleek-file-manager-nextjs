@@ -1,7 +1,4 @@
 
-/* Import Bootstrap styles */
-@import '../styles/bootstrap-custom.scss';
-
 /* Additional Global Styles */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
