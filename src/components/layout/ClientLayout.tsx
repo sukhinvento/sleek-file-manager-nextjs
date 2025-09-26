@@ -1,10 +1,11 @@
 'use client';
 
+import { type ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 
 interface ClientLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const ClientLayout = ({ children }: ClientLayoutProps) => {

@@ -1,7 +1,6 @@
-
-import { Dashboard } from "@/src/pages/Dashboard";
-import { AppLayout } from "@/src/components/layout/AppLayout";
 import Head from 'next/head';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Dashboard } from '@/pages/Dashboard';
 
 export default function DashboardPage() {
   return (

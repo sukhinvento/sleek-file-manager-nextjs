@@ -2,7 +2,7 @@ import Head from 'next/head';
 import dynamic from 'next/dynamic';
 
 const ClientLayout = dynamic(
-  () => import('@/src/components/layout/ClientLayout').then(m => m.ClientLayout),
+  () => import('@/components/layout/ClientLayout').then(m => m.ClientLayout),
   { ssr: false }
 );
 
