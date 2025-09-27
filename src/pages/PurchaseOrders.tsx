@@ -144,8 +144,8 @@ export const PurchaseOrders = () => {
     <div className="flex flex-col gap-16">
       {/* Summary Cards - Horizontally scrollable */}
       <div>
-        <div className="overflow-x-auto max-w-full pb-4 scrollbar-hide">
-          <div className="flex gap-6 pr-6 min-w-max">
+        <div className="overflow-x-auto w-full pb-4 scrollbar-hide">
+          <div className="flex gap-6 pr-6">
             {/* Total Orders Card */}
             <Card className="min-w-[280px] border-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 hover-scale transition-all duration-300">
               <CardContent className="p-6">
