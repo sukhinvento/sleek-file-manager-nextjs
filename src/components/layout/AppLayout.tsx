@@ -72,19 +72,19 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       {/* Overlay for mobile when sidebar is open */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
       
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#1a202c] z-30 flex items-center justify-between px-4">
-        <span className="text-white text-xl font-semibold">Enterprise</span>
+      <div className="fixed top-0 left-0 right-0 h-14 bg-[#1a202c] z-30 flex items-center justify-between px-4 lg:hidden">
+        <span className="text-white text-lg font-semibold truncate">Enterprise</span>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg text-white hover:bg-gray-700 transition-colors"
+          className="p-2 rounded-lg text-white hover:bg-gray-700 transition-colors flex-shrink-0"
         >
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
       </div>
 
@@ -95,9 +95,17 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         toggleSidebar={toggleSidebar}
       />
       
+      {/* Desktop Sidebar Toggle */}
+      <button
+        onClick={toggleSidebar}
+        className="hidden lg:flex fixed top-4 z-30 p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all items-center justify-center"
+        style={{ left: isCollapsed ? '20px' : '272px' }}
+      >
+        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+      </button>
       
       {/* Page Header - Fixed at top */}
-      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 lg:mt-0 mt-16`}>
+      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 mt-14 lg:mt-0`}>
         <PageHeader 
           title={getPageTitle(location.pathname)}
           notificationCount={3}
@@ -108,9 +116,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         />
       </div>
       
-      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen overflow-hidden pt-20 lg:pt-16 bg-[#f7fafc]">
-          <div className="h-full overflow-y-auto px-6 py-6">
+      <div className={`flex-1 transition-all duration-300 ml-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+        <main className="h-screen overflow-hidden pt-28 lg:pt-16 bg-[#f7fafc]">
+          <div className="h-full overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
             {children}
           </div>
         </main>

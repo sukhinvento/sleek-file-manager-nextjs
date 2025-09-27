@@ -25,10 +25,10 @@ const statusColors = {
 };
 
 const sizeClasses = {
-  default: 'w-[90vw] max-w-[1200px]',
-  large: 'w-[95vw] max-w-[1400px]',
-  full: 'w-[98vw] max-w-[1600px]',
-  medium: 'w-[60vw] max-w-[60vw]'
+  default: 'w-full sm:w-[90vw] sm:max-w-[1200px]',
+  large: 'w-full sm:w-[95vw] sm:max-w-[1400px]',
+  full: 'w-full sm:w-[98vw] sm:max-w-[1600px]',
+  medium: 'w-full sm:w-[80vw] md:w-[70vw] lg:w-[60vw] sm:max-w-[60vw]'
 };
 
 export const ModernInventoryOverlay = ({ 
@@ -50,30 +50,30 @@ export const ModernInventoryOverlay = ({
         side="right"
       >
         {/* Modern Header */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-3 sm:p-6">
+          <div className="flex items-start justify-between mb-2 sm:mb-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
                 {status && (
-                  <Badge variant="outline" className={statusColors[statusColor]}>
+                  <Badge variant="outline" className={`${statusColors[statusColor]} text-xs shrink-0`}>
                     {status}
                   </Badge>
                 )}
               </div>
               {subtitle && (
-                <p className="text-muted-foreground text-sm font-medium">{subtitle}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{subtitle}</p>
               )}
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <div className="flex items-center gap-1 sm:gap-2 ml-2">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 hidden sm:flex">
                 <Minimize2 className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 hidden sm:flex">
                 <Maximize2 className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground hover:text-foreground h-8 w-8 p-0">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -81,11 +81,11 @@ export const ModernInventoryOverlay = ({
           
           {/* Header Actions */}
           {headerActions && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
                 {quickActions}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 {headerActions}
               </div>
             </div>

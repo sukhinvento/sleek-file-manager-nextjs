@@ -33,21 +33,22 @@
  
     --ring: 215 20.2% 65.1%;
  
-    --radius: 0.5rem;
+  --radius: 0.5rem;
 
-    --enterprise-50: #f5f7fa;
-    --enterprise-100: #e4e7eb;
-    --enterprise-200: #cbd2d9;
-    --enterprise-500: #718096;
-    --enterprise-600: #4a5568;
-    --enterprise-700: #2d3748;
-    --enterprise-800: #1a202c;
-    --enterprise-900: #171923;
-    
-    /* Adding blue colors for buttons */
-    --blue-500: #3182ce;
-    --blue-600: #2b6cb0;
-    --blue-700: #2c5282;
+  /* Enterprise colors - mobile-first responsive design */
+  --enterprise-50: #f5f7fa;
+  --enterprise-100: #e4e7eb;
+  --enterprise-200: #cbd2d9;
+  --enterprise-500: #718096;
+  --enterprise-600: #4a5568;
+  --enterprise-700: #2d3748;
+  --enterprise-800: #1a202c;
+  --enterprise-900: #171923;
+  
+  /* Mobile-optimized button colors */
+  --blue-500: #3182ce;
+  --blue-600: #2b6cb0;
+  --blue-700: #2c5282;
   }
  
   .dark {

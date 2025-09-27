@@ -313,10 +313,10 @@ export const ModernPOOverlay = ({
       quickActions={quickActions}
       size="medium"
     >
-      <div className="flex h-full">
+      <div className="flex h-full flex-col lg:flex-row">
         {/* Left Sidebar - Order Info */}
-        <div className="w-80 bg-muted/30 border-r border-border/50 flex-shrink-0 overflow-y-auto">
-          <div className="p-6 space-y-6">
+        <div className="w-full lg:w-80 bg-muted/30 border-r border-border/50 flex-shrink-0 overflow-y-auto order-2 lg:order-1">
+          <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
             {/* Order Summary */}
             <Card>
               <CardHeader className="pb-3">
@@ -456,20 +456,21 @@ export const ModernPOOverlay = ({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden order-1 lg:order-2">
           {/* Items Section */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
             <Card className="h-full">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <CardTitle className="flex items-center text-base sm:text-lg">
                     <Package className="h-5 w-5 mr-2" />
                     Order Items ({items.length})
                   </CardTitle>
                   {(isEditMode || !order) && (
-                    <Button onClick={() => addItem()}>
+                    <Button onClick={() => addItem()} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Item
+                      <span className="hidden sm:inline">Add Item</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   )}
                 </div>

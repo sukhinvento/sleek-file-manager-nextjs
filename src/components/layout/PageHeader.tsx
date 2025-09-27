@@ -37,15 +37,15 @@ export const PageHeader = ({
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="bg-[#1a202c] border-b border-[#2d3748] px-6 py-4">
-      <div className="flex items-center justify-between">
+    <div className="bg-[#1a202c] border-b border-[#2d3748] px-3 py-3 sm:px-6 sm:py-4">
+      <div className="flex items-center justify-between gap-2">
         {/* Left side - Title */}
-        <div>
-          <h1 className="text-2xl font-semibold text-white">{title}</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg sm:text-2xl font-semibold text-white truncate">{title}</h1>
         </div>
 
         {/* Right side - Actions, Notifications and Profile */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
           {/* Additional content from children */}
           {children}
           
@@ -53,10 +53,23 @@ export const PageHeader = ({
           {onCreateClick && (
             <Button
               onClick={onCreateClick}
-              className="action-button-primary"
+              className="action-button-primary hidden sm:flex"
+              size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />
-              {createButtonText}
+              <span className="hidden md:inline">{createButtonText}</span>
+              <span className="md:hidden">Add</span>
+            </Button>
+          )}
+
+          {/* Mobile Create Button */}
+          {onCreateClick && (
+            <Button
+              onClick={onCreateClick}
+              className="action-button-primary sm:hidden"
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
             </Button>
           )}
         
@@ -64,15 +77,15 @@ export const PageHeader = ({
         <div className="relative">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onNotificationClick}
-            className="relative text-gray-300 hover:text-white hover:bg-[#2d3748]"
+            className="relative text-gray-300 hover:text-white hover:bg-[#2d3748] h-8 w-8 p-0"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-4 w-4" />
             {notificationCount > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs"
               >
                 {notificationCount > 9 ? '9+' : notificationCount}
               </Badge>
@@ -83,10 +96,10 @@ export const PageHeader = ({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-[#2d3748]">
-              <Avatar className="h-10 w-10">
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-[#2d3748] p-0">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={userAvatar} alt={userName} />
-                <AvatarFallback className="bg-[#2d3748] text-white">
+                <AvatarFallback className="bg-[#2d3748] text-white text-xs">
                   {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
