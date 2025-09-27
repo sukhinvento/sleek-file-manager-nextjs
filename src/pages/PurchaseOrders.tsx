@@ -142,268 +142,276 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Summary Cards - Horizontally scrollable */}
-      <div>
-        <div className="overflow-x-auto max-w-full pb-2">
-          <div className="inline-flex w-max gap-4 pr-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalOrders}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{pendingOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ${(pendingValue / 1000).toFixed(0)}K pending value
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                <CheckCircle className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{approvedOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Delivered</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{deliveredOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  ${(totalValue / 1000).toFixed(0)}K
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Order</CardTitle>
-                <Package className="h-4 w-4 text-purple-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">
-                  ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Average order value</p>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Summary Cards - Mobile First Responsive */}
+        <div className="w-full">
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-4 min-w-fit px-2">
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{totalOrders}</div>
+                </CardContent>
+              </Card>
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
+                  <Clock className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingOrders}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ${(pendingValue / 1000).toFixed(0)}K pending value
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">{approvedOrders}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
+                </CardContent>
+              </Card>
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Delivered</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">{deliveredOrders}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
+                </CardContent>
+              </Card>
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Value</CardTitle>
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                    ${(totalValue / 1000).toFixed(0)}K
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
+                </CardContent>
+              </Card>
+              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Avg Order</CardTitle>
+                  <Package className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                    ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Average order value</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 p-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {statuses.map(status => (
-            <Button
-              key={status}
-              variant={selectedStatus === status ? 'default' : 'outline'}
-              className="rounded-full whitespace-nowrap"
-              onClick={() => setSelectedStatus(status)}
-            >
-              {status}
-            </Button>
-          ))}
-        </div>
-        
-        <div className="flex gap-3 flex-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by PO number, vendor, or address..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {/* Filters and Search - Mobile First */}
+        <div className="bg-card rounded-lg border p-4 space-y-4">
+          {/* Status Filter Pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {statuses.map(status => (
+              <Button
+                key={status}
+                variant={selectedStatus === status ? 'default' : 'outline'}
+                className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
+                onClick={() => setSelectedStatus(status)}
+              >
+                {status}
+              </Button>
+            ))}
           </div>
-          <Button variant="outline" onClick={() => setIsFilterModalOpen(true)}>
-            <Filter className="mr-2 h-4 w-4" /> Filters
-          </Button>
-          <Button variant="outline" onClick={() => setIsSortModalOpen(true)}>
-            <ArrowUpDown className="mr-2 h-4 w-4" /> Sort
-          </Button>
+          
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search PO, vendor, or address..."
+                className="pl-8 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+                <Filter className="mr-1 h-4 w-4" /> 
+                <span className="hidden sm:inline">Filters</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+                <ArrowUpDown className="mr-1 h-4 w-4" /> 
+                <span className="hidden sm:inline">Sort</span>
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Purchase Orders Responsive Table/Cards */}
-      <div>
-        <MobileTableView
-          data={filteredOrders}
-          columns={[
-            {
-              key: 'poNumber',
-              label: 'PO Number',
-              render: (value, order) => (
-                <div>
-                  <div className="font-medium">{value}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {order.items.length} items
+        {/* Purchase Orders Responsive Table/Cards */}
+        <div className="w-full">
+          <MobileTableView
+            data={filteredOrders}
+            columns={[
+              {
+                key: 'poNumber',
+                label: 'PO Number',
+                render: (value, order) => (
+                  <div>
+                    <div className="font-medium">{value}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {order.items.length} items
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Created by: {order.createdBy}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Created by: {order.createdBy}
+                )
+              },
+              {
+                key: 'vendorName',
+                label: 'Vendor',
+                render: (value, order) => (
+                  <div>
+                    <div className="font-medium">{value}</div>
+                    <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
+                    <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
                   </div>
-                </div>
-              )
-            },
-            {
-              key: 'vendorName',
-              label: 'Vendor',
-              render: (value, order) => (
-                <div>
-                  <div className="font-medium">{value}</div>
-                  <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
-                  <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
-                </div>
-              )
-            },
-            {
-              key: 'status',
-              label: 'Status',
-              render: (value, order) => (
-                <div className="space-y-2">
-                  <StatusBadge status={value} />
-                  {order.approvedBy && (
+                )
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (value, order) => (
+                  <div className="space-y-2">
+                    <StatusBadge status={value} />
+                    {order.approvedBy && (
+                      <div className="text-xs text-muted-foreground">
+                        Approved by: {order.approvedBy}
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              {
+                key: 'orderDate',
+                label: 'Timeline',
+                render: (value, order) => (
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      <span className="font-medium">Ordered:</span> {value}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium">Due:</span> {order.deliveryDate}
+                    </div>
+                    {order.fulfilmentDate && (
+                      <div className="text-sm text-green-600">
+                        <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              {
+                key: 'total',
+                label: 'Amount',
+                render: (value, order) => (
+                  <div>
+                    <div className="font-semibold text-lg">
+                      ${value.toLocaleString()}
+                    </div>
+                    {order.paidAmount > 0 && (
+                      <div className="text-sm text-green-600">
+                        Paid: ${order.paidAmount.toLocaleString()}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground">
-                      Approved by: {order.approvedBy}
+                      {order.paymentMethod}
                     </div>
-                  )}
-                </div>
-              )
-            },
-            {
-              key: 'orderDate',
-              label: 'Timeline',
-              render: (value, order) => (
-                <div className="space-y-1">
-                  <div className="text-sm">
-                    <span className="font-medium">Ordered:</span> {value}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Due:</span> {order.deliveryDate}
-                  </div>
-                  {order.fulfilmentDate && (
-                    <div className="text-sm text-green-600">
-                      <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
-                    </div>
-                  )}
-                </div>
-              )
-            },
-            {
-              key: 'total',
-              label: 'Amount',
-              render: (value, order) => (
-                <div>
-                  <div className="font-semibold text-lg">
-                    ${value.toLocaleString()}
-                  </div>
-                  {order.paidAmount > 0 && (
-                    <div className="text-sm text-green-600">
-                      Paid: ${order.paidAmount.toLocaleString()}
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground">
-                    {order.paymentMethod}
-                  </div>
-                </div>
-              )
-            }
-          ]}
-          getTitle={(order) => order.poNumber}
-          getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
-          getStatus={(order) => order.status}
-          getStatusColor={(order) => {
-            const colors = {
-              'Pending': 'yellow',
-              'Approved': 'blue',
-              'Delivered': 'green',
-              'Cancelled': 'red',
-              'Partial': 'orange'
-            };
-            return colors[order.status as keyof typeof colors] || 'gray';
+                )
+              }
+            ]}
+            getTitle={(order) => order.poNumber}
+            getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
+            getStatus={(order) => order.status}
+            getStatusColor={(order) => {
+              const colors = {
+                'Pending': 'yellow',
+                'Approved': 'blue',
+                'Delivered': 'green',
+                'Cancelled': 'red',
+                'Partial': 'orange'
+              };
+              return colors[order.status as keyof typeof colors] || 'gray';
+            }}
+            getActions={(order) => [
+              {
+                label: 'Edit',
+                onClick: () => handleEditOrder(order),
+                variant: 'outline' as const
+              },
+              {
+                label: 'Delete',
+                onClick: () => handleDeleteOrder(order.id),
+                variant: 'destructive' as const
+              }
+            ]}
+            onRowClick={handleViewOrder}
+          />
+        </div>
+
+        {/* Purchase Order Modal */}
+        <ModernPOOverlay
+          order={editingOrder}
+          isOpen={isNewOrderOpen || !!editingOrder}
+          onClose={() => {
+            setIsNewOrderOpen(false);
+            setEditingOrder(null);
+            setIsEditMode(false);
           }}
-          getActions={(order) => [
-            {
-              label: 'Edit',
-              onClick: () => handleEditOrder(order),
-              variant: 'outline' as const
-            },
-            {
-              label: 'Delete',
-              onClick: () => handleDeleteOrder(order.id),
-              variant: 'destructive' as const
-            }
-          ]}
-          onRowClick={handleViewOrder}
+          isEdit={isEditMode}
+          onSave={(newOrder) => {
+            setPurchaseOrders([...purchaseOrders, newOrder]);
+            setIsNewOrderOpen(false);
+          }}
+          onUpdate={(updatedOrder) => {
+            setPurchaseOrders(purchaseOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+            setEditingOrder(null);
+            setIsEditMode(false);
+          }}
+          onDelete={(orderId) => {
+            setPurchaseOrders(purchaseOrders.filter(o => o.id !== orderId));
+            setEditingOrder(null);
+          }}
+        />
+
+        {/* Filter Modal */}
+        <FilterModal
+          isOpen={isFilterModalOpen}
+          onClose={() => setIsFilterModalOpen(false)}
+          onApplyFilters={handleApplyFilters}
+          vendors={vendors}
+          statuses={statuses}
+        />
+
+        {/* Sort Modal */}
+        <SortModal
+          isOpen={isSortModalOpen}
+          onClose={() => setIsSortModalOpen(false)}
+          onApplySort={handleApplySort}
         />
       </div>
-
-      {/* Purchase Order Modal */}
-      <ModernPOOverlay
-        order={editingOrder}
-        isOpen={isNewOrderOpen || !!editingOrder}
-        onClose={() => {
-          setIsNewOrderOpen(false);
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        isEdit={isEditMode}
-        onSave={(newOrder) => {
-          setPurchaseOrders([...purchaseOrders, newOrder]);
-          setIsNewOrderOpen(false);
-        }}
-        onUpdate={(updatedOrder) => {
-          setPurchaseOrders(purchaseOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        onDelete={(orderId) => {
-          setPurchaseOrders(purchaseOrders.filter(o => o.id !== orderId));
-          setEditingOrder(null);
-        }}
-      />
-
-      {/* Filter Modal */}
-      <FilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={handleApplyFilters}
-        vendors={vendors}
-        statuses={statuses}
-      />
-
-      {/* Sort Modal */}
-      <SortModal
-        isOpen={isSortModalOpen}
-        onClose={() => setIsSortModalOpen(false)}
-        onApplySort={handleApplySort}
-      />
     </div>
   );
 };

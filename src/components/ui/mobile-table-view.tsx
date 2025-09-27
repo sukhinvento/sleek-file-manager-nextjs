@@ -37,7 +37,7 @@ export function MobileTableView<T>({
     return (
       <>
         {/* Mobile Cards View */}
-        <div className="block md:hidden">
+        <div className="block lg:hidden px-4 space-y-4">
           {data.map((item, index) => (
             <MobileResponsiveCard
               key={index}
@@ -51,12 +51,41 @@ export function MobileTableView<T>({
               }))}
               actions={getActions?.(item)}
               onViewClick={onRowClick ? () => onRowClick(item) : undefined}
+              // Enhanced props for purchase orders
+              orderDetails={
+                (item as any).poNumber ? {
+                  poNumber: (item as any).poNumber,
+                  itemCount: (item as any).items?.length || 0,
+                  createdBy: (item as any).createdBy
+                } : undefined
+              }
+              vendorDetails={
+                (item as any).vendorName ? {
+                  name: (item as any).vendorName,
+                  contact: (item as any).vendorContact,
+                  phone: (item as any).vendorPhone
+                } : undefined
+              }
+              timeline={
+                (item as any).orderDate ? {
+                  orderDate: (item as any).orderDate,
+                  deliveryDate: (item as any).deliveryDate,
+                  fulfilmentDate: (item as any).fulfilmentDate
+                } : undefined
+              }
+              amount={
+                (item as any).total ? {
+                  total: (item as any).total,
+                  paid: (item as any).paidAmount || 0,
+                  paymentMethod: (item as any).paymentMethod
+                } : undefined
+              }
             />
           ))}
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow>
