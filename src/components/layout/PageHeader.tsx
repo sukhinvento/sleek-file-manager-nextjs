@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,8 @@ interface PageHeaderProps {
   userAvatar?: string;
   onNotificationClick?: () => void;
   onProfileClick?: () => void;
+  onCreateClick?: () => void;
+  createButtonText?: string;
   children?: React.ReactNode;
 }
 
@@ -30,19 +32,33 @@ export const PageHeader = ({
   userAvatar,
   onNotificationClick,
   onProfileClick,
+  onCreateClick,
+  createButtonText = "Create New",
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-border">
-      {/* Left side - Title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-      </div>
+    <div className="bg-background border-b border-border px-6 py-4">
+      <div className="flex items-center justify-between">
+        {/* Left side - Title */}
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        </div>
 
-      {/* Right side - Notifications and Profile */}
-      <div className="flex items-center gap-4">
-        {/* Additional content from children */}
-        {children}
+        {/* Right side - Actions, Notifications and Profile */}
+        <div className="flex items-center gap-4">
+          {/* Additional content from children */}
+          {children}
+          
+          {/* Create Button */}
+          {onCreateClick && (
+            <Button
+              onClick={onCreateClick}
+              className="action-button-primary"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {createButtonText}
+            </Button>
+          )}
         
         {/* Notifications */}
         <div className="relative">
@@ -97,6 +113,7 @@ export const PageHeader = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </div>
   );

@@ -33,6 +33,18 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     return titleMap[pathname] || 'Dashboard';
   };
 
+  const getCreateButtonConfig = (pathname: string) => {
+    const configMap: Record<string, { text: string; action: () => void }> = {
+      '/inventory-dashboard': { text: 'Add Item', action: () => console.log('Add inventory item') },
+      '/inventory': { text: 'Add Item', action: () => console.log('Add inventory item') },
+      '/purchase-orders': { text: 'New Order', action: () => console.log('Create purchase order') },
+      '/sales-orders': { text: 'New Order', action: () => console.log('Create sales order') },
+      '/vendors': { text: 'Add Vendor', action: () => console.log('Add vendor') },
+      '/patients': { text: 'Add Patient', action: () => console.log('Add patient') },
+    };
+    return configMap[pathname];
+  };
+
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -65,17 +77,22 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         toggleSidebar={toggleSidebar}
       />
       
+      
+      {/* Page Header - Fixed at top */}
+      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 lg:mt-0 mt-16`}>
+        <PageHeader 
+          title={getPageTitle(location.pathname)}
+          notificationCount={3}
+          userName="John Smith"
+          userEmail="john.smith@company.com"
+          onCreateClick={getCreateButtonConfig(location.pathname)?.action}
+          createButtonText={getCreateButtonConfig(location.pathname)?.text}
+        />
+      </div>
+      
       <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-full overflow-auto">
-          <div className="px-6 py-4 mt-16 lg:mt-0">
-            <PageHeader 
-              title={getPageTitle(location.pathname)}
-              notificationCount={3}
-              userName="John Smith"
-              userEmail="john.smith@company.com"
-            />
-          </div>
-          <div className="px-6 pb-6">
+        <main className="h-full overflow-auto pt-20 lg:pt-16">
+          <div className="px-6 py-6">
             {children}
           </div>
         </main>
