@@ -167,7 +167,7 @@ export const PurchaseOrders = () => {
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-6">
         {/* Filters and Search */}
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4 p-4">
           <div className="flex gap-2 overflow-x-auto pb-2">
             {statuses.map(status => (
               <Button
