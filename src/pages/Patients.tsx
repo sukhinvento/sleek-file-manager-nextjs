@@ -103,12 +103,11 @@ export const Patients = () => {
   const admittedPatients = patients.filter(p => p.status === 'Admitted').length;
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex justify-between items-center">
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Summary Cards - Horizontally scrollable */}
+      <div className="flex-shrink-0 mb-6">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-4 min-w-max lg:grid lg:grid-cols-3 lg:min-w-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
@@ -136,10 +135,14 @@ export const Patients = () => {
             <div className="text-2xl font-bold text-yellow-600">{admittedPatients}</div>
           </CardContent>
         </Card>
+          </div>
+        </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto space-y-6">
+        {/* Filters and Search */}
+        <div className="flex flex-col md:flex-row gap-4">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {statuses.map(status => (
             <Button
@@ -265,6 +268,7 @@ export const Patients = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

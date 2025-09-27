@@ -80,13 +80,11 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* Header Section */}
-      <div className="flex justify-between items-start">
-      </div>
-
-      {/* Enhanced Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Enhanced Summary Cards - Horizontally scrollable */}
+      <div className="flex-shrink-0 mb-6">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-4 min-w-max">
         <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Orders</CardTitle>
@@ -158,9 +156,13 @@ export const PurchaseOrders = () => {
             <p className="text-xs text-muted-foreground mt-1">Average order value</p>
           </CardContent>
         </Card>
+          </div>
+        </div>
       </div>
 
-      {/* Enhanced Filters Layout */}
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto space-y-6">
+        {/* Enhanced Filters Layout */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-6">
           <FilterLayout
@@ -392,6 +394,7 @@ export const PurchaseOrders = () => {
         }}
         onDelete={handleDeleteOrder}
       />
+      </div>
     </div>
   );
 };

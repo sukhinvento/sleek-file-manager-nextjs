@@ -178,106 +178,111 @@ export const InventoryDashboard = () => {
   const metrics = calculateInventoryMetrics();
   
   return (
-    <div className="space-y-6">
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard
-          title="Total Items"
-          value={metrics.totalItems}
-          icon={Package}
-          subtitle={`${metrics.categories} categories`}
-          gradient={true}
-        />
-        
-        <SummaryCard
-          title="Critical Stock"
-          value={metrics.criticalStock}
-          icon={AlertTriangle}
-          badge={{ 
-            text: metrics.criticalStock > 0 ? 'Action Required' : 'All Good',
-            variant: metrics.criticalStock > 0 ? 'destructive' : 'default'
-          }}
-        />
-        
-        <SummaryCard
-          title="Low Stock"
-          value={metrics.lowStock}
-          icon={TrendingUp}
-          badge={{
-            text: `${metrics.normalStock} Normal`,
-            variant: 'secondary'
-          }}
-        />
-        
-        <SummaryCard
-          title="Total Value"
-          value={`$${metrics.totalValue.toLocaleString()}`}
-          icon={DollarSign}
-          subtitle="Current stock value"
-          gradient={true}
-        />
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Summary Cards - Fixed height, horizontally scrollable */}
+      <div className="flex-shrink-0 mb-6">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-6 min-w-max">
+            <SummaryCard
+              title="Total Items"
+              value={metrics.totalItems}
+              icon={Package}
+              subtitle={`${metrics.categories} categories`}
+              gradient={true}
+            />
+            
+            <SummaryCard
+              title="Critical Stock"
+              value={metrics.criticalStock}
+              icon={AlertTriangle}
+              badge={{ 
+                text: metrics.criticalStock > 0 ? 'Action Required' : 'All Good',
+                variant: metrics.criticalStock > 0 ? 'destructive' : 'default'
+              }}
+            />
+            
+            <SummaryCard
+              title="Low Stock"
+              value={metrics.lowStock}
+              icon={TrendingUp}
+              badge={{
+                text: `${metrics.normalStock} Normal`,
+                variant: 'secondary'
+              }}
+            />
+            
+            <SummaryCard
+              title="Total Value"
+              value={`$${metrics.totalValue.toLocaleString()}`}
+              icon={DollarSign}
+              subtitle="Current stock value"
+              gradient={true}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Charts and Detailed Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <CategoryBreakdown />
-          <RecentActivity />
-        </div>
-        
-        <div className="space-y-6">
-          <QuickActions />
+      {/* Charts and Detailed Info - Scrollable content */}
+      <div className="flex-1 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+          <div className="lg:col-span-2 overflow-y-auto space-y-6">
+            <CategoryBreakdown />
+            <RecentActivity />
+          </div>
           
-          {/* Stock Status Overview */}
-          <Card className="summary-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 icon-accent" />
-                Stock Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Normal Stock</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {metrics.normalStock} items
-                  </span>
+          <div className="overflow-y-auto space-y-6">
+            <QuickActions />
+            
+            {/* Stock Status Overview */}
+            <Card className="summary-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 icon-accent" />
+                  Stock Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Normal Stock</span>
+                    <span className="text-sm font-medium text-green-600">
+                      {metrics.normalStock} items
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(metrics.normalStock / metrics.totalItems) * 100} 
+                    className="h-2"
+                  />
                 </div>
-                <Progress 
-                  value={(metrics.normalStock / metrics.totalItems) * 100} 
-                  className="h-2"
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Low Stock</span>
-                  <span className="text-sm font-medium text-yellow-600">
-                    {metrics.lowStock} items
-                  </span>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Low Stock</span>
+                    <span className="text-sm font-medium text-yellow-600">
+                      {metrics.lowStock} items
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(metrics.lowStock / metrics.totalItems) * 100} 
+                    className="h-2"
+                  />
                 </div>
-                <Progress 
-                  value={(metrics.lowStock / metrics.totalItems) * 100} 
-                  className="h-2"
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Critical Stock</span>
-                  <span className="text-sm font-medium text-red-600">
-                    {metrics.criticalStock} items
-                  </span>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Critical Stock</span>
+                    <span className="text-sm font-medium text-red-600">
+                      {metrics.criticalStock} items
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(metrics.criticalStock / metrics.totalItems) * 100} 
+                    className="h-2"
+                  />
                 </div>
-                <Progress 
-                  value={(metrics.criticalStock / metrics.totalItems) * 100} 
-                  className="h-2"
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -71,31 +71,34 @@ export const Dashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-8">
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <QuickActionCard
-          icon={FileUp}
-          title="Upload Files"
-          description="Upload new files to the system"
-          onClick={() => navigate('/upload')}
-          uploadButton={true}
-          IllustrationIcon={FileAxis3d}
-        />
-        <QuickActionCard
-          icon={FileText}
-          title="View Files"
-          description="View and manage existing files"
-          onClick={() => navigate('/files')}
-          IllustrationIcon={FolderKanban}
-        />
-        <QuickActionCard
-          icon={Edit}
-          title="Edit Files"
-          description="Make changes to your files"
-          onClick={() => navigate('/edit')}
-          IllustrationIcon={FileCode2}
-        />
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-6 min-w-max lg:grid lg:grid-cols-3 lg:min-w-0">
+            <QuickActionCard
+              icon={FileUp}
+              title="Upload Files"
+              description="Upload new files to the system"
+              onClick={() => navigate('/upload')}
+              uploadButton={true}
+              IllustrationIcon={FileAxis3d}
+            />
+            <QuickActionCard
+              icon={FileText}
+              title="View Files"
+              description="View and manage existing files"
+              onClick={() => navigate('/files')}
+              IllustrationIcon={FolderKanban}
+            />
+            <QuickActionCard
+              icon={Edit}
+              title="Edit Files"
+              description="Make changes to your files"
+              onClick={() => navigate('/edit')}
+              IllustrationIcon={FileCode2}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -100,9 +100,19 @@
 @layer base {
   * {
     @apply border-border;
+    /* Hide all scrollbars globally */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden; /* Prevent horizontal scroll on body */
+  }
+  html {
+    overflow-x: hidden; /* Prevent horizontal scroll on html */
   }
 }
 
