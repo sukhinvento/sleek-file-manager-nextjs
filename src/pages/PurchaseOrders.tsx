@@ -144,11 +144,10 @@ export const PurchaseOrders = () => {
   return (
     <>
       {/* Summary Cards - Full Width with Horizontal Scroll */}
-        <div className="w-full">
-          <div 
-            className="w-full overflow-x-auto overflow-y-hidden pb-2 scrollbar-show" 
-            onScroll={() => {}}
-          >
+        <div 
+          className="w-full overflow-x-auto overflow-y-hidden pb-2 scrollbar-show" 
+          onScroll={() => {}}
+        >
             <div className="flex gap-3 sm:gap-4 pb-2 min-w-max">
               <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -217,10 +216,9 @@ export const PurchaseOrders = () => {
               </Card>
             </div>
           </div>
-        </div>
 
         {/* Filters and Search - Full Width */}
-        <div className="w-full bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 overflow-hidden">
+        <div className="bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 overflow-hidden">
           {/* Status Filter Pills */}
           <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted">
             <div className="flex gap-2 pb-2 w-max min-w-full">
@@ -263,7 +261,7 @@ export const PurchaseOrders = () => {
         </div>
 
         {/* Purchase Orders Responsive Table/Cards */}
-        <div className="w-full overflow-hidden">
+        <div className="overflow-hidden">
           <MobileTableView
             data={filteredOrders}
             columns={[
