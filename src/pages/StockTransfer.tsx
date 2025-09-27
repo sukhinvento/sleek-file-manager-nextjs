@@ -195,12 +195,6 @@ export const StockTransfer = () => {
     <div className="w-full space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Stock Transfer</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage stock transfers between locations and track delivery status
-          </p>
-        </div>
         <Button 
           className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => setIsNewTransferOpen(true)}

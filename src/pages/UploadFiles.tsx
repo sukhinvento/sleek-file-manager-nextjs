@@ -83,10 +83,6 @@ export const UploadFiles = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-enterprise-900">Upload Files</h1>
-        <p className="text-enterprise-500 mt-2">Upload your documents and files</p>
-      </div>
 
       <div className="max-w-xl space-y-4">
         <div className="flex gap-4">

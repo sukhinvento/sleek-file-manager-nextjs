@@ -85,10 +85,6 @@ export const ViewFiles = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-enterprise-900">View Files</h1>
-        <p className="text-enterprise-500 mt-2">Browse and manage your files</p>
-      </div>
 
       <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <div className="px-4 py-3 border-b flex items-center justify-between gap-4 bg-white sticky top-0 z-20">

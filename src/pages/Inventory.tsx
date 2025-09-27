@@ -181,12 +181,6 @@ export const Inventory = () => {
     <div className="w-full space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Track and manage your inventory levels, stock alerts, and item details
-          </p>
-        </div>
         <Button 
           className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => {

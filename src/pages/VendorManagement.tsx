@@ -273,12 +273,6 @@ export const VendorManagement = () => {
     <div className="w-full space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Vendor Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your vendor relationships and track performance
-          </p>
-        </div>
         <Button 
           className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
           onClick={() => setIsAddVendorOpen(true)}

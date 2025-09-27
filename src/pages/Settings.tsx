@@ -13,10 +13,6 @@ import { Switch } from "@/components/ui/switch";
 export const Settings = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-enterprise-900">Settings</h1>
-        <p className="text-enterprise-500 mt-2">Manage your application settings</p>
-      </div>
 
       <div className="grid gap-6 max-w-xl">
         <Card>
