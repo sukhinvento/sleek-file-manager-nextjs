@@ -95,15 +95,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         toggleSidebar={toggleSidebar}
       />
       
-      {/* Desktop Sidebar Toggle */}
-      <button
-        onClick={toggleSidebar}
-        className="hidden lg:flex fixed top-4 z-30 p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all items-center justify-center"
-        style={{ left: isCollapsed ? '20px' : '272px' }}
-      >
-        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
-      
       {/* Page Header - Fixed at top */}
       <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 mt-14 lg:mt-0`}>
         <PageHeader 
