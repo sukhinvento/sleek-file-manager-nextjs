@@ -7,11 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { ModernVendorOverlay } from '../components/vendor/ModernVendorOverlay';
+import { Vendor } from '../types/inventory';
 
 // Sample vendor data
-const vendorsData = [
+interface VendorWithRisk extends Vendor {
+  riskLevel: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+const vendorsData: VendorWithRisk[] = [
   {
-    id: 1,
+    id: '1',
     vendorId: 'V001',
     name: 'PharmaCorp Ltd',
     contactPerson: 'John Anderson',
@@ -27,10 +37,11 @@ const vendorsData = [
     creditLimit: 50000.00,
     outstandingBalance: 12500.00,
     paymentTerms: 'Net 30',
+    registrationDate: '2023-01-15',
     riskLevel: 'Low'
   },
   {
-    id: 2,
+    id: '2',
     vendorId: 'V002',
     name: 'MedSupply Co',
     contactPerson: 'Sarah Wilson',
@@ -46,10 +57,11 @@ const vendorsData = [
     creditLimit: 30000.00,
     outstandingBalance: 8500.00,
     paymentTerms: 'Net 15',
+    registrationDate: '2023-03-20',
     riskLevel: 'Medium'
   },
   {
-    id: 3,
+    id: '3',
     vendorId: 'V003',
     name: 'Equipment Plus',
     contactPerson: 'Mike Johnson',
@@ -65,6 +77,7 @@ const vendorsData = [
     creditLimit: 100000.00,
     outstandingBalance: 25000.00,
     paymentTerms: 'Net 45',
+    registrationDate: '2022-11-10',
     riskLevel: 'High'
   }
 ];
@@ -98,11 +111,13 @@ const RiskBadge = ({ level }: { level: string }) => {
 };
 
 export const VendorManagement = () => {
-  const [vendors, setVendors] = useState(vendorsData);
+  const [vendors, setVendors] = useState<VendorWithRisk[]>(vendorsData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<VendorWithRisk | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -306,11 +321,17 @@ export const VendorManagement = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingVendor(vendor);
+                            setIsEditMode(false);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingVendor(vendor);
+                            setIsEditMode(true);
+                          }}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Vendor
                           </DropdownMenuItem>
@@ -331,30 +352,32 @@ export const VendorManagement = () => {
           </div>
         </Card>
 
-        {/* Add Vendor Modal Placeholder */}
-        {isAddVendorOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">Add New Vendor</h2>
-              <p className="text-muted-foreground mb-4">Vendor form would go here...</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddVendorOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setIsAddVendorOpen(false);
-                  toast({
-                    title: "Vendor Added",
-                    description: "New vendor has been successfully added.",
-                  });
-                }}>
-                  Add Vendor
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Vendor Modal */}
+      <ModernVendorOverlay
+        vendor={editingVendor as any}
+        isOpen={isAddVendorOpen || !!editingVendor}
+        onClose={() => {
+          setIsAddVendorOpen(false);
+          setEditingVendor(null);
+          setIsEditMode(false);
+        }}
+        isEdit={isEditMode}
+        onSave={(newVendor) => {
+          setVendors([...vendors, newVendor]);
+          setIsAddVendorOpen(false);
+        }}
+        onUpdate={(updatedVendor) => {
+          setVendors(vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v));
+          setEditingVendor(null);
+          setIsEditMode(false);
+        }}
+        onDelete={(vendorId) => {
+          setVendors(vendors.filter(v => v.vendorId !== vendorId));
+          setEditingVendor(null);
+        }}
+      />
     </div>
   );
 };

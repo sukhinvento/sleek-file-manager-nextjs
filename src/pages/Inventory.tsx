@@ -7,47 +7,58 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { InventoryFormOverlay } from '../components/inventory/InventoryFormOverlay';
+import { InventoryItem } from '../types/inventory';
 
 // Sample inventory data
-const inventoryData = [
+const inventoryData: InventoryItem[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Paracetamol 500mg',
     category: 'Medication',
     sku: 'MED001',
     currentStock: 150,
     minStock: 50,
+    maxStock: 500,
     unitPrice: 2.50,
     supplier: 'PharmaCorp Ltd',
     expiryDate: '2025-08-15',
     location: 'Pharmacy-A1',
-    status: 'Normal'
+    batchNumber: 'B001',
+    description: 'Pain relief medication',
+    manufacturer: 'PharmaCorp'
   },
   {
-    id: 2,
+    id: '2',
     name: 'Surgical Gloves (Box)',
     category: 'Medical Supplies',
     sku: 'SUP001',
     currentStock: 25,
     minStock: 20,
+    maxStock: 100,
     unitPrice: 15.00,
     supplier: 'MedSupply Co',
     expiryDate: '2026-12-31',
     location: 'Storage-B2',
-    status: 'Low'
+    batchNumber: 'B002',
+    description: 'Sterile surgical gloves',
+    manufacturer: 'MedSupply Co'
   },
   {
-    id: 3,
+    id: '3',
     name: 'Ultrasound Gel',
     category: 'Medical Supplies',
     sku: 'SUP002',
     currentStock: 5,
     minStock: 15,
+    maxStock: 50,
     unitPrice: 8.50,
     supplier: 'MedEquip Inc',
     expiryDate: '2025-06-30',
     location: 'Radiology',
-    status: 'Critical'
+    batchNumber: 'B003',
+    description: 'Ultrasound gel for diagnostics',
+    manufacturer: 'MedEquip Inc'
   }
 ];
 
@@ -67,11 +78,13 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export const Inventory = () => {
-  const [items, setItems] = useState(inventoryData);
+  const [items, setItems] = useState<InventoryItem[]>(inventoryData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -88,21 +101,28 @@ export const Inventory = () => {
   const categories = ['All', 'Medication', 'Medical Supplies', 'Equipment'];
   const statuses = ['All', 'Normal', 'Low', 'Critical', 'Out of Stock'];
 
+  const getItemStatus = (item: InventoryItem): string => {
+    if (item.currentStock === 0) return 'Out of Stock';
+    if (item.currentStock < item.minStock) return 'Critical';
+    if (item.currentStock < item.minStock * 1.5) return 'Low';
+    return 'Normal';
+  };
+
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.supplier.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'All' || item.status === selectedStatus;
+    const matchesStatus = selectedStatus === 'All' || getItemStatus(item) === selectedStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const totalItems = items.length;
-  const lowStockItems = items.filter(item => item.status !== 'Normal').length;
-  const criticalItems = items.filter(item => item.status === 'Critical').length;
+  const lowStockItems = items.filter(item => getItemStatus(item) !== 'Normal').length;
+  const criticalItems = items.filter(item => getItemStatus(item) === 'Critical').length;
   const totalValue = items.reduce((sum, item) => sum + (item.currentStock * item.unitPrice), 0);
 
-  const handleDeleteItem = (itemId: number) => {
+  const handleDeleteItem = (itemId: string) => {
     setItems(items.filter(i => i.id !== itemId));
     toast({
       title: "Item Deleted",
@@ -220,7 +240,7 @@ export const Inventory = () => {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <StatusBadge status={item.status} />
+                        <StatusBadge status={getItemStatus(item)} />
                         <div className="text-sm text-muted-foreground">
                           {item.currentStock} / {item.minStock} min
                         </div>
@@ -246,11 +266,17 @@ export const Inventory = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingItem(item);
+                            setIsEditMode(false);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingItem(item);
+                            setIsEditMode(true);
+                          }}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Item
                           </DropdownMenuItem>
@@ -271,30 +297,28 @@ export const Inventory = () => {
           </div>
         </Card>
 
-        {/* Add Item Modal Placeholder */}
-        {isAddItemOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">Add New Item</h2>
-              <p className="text-muted-foreground mb-4">Item form would go here...</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddItemOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setIsAddItemOpen(false);
-                  toast({
-                    title: "Item Added",
-                    description: "New inventory item has been successfully added.",
-                  });
-                }}>
-                  Add Item
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Inventory Item Modal */}
+      <InventoryFormOverlay
+        item={editingItem}
+        isOpen={isAddItemOpen || !!editingItem}
+        onClose={() => {
+          setIsAddItemOpen(false);
+          setEditingItem(null);
+          setIsEditMode(false);
+        }}
+        isEdit={isEditMode}
+        onSave={(newItem) => {
+          setItems([...items, newItem]);
+          setIsAddItemOpen(false);
+        }}
+        onUpdate={(updatedItem) => {
+          setItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
+          setEditingItem(null);
+          setIsEditMode(false);
+        }}
+      />
     </div>
   );
 };

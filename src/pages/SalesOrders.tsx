@@ -7,47 +7,67 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { ModernSOOverlay } from '../components/sales-orders/ModernSOOverlay';
+import { SalesOrder } from '../types/inventory';
 
 // Sample sales orders data
-const salesOrdersData = [
+const salesOrdersData: SalesOrder[] = [
   {
-    id: 1,
+    id: '1',
     orderNumber: 'SO-2024-001',
     customerName: 'John Smith',
     customerEmail: 'john@example.com',
+    customerPhone: '+1-555-0123',
+    customerAddress: '123 Main St',
     orderDate: '2024-01-15',
     dueDate: '2024-01-22',
     status: 'Processing',
     paymentStatus: 'Paid',
     total: 2500.00,
-    itemCount: 3,
-    shippingAddress: '123 Main St, City, State'
+    items: [],
+    deliveryDate: '2024-01-22',
+    paymentMethod: 'Credit Card',
+    shippingAddress: '123 Main St, City, State',
+    billingAddress: '123 Main St, City, State',
+    notes: ''
   },
   {
-    id: 2,
+    id: '2',
     orderNumber: 'SO-2024-002',
     customerName: 'Emily Davis',
     customerEmail: 'emily@example.com',
+    customerPhone: '+1-555-0124',
+    customerAddress: '456 Oak Ave',
     orderDate: '2024-01-16',
     dueDate: '2024-01-23',
     status: 'Shipped',
     paymentStatus: 'Paid',
     total: 4200.00,
-    itemCount: 5,
-    shippingAddress: '456 Oak Ave, City, State'
+    items: [],
+    deliveryDate: '2024-01-23',
+    paymentMethod: 'Bank Transfer',
+    shippingAddress: '456 Oak Ave, City, State',
+    billingAddress: '456 Oak Ave, City, State',
+    notes: ''
   },
   {
-    id: 3,
+    id: '3',
     orderNumber: 'SO-2024-003',
     customerName: 'Robert Wilson',
     customerEmail: 'robert@example.com',
+    customerPhone: '+1-555-0125',
+    customerAddress: '789 Pine Rd',
     orderDate: '2024-01-17',
     dueDate: '2024-01-24',
     status: 'Delivered',
     paymentStatus: 'Pending',
     total: 1800.00,
-    itemCount: 2,
-    shippingAddress: '789 Pine Rd, City, State'
+    items: [],
+    deliveryDate: '2024-01-24',
+    paymentMethod: 'Cash',
+    shippingAddress: '789 Pine Rd, City, State',
+    billingAddress: '789 Pine Rd, City, State',
+    notes: ''
   }
 ];
 
@@ -75,11 +95,13 @@ const StatusBadge = ({ status, type = 'order' }: { status: string; type?: 'order
 };
 
 export const SalesOrders = () => {
-  const [orders, setOrders] = useState(salesOrdersData);
+  const [orders, setOrders] = useState<SalesOrder[]>(salesOrdersData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('All');
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -110,7 +132,7 @@ export const SalesOrders = () => {
   const pendingPayments = orders.filter(order => order.paymentStatus === 'Pending').reduce((sum, order) => sum + order.total, 0);
 
   const handleDeleteOrder = (orderId: number) => {
-    setOrders(orders.filter(o => o.id !== orderId));
+    setOrders(orders.filter(o => parseInt(o.id) !== orderId));
     toast({
       title: "Sales Order Deleted",
       description: "Sales order has been successfully deleted.",
@@ -222,7 +244,7 @@ export const SalesOrders = () => {
                       <div>
                         <div className="font-medium">{order.orderNumber}</div>
                         <div className="text-sm text-muted-foreground">
-                          {order.itemCount} items
+                          {order.items.length} items
                         </div>
                       </div>
                     </TableCell>
@@ -261,16 +283,22 @@ export const SalesOrders = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingOrder(order);
+                            setIsEditMode(false);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingOrder(order);
+                            setIsEditMode(true);
+                          }}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Order
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => handleDeleteOrder(order.id)}
+                            onClick={() => handleDeleteOrder(parseInt(order.id))}
                             className="text-red-600"
                           >
                             <AlertTriangle className="mr-2 h-4 w-4" />
@@ -286,30 +314,32 @@ export const SalesOrders = () => {
           </div>
         </Card>
 
-        {/* New Order Modal Placeholder */}
-        {isNewOrderOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">New Sales Order</h2>
-              <p className="text-muted-foreground mb-4">Order form would go here...</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsNewOrderOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setIsNewOrderOpen(false);
-                  toast({
-                    title: "Order Created",
-                    description: "New sales order has been successfully created.",
-                  });
-                }}>
-                  Create Order
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Sales Order Modal */}
+      <ModernSOOverlay
+        order={editingOrder}
+        isOpen={isNewOrderOpen || !!editingOrder}
+        onClose={() => {
+          setIsNewOrderOpen(false);
+          setEditingOrder(null);
+          setIsEditMode(false);
+        }}
+        isEdit={isEditMode}
+        onSave={(newOrder) => {
+          setOrders([...orders, newOrder]);
+          setIsNewOrderOpen(false);
+        }}
+        onUpdate={(updatedOrder) => {
+          setOrders(orders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+          setEditingOrder(null);
+          setIsEditMode(false);
+        }}
+        onDelete={(orderId) => {
+          setOrders(orders.filter(o => o.id !== orderId));
+          setEditingOrder(null);
+        }}
+      />
     </div>
   );
 };

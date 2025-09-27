@@ -7,26 +7,27 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { ModernStockTransferOverlay } from '../components/stock-transfer/ModernStockTransferOverlay';
+import { StockTransfer as StockTransferType } from '../types/inventory';
 
-// Sample stock transfer data
-const stockTransfersData = [
+// Sample stock transfer data  
+const stockTransfersData: StockTransferType[] = [
   {
-    id: 1,
+    id: '1',
     transferId: 'ST-2024-001',
     fromLocation: 'Main Warehouse',
     toLocation: 'Emergency Room',
     status: 'Completed',
-    priority: 'Normal',
+    priority: 'Medium',
     requestDate: '2024-01-15',
     completedDate: '2024-01-16',
     requestedBy: 'Dr. Sarah Johnson',
     approvedBy: 'John Manager',
-    transferValue: 1250.00,
-    itemCount: 5,
-    notes: 'Urgent request for emergency supplies'
+    reason: 'Urgent request for emergency supplies',
+    items: []
   },
   {
-    id: 2,
+    id: '2',
     transferId: 'ST-2024-002',
     fromLocation: 'Eastern Warehouse',
     toLocation: 'ICU',
@@ -36,12 +37,11 @@ const stockTransfersData = [
     completedDate: null,
     requestedBy: 'Nurse Manager',
     approvedBy: 'Jane Supervisor',
-    transferValue: 875.50,
-    itemCount: 3,
-    notes: 'Critical supplies for ICU'
+    reason: 'Critical supplies for ICU',
+    items: []
   },
   {
-    id: 3,
+    id: '3',
     transferId: 'ST-2024-003',
     fromLocation: 'Central Storage',
     toLocation: 'Pharmacy',
@@ -51,9 +51,8 @@ const stockTransfersData = [
     completedDate: null,
     requestedBy: 'Pharmacist',
     approvedBy: null,
-    transferValue: 2100.00,
-    itemCount: 8,
-    notes: 'Regular stock replenishment'
+    reason: 'Regular stock replenishment',
+    items: []
   }
 ];
 
@@ -89,11 +88,13 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
 };
 
 export const StockTransfer = () => {
-  const [transfers, setTransfers] = useState(stockTransfersData);
+  const [transfers, setTransfers] = useState<StockTransferType[]>(stockTransfersData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedPriority, setSelectedPriority] = useState<string>('All');
   const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState<StockTransferType | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -123,7 +124,7 @@ export const StockTransfer = () => {
   const totalTransfers = transfers.length;
   const pendingTransfers = transfers.filter(transfer => transfer.status === 'Pending').length;
   const inTransitTransfers = transfers.filter(transfer => transfer.status === 'In Transit').length;
-  const totalValue = transfers.reduce((sum, transfer) => sum + transfer.transferValue, 0);
+  const totalValue = transfers.reduce((sum, transfer) => sum + transfer.items.reduce((itemSum, item) => itemSum + (item.quantity * 10), 0), 0);
 
   const handleDeleteTransfer = (transferId: string) => {
     setTransfers(transfers.filter(t => t.transferId !== transferId));
@@ -236,7 +237,7 @@ export const StockTransfer = () => {
                       <div>
                         <div className="font-medium">{transfer.transferId}</div>
                         <div className="text-sm text-muted-foreground">
-                          {transfer.itemCount} items
+                          {transfer.items.length} items
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {transfer.requestDate}
@@ -274,7 +275,7 @@ export const StockTransfer = () => {
                     </TableCell>
                     <TableCell>
                       <div className="font-semibold">
-                        ${transfer.transferValue.toLocaleString()}
+                        Estimated: ${transfer.items.reduce((sum, item) => sum + (item.quantity * 10), 0).toLocaleString()}
                       </div>
                       {transfer.completedDate && (
                         <div className="text-xs text-muted-foreground">
@@ -290,11 +291,17 @@ export const StockTransfer = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingTransfer(transfer);
+                            setIsEditMode(false);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingTransfer(transfer);
+                            setIsEditMode(true);
+                          }}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Transfer
                           </DropdownMenuItem>
@@ -315,30 +322,32 @@ export const StockTransfer = () => {
           </div>
         </Card>
 
-        {/* New Transfer Modal Placeholder */}
-        {isNewTransferOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">New Stock Transfer</h2>
-              <p className="text-muted-foreground mb-4">Transfer form would go here...</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsNewTransferOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setIsNewTransferOpen(false);
-                  toast({
-                    title: "Transfer Created",
-                    description: "New stock transfer has been successfully created.",
-                  });
-                }}>
-                  Create Transfer
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Stock Transfer Modal */}
+      <ModernStockTransferOverlay
+        transfer={editingTransfer as any}
+        isOpen={isNewTransferOpen || !!editingTransfer}
+        onClose={() => {
+          setIsNewTransferOpen(false);
+          setEditingTransfer(null);
+          setIsEditMode(false);
+        }}
+        isEdit={isEditMode}
+        onSave={(newTransfer) => {
+          setTransfers([...transfers, newTransfer]);
+          setIsNewTransferOpen(false);
+        }}
+        onUpdate={(updatedTransfer) => {
+          setTransfers(transfers.map(t => t.id === updatedTransfer.id ? updatedTransfer : t));
+          setEditingTransfer(null);
+          setIsEditMode(false);
+        }}
+        onDelete={(transferId) => {
+          setTransfers(transfers.filter(t => t.transferId !== transferId));
+          setEditingTransfer(null);
+        }}
+      />
     </div>
   );
 };
