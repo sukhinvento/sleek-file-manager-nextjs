@@ -142,8 +142,8 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="w-full max-w-none px-4 py-6 space-y-6 overflow-x-hidden">
-        {/* Summary Cards - Full Width with Horizontal Scroll */}
+    <>
+      {/* Summary Cards - Full Width with Horizontal Scroll */}
         <div className="w-full">
           <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted pb-2">
             <div className="flex gap-4 pb-2 w-max min-w-full">
@@ -411,7 +411,7 @@ export const PurchaseOrders = () => {
           isOpen={isSortModalOpen}
           onClose={() => setIsSortModalOpen(false)}
           onApplySort={handleApplySort}
-        />
-      </div>
-    );
-  };
+      />
+    </>
+  );
+};
