@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, DollarSign } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, DollarSign, ArrowUpDown } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -10,6 +10,8 @@ import { purchaseOrdersData } from '../data/purchaseOrderData';
 import { PurchaseOrder } from '../types/purchaseOrder';
 import { toast } from "@/hooks/use-toast";
 import { ModernPOOverlay } from '../components/purchase-orders/ModernPOOverlay';
+import { FilterModal } from '../components/purchase-orders/FilterModal';
+import { SortModal } from '../components/purchase-orders/SortModal';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
@@ -37,6 +39,10 @@ export const PurchaseOrders = () => {
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<any>({});
+  const [sortConfig, setSortConfig] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -60,7 +66,36 @@ export const PurchaseOrders = () => {
       order.shippingAddress.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'All' || order.status === selectedStatus;
     const matchesVendor = selectedVendor === 'All' || order.vendorName === selectedVendor;
-    return matchesSearch && matchesStatus && matchesVendor;
+    
+    // Apply advanced filters
+    const matchesAdvancedFilters = (
+      (!appliedFilters.poNumber || order.poNumber.toLowerCase().includes(appliedFilters.poNumber.toLowerCase())) &&
+      (!appliedFilters.vendorName || order.vendorName === appliedFilters.vendorName) &&
+      (!appliedFilters.vendorContact || order.vendorContact.toLowerCase().includes(appliedFilters.vendorContact.toLowerCase())) &&
+      (!appliedFilters.status || order.status === appliedFilters.status) &&
+      (!appliedFilters.createdBy || order.createdBy.toLowerCase().includes(appliedFilters.createdBy.toLowerCase())) &&
+      (!appliedFilters.paymentMethod || order.paymentMethod === appliedFilters.paymentMethod) &&
+      (!appliedFilters.minAmount || order.total >= parseInt(appliedFilters.minAmount)) &&
+      (!appliedFilters.maxAmount || order.total <= parseInt(appliedFilters.maxAmount))
+    );
+    
+    return matchesSearch && matchesStatus && matchesVendor && matchesAdvancedFilters;
+  }).sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    const { field, direction } = sortConfig;
+    let aValue = a[field as keyof PurchaseOrder];
+    let bValue = b[field as keyof PurchaseOrder];
+    
+    // Handle different data types
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    return 0;
   });
 
   // Calculate metrics
@@ -86,6 +121,22 @@ export const PurchaseOrders = () => {
     toast({
       title: "Purchase Order Deleted",
       description: "Purchase order has been successfully deleted.",
+    });
+  };
+
+  const handleApplyFilters = (filters: any) => {
+    setAppliedFilters(filters);
+    toast({
+      title: "Filters Applied",
+      description: "Purchase orders have been filtered based on your criteria.",
+    });
+  };
+
+  const handleApplySort = (config: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(config);
+    toast({
+      title: "Sort Applied",
+      description: `Orders sorted by ${config.field} (${config.direction === 'asc' ? 'ascending' : 'descending'}).`,
     });
   };
 
@@ -192,8 +243,11 @@ export const PurchaseOrders = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setIsFilterModalOpen(true)}>
               <Filter className="mr-2 h-4 w-4" /> Filters
+            </Button>
+            <Button variant="outline" onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown className="mr-2 h-4 w-4" /> Sort
             </Button>
           </div>
         </div>
@@ -331,6 +385,22 @@ export const PurchaseOrders = () => {
           setPurchaseOrders(purchaseOrders.filter(o => o.id !== orderId));
           setEditingOrder(null);
         }}
+      />
+
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onApplyFilters={handleApplyFilters}
+        vendors={vendors}
+        statuses={statuses}
+      />
+
+      {/* Sort Modal */}
+      <SortModal
+        isOpen={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        onApplySort={handleApplySort}
       />
     </div>
   );
