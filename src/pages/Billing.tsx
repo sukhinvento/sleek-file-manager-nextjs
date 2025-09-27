@@ -87,9 +87,9 @@ export const Billing = () => {
   const pendingPayments = billingRecords.filter(record => record.status !== 'Paid').length;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col space-y-6">
       {/* Summary Cards - Horizontally scrollable */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="mb-6">
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-4 min-w-max lg:grid lg:grid-cols-4 lg:min-w-0">
         <Card>

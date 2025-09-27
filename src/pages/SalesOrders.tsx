@@ -140,9 +140,9 @@ export const SalesOrders = () => {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col space-y-6">
       {/* Summary Cards - Horizontally scrollable */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="mb-6">
         <div className="overflow-x-auto max-w-full pb-2">
           <div className="inline-flex w-max gap-4 pr-6">
             <Card>

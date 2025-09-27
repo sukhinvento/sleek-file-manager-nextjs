@@ -178,9 +178,9 @@ export const InventoryDashboard = () => {
   const metrics = calculateInventoryMetrics();
   
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col space-y-6">
       {/* Summary Cards - Fixed height, horizontally scrollable */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="mb-6">
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-6 min-w-max">
             <SummaryCard

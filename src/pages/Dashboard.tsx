@@ -72,8 +72,8 @@ export const Dashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-col space-y-6">
+      <div className="">
         <div className="space-y-4 sm:space-y-0">
           {/* Mobile: Stack cards vertically */}
           <div className="flex flex-col gap-4 sm:hidden">

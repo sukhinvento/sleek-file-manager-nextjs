@@ -135,9 +135,9 @@ export const StockTransfer = () => {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col space-y-6">
       {/* Summary Cards - Horizontally scrollable */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="mb-6">
         <div className="overflow-x-auto max-w-full pb-2">
           <div className="inline-flex w-max gap-4 pr-6">
             <Card>
@@ -182,8 +182,8 @@ export const StockTransfer = () => {
         </div>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto space-y-6">
+      {/* Main Content */}
+      <div className="space-y-6">
         {/* Filters and Search */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex gap-2 overflow-x-auto pb-2">
