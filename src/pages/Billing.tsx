@@ -89,10 +89,6 @@ export const Billing = () => {
   return (
     <div className="w-full space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Billing & Invoicing</h1>
-        <Button className="bg-enterprise-700 hover:bg-enterprise-800">
-          <Plus className="mr-2 h-4 w-4" /> New Invoice
-        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -168,8 +164,9 @@ export const Billing = () => {
       </div>
 
       {/* Billing Table */}
-      <div className="rounded-md border overflow-hidden">
-        <Table>
+      <Card className="border-border/50 shadow-sm">
+        <div className="overflow-hidden">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Invoice Details</TableHead>
@@ -230,7 +227,8 @@ export const Billing = () => {
             ))}
           </TableBody>
         </Table>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 };

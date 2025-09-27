@@ -71,12 +71,6 @@ export const PurchaseOrders = () => {
     <div className="w-full space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-start">
-        <Button
-          className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg"
-          onClick={() => setIsNewOrderOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" /> New Purchase Order
-        </Button>
       </div>
 
       {/* Enhanced Summary Cards */}

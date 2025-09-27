@@ -91,10 +91,6 @@ export const Patients = () => {
   return (
     <div className="w-full space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Patient Management</h1>
-        <Button className="bg-enterprise-700 hover:bg-enterprise-800">
-          <Plus className="mr-2 h-4 w-4" /> Add New Patient
-        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -134,8 +130,10 @@ export const Patients = () => {
           {statuses.map(status => (
             <Button
               key={status}
-              variant={selectedStatus === status ? 'default' : 'outline'}
-              className={`rounded-full whitespace-nowrap ${selectedStatus === status ? 'bg-enterprise-700' : ''}`}
+              variant={status === selectedStatus ? 'default' : 'outline'}
+              className={`rounded-full whitespace-nowrap ${
+                status === selectedStatus ? 'bg-primary text-primary-foreground' : ''
+              }`}
               onClick={() => setSelectedStatus(status)}
             >
               {status}
@@ -161,8 +159,9 @@ export const Patients = () => {
       </div>
 
       {/* Patients Table */}
-      <div className="rounded-md border overflow-hidden">
-        <Table>
+      <Card className="border-border/50 shadow-sm">
+        <div className="overflow-hidden">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Patient Details</TableHead>
@@ -226,8 +225,9 @@ export const Patients = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
-      </div>
+          </Table>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { PageHeader } from './PageHeader';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -13,6 +13,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getPageTitle = (pathname: string) => {
     const titleMap: Record<string, string> = {
@@ -35,12 +36,14 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   const getCreateButtonConfig = (pathname: string) => {
     const configMap: Record<string, { text: string; action: () => void }> = {
-      '/inventory-dashboard': { text: 'Add Item', action: () => console.log('Add inventory item') },
+      '/inventory-dashboard': { text: 'Add Item', action: () => navigate('/inventory') },
       '/inventory': { text: 'Add Item', action: () => console.log('Add inventory item') },
       '/purchase-orders': { text: 'New Order', action: () => console.log('Create purchase order') },
       '/sales-orders': { text: 'New Order', action: () => console.log('Create sales order') },
       '/vendors': { text: 'Add Vendor', action: () => console.log('Add vendor') },
       '/patients': { text: 'Add Patient', action: () => console.log('Add patient') },
+      '/billing': { text: 'New Invoice', action: () => console.log('Create invoice') },
+      '/stock-transfer': { text: 'New Transfer', action: () => console.log('Create transfer') },
     };
     return configMap[pathname];
   };
