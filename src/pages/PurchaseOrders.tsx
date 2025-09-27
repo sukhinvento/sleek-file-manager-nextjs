@@ -218,51 +218,95 @@ export const PurchaseOrders = () => {
             </div>
           </div>
 
-        {/* Filters and Search - Full Width */}
-        <div className="bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 overflow-hidden">
-          {/* Status Filter Pills */}
-          <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted">
-            <div className="flex gap-2 pb-2 w-max min-w-full">
-            {statuses.map(status => (
-              <Button
-                key={status}
-                variant={selectedStatus === status ? 'default' : 'outline'}
-                className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
-                onClick={() => setSelectedStatus(status)}
-              >
-                {status}
-              </Button>
-            ))}
+        {/* Filters and Search - Responsive Layout */}
+        <div className="bg-card rounded-lg border p-3 sm:p-4 space-y-3 lg:space-y-0 overflow-hidden">
+          {/* Desktop Layout - All in one line */}
+          <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
+            {/* Status Filter Pills */}
+            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-2 pb-2 w-max min-w-0">
+                {statuses.map(status => (
+                  <Button
+                    key={status}
+                    variant={selectedStatus === status ? 'default' : 'outline'}
+                    className="rounded-full whitespace-nowrap text-sm px-3 py-1 animate-fade-in"
+                    onClick={() => setSelectedStatus(status)}
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-          
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full overflow-hidden">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search PO, vendor, or address..."
-                className="pl-8 text-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
+            
+            {/* Search and Action Buttons */}
+            <div className="flex gap-3 flex-shrink-0 min-w-0">
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search PO, vendor, or address..."
+                  className="pl-8 text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
               <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
                 <Filter className="mr-1 h-4 w-4" /> 
-                <span className="hidden sm:inline">Filters</span>
+                Filters
               </Button>
               <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
                 <ArrowUpDown className="mr-1 h-4 w-4" /> 
-                <span className="hidden sm:inline">Sort</span>
+                Sort
               </Button>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Layout - Stacked */}
+          <div className="lg:hidden space-y-3">
+            {/* Status Filter Pills */}
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-2 pb-2 w-max min-w-full">
+                {statuses.map(status => (
+                  <Button
+                    key={status}
+                    variant={selectedStatus === status ? 'default' : 'outline'}
+                    className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
+                    onClick={() => setSelectedStatus(status)}
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 overflow-hidden">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search PO, vendor, or address..."
+                  className="pl-8 text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+                  <Filter className="mr-1 h-4 w-4" /> 
+                  <span className="hidden sm:inline">Filters</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+                  <ArrowUpDown className="mr-1 h-4 w-4" /> 
+                  <span className="hidden sm:inline">Sort</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Purchase Orders Responsive Table/Cards */}
-        <div className="overflow-hidden">
+        <div className="overflow-hidden mt-6">
           <MobileTableView
             data={filteredOrders}
             columns={[
