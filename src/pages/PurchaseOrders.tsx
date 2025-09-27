@@ -70,11 +70,11 @@ export const PurchaseOrders = () => {
     // Apply advanced filters
     const matchesAdvancedFilters = (
       (!appliedFilters.poNumber || order.poNumber.toLowerCase().includes(appliedFilters.poNumber.toLowerCase())) &&
-      (!appliedFilters.vendorName || order.vendorName === appliedFilters.vendorName) &&
+      (!appliedFilters.vendorName || appliedFilters.vendorName === 'all-vendors' || order.vendorName === appliedFilters.vendorName) &&
       (!appliedFilters.vendorContact || order.vendorContact.toLowerCase().includes(appliedFilters.vendorContact.toLowerCase())) &&
-      (!appliedFilters.status || order.status === appliedFilters.status) &&
+      (!appliedFilters.status || appliedFilters.status === 'all-statuses' || order.status === appliedFilters.status) &&
       (!appliedFilters.createdBy || order.createdBy.toLowerCase().includes(appliedFilters.createdBy.toLowerCase())) &&
-      (!appliedFilters.paymentMethod || order.paymentMethod === appliedFilters.paymentMethod) &&
+      (!appliedFilters.paymentMethod || appliedFilters.paymentMethod === 'all-methods' || order.paymentMethod === appliedFilters.paymentMethod) &&
       (!appliedFilters.minAmount || order.total >= parseInt(appliedFilters.minAmount)) &&
       (!appliedFilters.maxAmount || order.total <= parseInt(appliedFilters.maxAmount))
     );

@@ -90,7 +90,7 @@ export const FilterModal = ({ isOpen, onClose, onApplyFilters, vendors, statuses
                 <SelectValue placeholder="Select vendor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Vendors</SelectItem>
+                <SelectItem value="all-vendors">All Vendors</SelectItem>
                 {vendors.filter(v => v !== 'All').map(vendor => (
                   <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
                 ))}
@@ -116,7 +116,7 @@ export const FilterModal = ({ isOpen, onClose, onApplyFilters, vendors, statuses
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all-statuses">All Statuses</SelectItem>
                 {statuses.filter(s => s !== 'All').map(status => (
                   <SelectItem key={status} value={status}>{status}</SelectItem>
                 ))}
@@ -131,7 +131,7 @@ export const FilterModal = ({ isOpen, onClose, onApplyFilters, vendors, statuses
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Methods</SelectItem>
+                <SelectItem value="all-methods">All Methods</SelectItem>
                 <SelectItem value="Credit Card">Credit Card</SelectItem>
                 <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                 <SelectItem value="Cash">Cash</SelectItem>
