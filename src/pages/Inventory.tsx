@@ -193,8 +193,8 @@ export const Inventory = () => {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Enhanced Summary Cards - Horizontally scrollable */}
       <div className="flex-shrink-0 mb-6">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-max">
+        <div className="overflow-x-auto max-w-full pb-2">
+          <div className="inline-flex w-max gap-4 pr-6">
         <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Items</CardTitle>
@@ -329,7 +329,7 @@ export const Inventory = () => {
 
       {/* Enhanced Inventory Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
