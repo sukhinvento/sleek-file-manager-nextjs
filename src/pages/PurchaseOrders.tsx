@@ -141,9 +141,9 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col gap-16">
       {/* Summary Cards - Horizontally scrollable */}
-      <div className="mb-6">
+      <div>
         <div className="overflow-x-auto max-w-full pb-2">
           <div className="inline-flex w-max gap-4 pr-6">
             <Card>
@@ -216,7 +216,7 @@ export const PurchaseOrders = () => {
       </div>
 
       {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto space-y-6">
+      <div className="flex-1 overflow-y-auto">
         {/* Filters and Search */}
         <div className="flex flex-col md:flex-row gap-4 p-4">
           <div className="flex gap-2 overflow-x-auto pb-2">
