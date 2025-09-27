@@ -1,27 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, ArrowRight, MapPin, Package, Clock, CheckCircle, AlertTriangle, Eye, Edit, MoreVertical, Truck, User } from 'lucide-react';
-import { FilterLayout } from "@/components/ui/filter-layout";
+import { Search, Plus, Filter, ArrowRight, MapPin, Package, Clock, CheckCircle, AlertTriangle, Eye, Edit, MoreVertical, Truck, User, TrendingUp } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ModernStockTransferOverlay } from "@/components/stock-transfer/ModernStockTransferOverlay";
-import { FilterModal } from "@/components/ui/filter-modal";
 import { toast } from "@/hooks/use-toast";
 
-// Enhanced stock transfer data
+// Sample stock transfer data
 const stockTransfersData = [
   {
     id: 1,
-    transferId: 'ST-100001',
+    transferId: 'ST-2024-001',
     fromLocation: 'Main Warehouse',
     toLocation: 'Emergency Room',
-    items: [
-      { name: 'Bandages', quantity: 50, sku: 'MED-BND-001' },
-      { name: 'Syringes', quantity: 100, sku: 'MED-SYR-002' }
-    ],
     status: 'Completed',
     priority: 'Normal',
     requestDate: '2024-01-15',
@@ -29,18 +22,14 @@ const stockTransfersData = [
     requestedBy: 'Dr. Sarah Johnson',
     approvedBy: 'John Manager',
     transferValue: 1250.00,
-    department: 'Emergency Medicine',
+    itemCount: 5,
     notes: 'Urgent request for emergency supplies'
   },
   {
     id: 2,
-    transferId: 'ST-100002',
+    transferId: 'ST-2024-002',
     fromLocation: 'Eastern Warehouse',
     toLocation: 'ICU',
-    items: [
-      { name: 'IV Fluids', quantity: 25, sku: 'MED-IV-003' },
-      { name: 'Oxygen Masks', quantity: 15, sku: 'MED-OXY-004' }
-    ],
     status: 'In Transit',
     priority: 'High',
     requestDate: '2024-01-17',
@@ -48,78 +37,37 @@ const stockTransfersData = [
     requestedBy: 'Nurse Manager',
     approvedBy: 'Jane Supervisor',
     transferValue: 875.50,
-    department: 'Intensive Care',
-    notes: 'Critical care supplies needed'
+    itemCount: 3,
+    notes: 'Critical supplies for ICU'
   },
   {
     id: 3,
-    transferId: 'ST-100003',
-    fromLocation: 'Main Warehouse',
+    transferId: 'ST-2024-003',
+    fromLocation: 'Central Storage',
     toLocation: 'Pharmacy',
-    items: [
-      { name: 'Antibiotics', quantity: 200, sku: 'MED-ANT-005' },
-      { name: 'Pain Relievers', quantity: 150, sku: 'MED-PAI-006' }
-    ],
     status: 'Pending',
-    priority: 'Normal',
+    priority: 'Low',
     requestDate: '2024-01-18',
     completedDate: null,
-    requestedBy: 'Pharmacy Manager',
+    requestedBy: 'Pharmacist',
     approvedBy: null,
-    transferValue: 3200.00,
-    department: 'Pharmacy',
-    notes: 'Monthly stock replenishment'
-  },
-  {
-    id: 4,
-    transferId: 'ST-100004',
-    fromLocation: 'Storage Room A',
-    toLocation: 'Operating Theater',
-    items: [
-      { name: 'Surgical Instruments', quantity: 5, sku: 'SUR-INS-007' },
-      { name: 'Sterile Gauze', quantity: 100, sku: 'SUR-GAU-008' }
-    ],
-    status: 'Approved',
-    priority: 'High',
-    requestDate: '2024-01-19',
-    completedDate: null,
-    requestedBy: 'Surgery Coordinator',
-    approvedBy: 'Medical Director',
-    transferValue: 2150.75,
-    department: 'Surgery',
-    notes: 'Scheduled surgery preparations'
-  },
-  {
-    id: 5,
-    transferId: 'ST-100005',
-    fromLocation: 'Central Storage',
-    toLocation: 'Pediatric Ward',
-    items: [
-      { name: 'Pediatric Medication', quantity: 75, sku: 'PED-MED-009' },
-      { name: 'Small Needles', quantity: 200, sku: 'PED-NEE-010' }
-    ],
-    status: 'Cancelled',
-    priority: 'Low',
-    requestDate: '2024-01-16',
-    completedDate: null,
-    requestedBy: 'Pediatric Nurse',
-    approvedBy: null,
-    transferValue: 450.25,
-    department: 'Pediatrics',
-    notes: 'Request cancelled due to overstocking'
+    transferValue: 2100.00,
+    itemCount: 8,
+    notes: 'Regular stock replenishment'
   }
 ];
 
 const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
-    'Pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'Approved': 'bg-blue-100 text-blue-800 border-blue-200',
-    'In Transit': 'bg-purple-100 text-purple-800 border-purple-200',
-    'Completed': 'bg-green-100 text-green-800 border-green-200',
-    'Cancelled': 'bg-red-100 text-red-800 border-red-200'
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Approved': 'bg-blue-100 text-blue-800',
+    'In Transit': 'bg-purple-100 text-purple-800',
+    'Completed': 'bg-green-100 text-green-800',
+    'Cancelled': 'bg-red-100 text-red-800'
   };
+
   return (
-    <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800 border-gray-200'}>
+    <Badge className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
       {status}
     </Badge>
   );
@@ -127,13 +75,14 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const PriorityBadge = ({ priority }: { priority: string }) => {
   const variants = {
-    'Low': 'bg-gray-100 text-gray-800 border-gray-200',
-    'Normal': 'bg-blue-100 text-blue-800 border-blue-200',
-    'High': 'bg-orange-100 text-orange-800 border-orange-200',
-    'Critical': 'bg-red-100 text-red-800 border-red-200'
+    'Low': 'bg-gray-100 text-gray-800',
+    'Normal': 'bg-blue-100 text-blue-800',
+    'High': 'bg-orange-100 text-orange-800',
+    'Critical': 'bg-red-100 text-red-800'
   };
+
   return (
-    <Badge variant="outline" className={variants[priority as keyof typeof variants] || 'bg-gray-100 text-gray-800 border-gray-200'}>
+    <Badge variant="outline" className={variants[priority as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
       {priority}
     </Badge>
   );
@@ -145,10 +94,6 @@ export const StockTransfer = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedPriority, setSelectedPriority] = useState<string>('All');
   const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
-  const [selectedTransfer, setSelectedTransfer] = useState<any>(null);
-  const [isViewTransferOpen, setIsViewTransferOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -169,31 +114,16 @@ export const StockTransfer = () => {
     const matchesSearch = transfer.transferId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transfer.fromLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transfer.toLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transfer.requestedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transfer.department.toLowerCase().includes(searchTerm.toLowerCase());
+                         transfer.requestedBy.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'All' || transfer.status === selectedStatus;
     const matchesPriority = selectedPriority === 'All' || transfer.priority === selectedPriority;
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const totalTransfers = transfers.length;
-  const pendingTransfers = transfers.filter(t => t.status === 'Pending').length;
-  const inTransitTransfers = transfers.filter(t => t.status === 'In Transit').length;
-  const completedTransfers = transfers.filter(t => t.status === 'Completed').length;
-  const highPriorityTransfers = transfers.filter(t => t.priority === 'High' || t.priority === 'Critical').length;
-  const totalValue = transfers.reduce((sum, t) => sum + t.transferValue, 0);
-
-  const handleEditTransfer = (transfer: any) => {
-    setSelectedTransfer(transfer);
-    setIsEditMode(true);
-    setIsViewTransferOpen(true);
-  };
-
-  const handleViewTransfer = (transfer: any) => {
-    setSelectedTransfer(transfer);
-    setIsEditMode(false);
-    setIsViewTransferOpen(true);
-  };
+  const pendingTransfers = transfers.filter(transfer => transfer.status === 'Pending').length;
+  const inTransitTransfers = transfers.filter(transfer => transfer.status === 'In Transit').length;
+  const totalValue = transfers.reduce((sum, transfer) => sum + transfer.transferValue, 0);
 
   const handleDeleteTransfer = (transferId: string) => {
     setTransfers(transfers.filter(t => t.transferId !== transferId));
@@ -205,354 +135,209 @@ export const StockTransfer = () => {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Enhanced Summary Cards - Horizontally scrollable */}
+      {/* Summary Cards - Horizontally scrollable */}
       <div className="flex-shrink-0 mb-6">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-max">
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Transfers</CardTitle>
-            <Package className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{totalTransfers}</div>
-            <p className="text-xs text-muted-foreground mt-1">All transfer requests</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingTransfers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">In Transit</CardTitle>
-            <Truck className="h-4 w-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{inTransitTransfers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Being transferred</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedTransfers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Successfully delivered</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">High Priority</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{highPriorityTransfers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Urgent transfers</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Value</CardTitle>
-            <Package className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              ₹{(totalValue / 1000).toFixed(0)}K
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Transfer value</p>
-          </CardContent>
-        </Card>
+        <div className="overflow-x-auto max-w-full pb-2">
+          <div className="inline-flex w-max gap-4 pr-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Transfers</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalTransfers}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <Clock className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{pendingTransfers}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">In Transit</CardTitle>
+                <Truck className="h-4 w-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{inTransitTransfers}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  ${totalValue.toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-6">
-        {/* Enhanced Filters Layout */}
-      <Card className="border-border/50 shadow-sm">
-        <CardContent className="p-6">
-          <FilterLayout
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search by transfer ID, location, or requestor..."
-            filterGroups={[
-              {
-                id: 'status',
-                label: 'Status',
-                items: statuses.map(status => ({
-                  id: status,
-                  label: status,
-                  isActive: selectedStatus === status,
-                  onClick: () => setSelectedStatus(status)
-                }))
-              },
-              {
-                id: 'priority',
-                label: 'Priority',
-                items: priorities.map(priority => ({
-                  id: priority,
-                  label: priority,
-                  isActive: selectedPriority === priority,
-                  onClick: () => setSelectedPriority(priority)
-                }))
-              }
-            ]}
-            filterModalConfig={{
-              isOpen: isFilterModalOpen,
-              onOpenChange: setIsFilterModalOpen,
-              filters: {
-                priorities,
-                selectedPriority,
-                onPriorityChange: setSelectedPriority,
-                toggles: [
-                  {
-                    id: 'high-priority',
-                    label: 'High Priority Only',
-                    value: false,
-                    onChange: () => {},
-                    isNew: true
-                  }
-                ]
-              },
-              onClear: () => {
-                setSelectedStatus('All');
-                setSelectedPriority('All');
-              },
-              onApply: () => {}
-            }}
-            resultsCount={filteredTransfers.length}
-            totalCount={totalTransfers}
-            itemLabel="stock transfers"
-            onClearAll={() => {
-              setSearchTerm('');
-              setSelectedStatus('All');
-              setSelectedPriority('All');
-            }}
-          />
-        </CardContent>
-      </Card>
+        {/* Filters and Search */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {statuses.map(status => (
+              <Button
+                key={status}
+                variant={selectedStatus === status ? 'default' : 'outline'}
+                className="rounded-full whitespace-nowrap"
+                onClick={() => setSelectedStatus(status)}
+              >
+                {status}
+              </Button>
+            ))}
+          </div>
+          
+          <div className="flex gap-3 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search transfers..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" /> Filters
+            </Button>
+          </div>
+        </div>
 
-      {/* Enhanced Stock Transfers Table */}
-      <Card className="border-border/50 shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[25%] font-semibold">Transfer Details</TableHead>
-                <TableHead className="w-[20%] font-semibold">Route & Items</TableHead>
-                <TableHead className="w-[15%] font-semibold">Status & Priority</TableHead>
-                <TableHead className="w-[15%] font-semibold">Request Info</TableHead>
-                <TableHead className="w-[15%] font-semibold">Financial</TableHead>
-                <TableHead className="w-[10%] font-semibold text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransfers.map((transfer) => (
-                <TableRow 
-                  key={transfer.id} 
-                  className="hover:bg-muted/30 transition-colors border-border/50"
-                >
-                  {/* Transfer Details */}
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                          <Package className="h-5 w-5 text-slate-600" />
+        {/* Stock Transfers Table */}
+        <Card className="border-border/50 shadow-sm">
+          <div className="overflow-x-auto max-w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transfer Details</TableHead>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Status & Priority</TableHead>
+                  <TableHead>Request Info</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransfers.map((transfer) => (
+                  <TableRow key={transfer.id} className="cursor-pointer hover:bg-muted/30">
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{transfer.transferId}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {transfer.itemCount} items
                         </div>
-                        <div>
-                          <div className="font-semibold text-foreground text-base">
-                            {transfer.transferId}
-                          </div>
-                          <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md inline-block">
-                            {transfer.department}
+                        <div className="text-sm text-muted-foreground">
+                          {transfer.requestDate}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm">
+                          <div className="font-medium">{transfer.fromLocation}</div>
+                          <div className="flex items-center text-muted-foreground mt-1">
+                            <ArrowRight className="h-3 w-3 mx-1" />
+                            <span>{transfer.toLocation}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Requested: {transfer.requestDate}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <StatusBadge status={transfer.status} />
+                        <PriorityBadge priority={transfer.priority} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="text-sm font-medium">Requested by:</div>
+                        <div className="text-sm">{transfer.requestedBy}</div>
+                        {transfer.approvedBy && (
+                          <>
+                            <div className="text-sm font-medium mt-1">Approved by:</div>
+                            <div className="text-sm">{transfer.approvedBy}</div>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-semibold">
+                        ${transfer.transferValue.toLocaleString()}
                       </div>
                       {transfer.completedDate && (
                         <div className="text-xs text-muted-foreground">
                           Completed: {transfer.completedDate}
                         </div>
                       )}
-                    </div>
-                  </TableCell>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Transfer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteTransfer(transfer.transferId)}
+                            className="text-red-600"
+                          >
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Cancel Transfer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
 
-                  {/* Route & Items */}
-                  <TableCell className="py-4">
-                    <div className="space-y-3">
-                      {/* Route */}
-                      <div className="flex items-center space-x-2">
-                        <div className="text-sm">
-                          <div className="flex items-center">
-                            <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
-                            <span className="font-medium">{transfer.fromLocation}</span>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <div className="text-sm">
-                          <div className="flex items-center">
-                            <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
-                            <span className="font-medium">{transfer.toLocation}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Items */}
-                      <div className="space-y-1">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {transfer.items.length} item{transfer.items.length !== 1 ? 's' : ''}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground">
-                          {transfer.items.slice(0, 2).map((item, index) => (
-                            <div key={index}>
-                              {item.name} ({item.quantity})
-                            </div>
-                          ))}
-                          {transfer.items.length > 2 && (
-                            <div>+{transfer.items.length - 2} more...</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Status & Priority */}
-                  <TableCell className="py-4">
-                    <div className="space-y-3">
-                      <StatusBadge status={transfer.status} />
-                      <PriorityBadge priority={transfer.priority} />
-                    </div>
-                  </TableCell>
-
-                  {/* Request Info */}
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-sm">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Requested by:</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground ml-5">
-                        {transfer.requestedBy}
-                      </div>
-                      {transfer.approvedBy && (
-                        <>
-                          <div className="flex items-center gap-1 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span className="font-medium">Approved by:</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground ml-5">
-                            {transfer.approvedBy}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-
-                  {/* Financial */}
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="text-lg font-bold text-foreground">
-                        ₹{transfer.transferValue.toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Transfer Value
-                      </div>
-                      <div className="text-xs bg-muted px-2 py-1 rounded text-center">
-                        {transfer.items.reduce((sum, item) => sum + item.quantity, 0)} units
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="text-right py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => handleViewTransfer(transfer)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditTransfer(transfer)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Transfer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteTransfer(transfer.transferId)}
-                          className="text-red-600"
-                        >
-                          <AlertTriangle className="mr-2 h-4 w-4" />
-                          Delete Transfer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* Enhanced Stock Transfer Overlays */}
-      <ModernStockTransferOverlay
-        transfer={null}
-        isOpen={isNewTransferOpen}
-        onClose={() => setIsNewTransferOpen(false)}
-        isEdit={false}
-        onSave={(transfer) => {
-          const newTransfer = {
-            ...transfer,
-            id: transfers.length + 1,
-            transferValue: 0,
-            status: 'Pending',
-            priority: 'Normal'
-          };
-          setTransfers([...transfers, newTransfer as any]);
-          toast({
-            title: "Transfer Request Created",
-            description: `Transfer request ${transfer.transferId} has been successfully created.`,
-          });
-        }}
-      />
-
-      <ModernStockTransferOverlay
-        transfer={selectedTransfer}
-        isOpen={isViewTransferOpen}
-        onClose={() => {
-          setIsViewTransferOpen(false);
-          setSelectedTransfer(null);
-          setIsEditMode(false);
-        }}
-        isEdit={isEditMode}
-        onUpdate={(transfer) => {
-          setTransfers(transfers.map(t => t.id === transfer.id ? transfer as any : t));
-          toast({
-            title: "Transfer Updated",
-            description: `Transfer ${transfer.transferId} has been successfully updated.`,
-          });
-        }}
-        onDelete={handleDeleteTransfer}
-      />
+        {/* New Transfer Modal Placeholder */}
+        {isNewTransferOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h2 className="text-lg font-semibold mb-4">New Stock Transfer</h2>
+              <p className="text-muted-foreground mb-4">Transfer form would go here...</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsNewTransferOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  setIsNewTransferOpen(false);
+                  toast({
+                    title: "Transfer Created",
+                    description: "New stock transfer has been successfully created.",
+                  });
+                }}>
+                  Create Transfer
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

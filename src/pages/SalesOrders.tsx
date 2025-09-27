@@ -1,27 +1,85 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, Calendar, User, Package, TrendingUp, DollarSign, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, Truck } from 'lucide-react';
-import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { StatusBadge } from '../components/inventory/StatusBadge';
-import { DetailedSOOverlay } from '../components/sales-orders/DetailedSOOverlay';
-import { FilterModal } from "@/components/ui/filter-modal";
-import { salesOrdersData } from '../data/inventoryData';
-import { SalesOrder } from '../types/inventory';
 import { toast } from "@/hooks/use-toast";
 
+// Sample sales orders data
+const salesOrdersData = [
+  {
+    id: 1,
+    orderNumber: 'SO-2024-001',
+    customerName: 'John Smith',
+    customerEmail: 'john@example.com',
+    orderDate: '2024-01-15',
+    dueDate: '2024-01-22',
+    status: 'Processing',
+    paymentStatus: 'Paid',
+    total: 2500.00,
+    itemCount: 3,
+    shippingAddress: '123 Main St, City, State'
+  },
+  {
+    id: 2,
+    orderNumber: 'SO-2024-002',
+    customerName: 'Emily Davis',
+    customerEmail: 'emily@example.com',
+    orderDate: '2024-01-16',
+    dueDate: '2024-01-23',
+    status: 'Shipped',
+    paymentStatus: 'Paid',
+    total: 4200.00,
+    itemCount: 5,
+    shippingAddress: '456 Oak Ave, City, State'
+  },
+  {
+    id: 3,
+    orderNumber: 'SO-2024-003',
+    customerName: 'Robert Wilson',
+    customerEmail: 'robert@example.com',
+    orderDate: '2024-01-17',
+    dueDate: '2024-01-24',
+    status: 'Delivered',
+    paymentStatus: 'Pending',
+    total: 1800.00,
+    itemCount: 2,
+    shippingAddress: '789 Pine Rd, City, State'
+  }
+];
+
+const StatusBadge = ({ status, type = 'order' }: { status: string; type?: 'order' | 'payment' }) => {
+  const orderVariants = {
+    'Processing': 'bg-yellow-100 text-yellow-800',
+    'Shipped': 'bg-blue-100 text-blue-800',
+    'Delivered': 'bg-green-100 text-green-800',
+    'Cancelled': 'bg-red-100 text-red-800'
+  };
+
+  const paymentVariants = {
+    'Paid': 'bg-green-100 text-green-800',
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Overdue': 'bg-red-100 text-red-800'
+  };
+
+  const variants = type === 'payment' ? paymentVariants : orderVariants;
+
+  return (
+    <Badge className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      {status}
+    </Badge>
+  );
+};
+
 export const SalesOrders = () => {
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(salesOrdersData);
+  const [orders, setOrders] = useState(salesOrdersData);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('All');
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -38,7 +96,7 @@ export const SalesOrders = () => {
   const statuses = ['All', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   const paymentStatuses = ['All', 'Paid', 'Pending', 'Overdue'];
   
-  const filteredOrders = salesOrders.filter(order => {
+  const filteredOrders = orders.filter(order => {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'All' || order.status === selectedStatus;
@@ -46,26 +104,13 @@ export const SalesOrders = () => {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
-  const totalOrders = salesOrders.length;
-  const totalRevenue = salesOrders.reduce((sum, order) => sum + order.total, 0);
-  const processingOrders = salesOrders.filter(o => o.status === 'Processing').length;
-  const shippedOrders = salesOrders.filter(o => o.status === 'Shipped').length;
-  const deliveredOrders = salesOrders.filter(o => o.status === 'Delivered').length;
-  const paidOrders = salesOrders.filter(o => o.paymentStatus === 'Paid').length;
-  const pendingPayments = salesOrders.filter(o => o.paymentStatus === 'Pending').reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const processingOrders = orders.filter(order => order.status === 'Processing').length;
+  const pendingPayments = orders.filter(order => order.paymentStatus === 'Pending').reduce((sum, order) => sum + order.total, 0);
 
-  const handleEditOrder = (order: SalesOrder) => {
-    setEditingOrder(order);
-    setIsEditMode(true);
-  };
-
-  const handleViewOrder = (order: SalesOrder) => {
-    setEditingOrder(order);
-    setIsEditMode(false);
-  };
-
-  const handleDeleteOrder = (orderId: string) => {
-    setSalesOrders(salesOrders.filter(o => o.id !== orderId));
+  const handleDeleteOrder = (orderId: number) => {
+    setOrders(orders.filter(o => o.id !== orderId));
     toast({
       title: "Sales Order Deleted",
       description: "Sales order has been successfully deleted.",
@@ -74,298 +119,196 @@ export const SalesOrders = () => {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Enhanced Summary Cards - Horizontally scrollable */}
+      {/* Summary Cards - Horizontally scrollable */}
       <div className="flex-shrink-0 mb-6">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-max">
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Orders</CardTitle>
-            <Package className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">All sales orders</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ₹{(totalRevenue / 1000).toFixed(0)}K
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Lifetime revenue</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Processing</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{processingOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting fulfillment</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Shipped</CardTitle>
-            <Truck className="h-4 w-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{shippedOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">In transit</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivered</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{deliveredOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending Payment</CardTitle>
-            <DollarSign className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              ₹{(pendingPayments / 1000).toFixed(0)}K
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Outstanding amount</p>
-          </CardContent>
-        </Card>
+        <div className="overflow-x-auto max-w-full pb-2">
+          <div className="inline-flex w-max gap-4 pr-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalOrders}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  ${totalRevenue.toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Processing</CardTitle>
+                <Clock className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{processingOrders}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  ${pendingPayments.toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-6">
-        {/* Enhanced Filters Layout */}
-      <Card className="border-border/50 shadow-sm">
-        <CardContent className="p-6">
-          <FilterLayout
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search by order number, customer name..."
-            filterGroups={[
-              {
-                id: 'status',
-                label: 'Status',
-                items: statuses.map(status => ({
-                  id: status,
-                  label: status,
-                  isActive: selectedStatus === status,
-                  onClick: () => setSelectedStatus(status)
-                }))
-              },
-              {
-                id: 'payment',
-                label: 'Payment',
-                items: paymentStatuses.map(paymentStatus => ({
-                  id: paymentStatus,
-                  label: paymentStatus,
-                  isActive: selectedPaymentStatus === paymentStatus,
-                  onClick: () => setSelectedPaymentStatus(paymentStatus)
-                }))
-              }
-            ]}
-            filterModalConfig={{
-              isOpen: false,
-              onOpenChange: () => {},
-              filters: {
-                categories: ['All', 'Medical', 'Equipment', 'Supplies'],
-                selectedCategory: 'All',
-                onCategoryChange: () => {},
-                toggles: [
-                  {
-                    id: 'priority-orders',
-                    label: 'Priority Orders Only',
-                    value: false,
-                    onChange: () => {},
-                    isNew: true
-                  }
-                ]
-              }
-            }}
-            resultsCount={filteredOrders.length}
-            totalCount={totalOrders}
-            itemLabel="sales orders"
-            onClearAll={() => {
-              setSearchTerm('');
-              setSelectedStatus('All');
-              setSelectedPaymentStatus('All');
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Sales Orders Table */}
-      <Card className="border-border/50 shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Order Details</TableHead>
-                <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold">Timeline</TableHead>
-                <TableHead className="font-semibold">Amount</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order, index) => (
-                <TableRow 
-                  key={order.id} 
-                  className="hover:bg-muted/30 transition-colors border-border/50"
-                >
-                  {/* Order Details */}
-                  <TableCell className="py-4">
-                    <div className="space-y-1">
-                      <div className="font-semibold text-foreground">
-                        {order.orderNumber}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Customer */}
-                  <TableCell className="py-4">
-                    <div className="space-y-1">
-                      <div className="font-medium">{order.customerName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.shippingAddress.split(',')[0]}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Status & Items */}
-                  <TableCell className="py-4">
-                    <div className="space-y-3">
-                      <StatusBadge status={order.status} type="order" />
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  </TableCell>
-
-                  {/* Timeline */}
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Ordered:</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground ml-5">
-                        {order.orderDate}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Due:</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground ml-5">
-                        {order.dueDate}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Financial */}
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="text-lg font-bold text-foreground">
-                        ₹{order.total.toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Order Total
-                      </div>
-                      <StatusBadge status={order.paymentStatus} type="payment" />
-                    </div>
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="text-right py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => handleViewOrder(order)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditOrder(order)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Order
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="text-red-600"
-                        >
-                          <AlertTriangle className="mr-2 h-4 w-4" />
-                          Delete Order
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        {/* Filters and Search */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {statuses.map(status => (
+              <Button
+                key={status}
+                variant={selectedStatus === status ? 'default' : 'outline'}
+                className="rounded-full whitespace-nowrap"
+                onClick={() => setSelectedStatus(status)}
+              >
+                {status}
+              </Button>
+            ))}
+          </div>
+          
+          <div className="flex gap-3 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search orders..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" /> Filters
+            </Button>
+          </div>
         </div>
-      </Card>
 
-      {/* Enhanced Sales Order Overlays */}
-      <DetailedSOOverlay 
-        order={null}
-        isOpen={isNewOrderOpen}
-        onClose={() => setIsNewOrderOpen(false)}
-        isEdit={true}
-        onSave={(newOrder) => {
-          setSalesOrders([...salesOrders, newOrder]);
-          toast({
-            title: "Sales Order Created",
-            description: `Sales order ${newOrder.orderNumber} has been successfully created.`,
-          });
-        }}
-      />
-      
-      <DetailedSOOverlay 
-        order={editingOrder}
-        isOpen={!!editingOrder}
-        onClose={() => {
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        isEdit={isEditMode}
-        onUpdate={(updatedOrder) => {
-          setSalesOrders(salesOrders.map(order => 
-            order.id === updatedOrder.id ? updatedOrder : order
-          ));
-          setEditingOrder(null);
-          toast({
-            title: "Sales Order Updated",
-            description: `Sales order ${updatedOrder.orderNumber} has been successfully updated.`,
-          });
-        }}
-        onDelete={handleDeleteOrder}
-      />
+        {/* Sales Orders Table */}
+        <Card className="border-border/50 shadow-sm">
+          <div className="overflow-x-auto max-w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order Details</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Timeline</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id} className="cursor-pointer hover:bg-muted/30">
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.orderNumber}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {order.itemCount} items
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.customerName}</div>
+                        <div className="text-sm text-muted-foreground">{order.customerEmail}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <StatusBadge status={order.status} />
+                        <StatusBadge status={order.paymentStatus} type="payment" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="font-medium">Ordered:</span> {order.orderDate}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-medium">Due:</span> {order.dueDate}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-semibold text-lg">
+                        ${order.total.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Order
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="text-red-600"
+                          >
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Delete Order
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        {/* New Order Modal Placeholder */}
+        {isNewOrderOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h2 className="text-lg font-semibold mb-4">New Sales Order</h2>
+              <p className="text-muted-foreground mb-4">Order form would go here...</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsNewOrderOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  setIsNewOrderOpen(false);
+                  toast({
+                    title: "Order Created",
+                    description: "New sales order has been successfully created.",
+                  });
+                }}>
+                  Create Order
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
