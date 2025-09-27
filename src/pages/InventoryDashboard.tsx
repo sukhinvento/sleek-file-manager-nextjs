@@ -16,6 +16,7 @@ import { inventoryItemsData, vendorsData, salesOrdersData } from '@/data/invento
 import { SummaryCard } from '@/components/inventory/SummaryCard';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 // Helper functions for calculations
 const getStockStatus = (current: number, min: number, reorderPoint: number = min * 1.5) => {
@@ -179,12 +180,15 @@ export const InventoryDashboard = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Inventory Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Overview of your inventory status and key metrics
-        </p>
-      </div>
+      <PageHeader 
+        title="Inventory Dashboard"
+        subtitle="Overview of your inventory status and key metrics"
+        notificationCount={3}
+        userName="John Smith"
+        userEmail="john.smith@company.com"
+        onNotificationClick={() => console.log('Notifications clicked')}
+        onProfileClick={() => console.log('Profile clicked')}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
