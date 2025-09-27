@@ -142,8 +142,7 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-hidden bg-background">
-      <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Summary Cards - Viewport Constrained */}
         <div className="w-full max-w-full">
           <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
@@ -414,6 +413,5 @@ export const PurchaseOrders = () => {
           onApplySort={handleApplySort}
         />
       </div>
-    </div>
-  );
-};
+    );
+  };
