@@ -59,19 +59,19 @@ export const MobileResponsiveCard = ({
   // Enhanced card for purchase orders
   if (orderDetails && vendorDetails && timeline && amount) {
     return (
-      <Card className="w-full mb-4 animate-fade-in hover-scale cursor-pointer" onClick={onViewClick}>
-        <CardHeader className="pb-4">
+      <Card className="w-full mb-3 animate-fade-in hover-scale cursor-pointer" onClick={onViewClick}>
+        <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <Package className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base font-bold">{orderDetails.poNumber}</CardTitle>
+                <CardTitle className="text-sm font-bold">{orderDetails.poNumber}</CardTitle>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {orderDetails.itemCount} items • Created by {orderDetails.createdBy}
               </p>
             </div>
-            <div className="flex items-center gap-2 ml-3">
+            <div className="flex items-center gap-2 ml-2">
               {status && (
                 <Badge 
                   variant="outline" 
@@ -112,32 +112,32 @@ export const MobileResponsiveCard = ({
           </div>
         </CardHeader>
         
-        <CardContent className="pt-0 space-y-4">
+        <CardContent className="pt-0 space-y-3">
           {/* Vendor Information */}
-          <div className="bg-muted/20 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Vendor Details</span>
+          <div className="bg-muted/20 rounded-lg p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <User className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">Vendor Details</span>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">{vendorDetails.name}</p>
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold">{vendorDetails.name}</p>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground">{vendorDetails.contact}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Phone className="h-3 w-3 text-muted-foreground" />
+                <Phone className="h-2.5 w-2.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">{vendorDetails.phone}</span>
               </div>
             </div>
           </div>
 
           {/* Timeline */}
-          <div className="bg-muted/20 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Timeline</span>
+          <div className="bg-muted/20 rounded-lg p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium">Timeline</span>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Ordered:</span>
                 <span className="text-xs font-medium">{timeline.orderDate}</span>
@@ -156,15 +156,15 @@ export const MobileResponsiveCard = ({
           </div>
 
           {/* Amount */}
-          <div className="bg-muted/20 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Payment</span>
+          <div className="bg-muted/20 rounded-lg p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium">Payment</span>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">Total Amount:</span>
-                <span className="text-lg font-bold text-primary">${amount.total.toLocaleString()}</span>
+                <span className="text-sm font-bold text-primary">${amount.total.toLocaleString()}</span>
               </div>
               {amount.paid > 0 && (
                 <div className="flex justify-between">

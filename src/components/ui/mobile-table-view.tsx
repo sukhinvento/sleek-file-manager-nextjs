@@ -1,5 +1,6 @@
 import React from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 import { MobileResponsiveCard } from './mobile-responsive-card';
 
 interface MobileTableViewProps<T> {
@@ -86,6 +87,8 @@ export function MobileTableView<T>({
 
         {/* Desktop Table View */}
         <div className="hidden lg:block">
+          <Card className="border-border/50 shadow-sm">
+            <div className="overflow-x-auto max-w-full">
           <Table>
             <TableHeader>
               <TableRow>
@@ -130,13 +133,17 @@ export function MobileTableView<T>({
               ))}
             </TableBody>
           </Table>
+            </div>
+          </Card>
         </div>
       </>
     );
   }
 
-  // Fallback to regular table
+  // Fallback to regular table with container
   return (
+    <Card className="border-border/50 shadow-sm">
+      <div className="overflow-x-auto max-w-full">
     <Table>
       <TableHeader>
         <TableRow>
@@ -180,6 +187,8 @@ export function MobileTableView<T>({
           </TableRow>
         ))}
       </TableBody>
-    </Table>
+      </Table>
+      </div>
+    </Card>
   );
 }
