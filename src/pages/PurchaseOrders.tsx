@@ -149,8 +149,8 @@ export const PurchaseOrders = () => {
             className="w-full overflow-x-auto overflow-y-hidden pb-2 scrollbar-show" 
             onScroll={() => {}}
           >
-            <div className="flex gap-4 pb-2 w-max min-w-full">
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+            <div className="flex gap-3 sm:gap-4 pb-2 min-w-max">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
@@ -159,7 +159,7 @@ export const PurchaseOrders = () => {
                   <div className="text-xl sm:text-2xl font-bold">{totalOrders}</div>
                 </CardContent>
               </Card>
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
                   <Clock className="h-4 w-4 text-yellow-500" />
@@ -171,7 +171,7 @@ export const PurchaseOrders = () => {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
                   <CheckCircle className="h-4 w-4 text-blue-500" />
@@ -181,7 +181,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
                 </CardContent>
               </Card>
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Delivered</CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-500" />
@@ -191,7 +191,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
                 </CardContent>
               </Card>
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Value</CardTitle>
                   <DollarSign className="h-4 w-4 text-green-500" />
@@ -203,7 +203,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
                 </CardContent>
               </Card>
-              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Avg Order</CardTitle>
                   <Package className="h-4 w-4 text-purple-500" />
