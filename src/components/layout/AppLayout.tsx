@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sidebar } from './Sidebar';
+import { PageHeader } from './PageHeader';
+import { useLocation } from 'react-router-dom';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,6 +12,26 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
+
+  const getPageTitle = (pathname: string) => {
+    const titleMap: Record<string, string> = {
+      '/': 'Dashboard',
+      '/inventory-dashboard': 'Inventory Dashboard',
+      '/inventory': 'Inventory Management',
+      '/purchase-orders': 'Purchase Orders',
+      '/sales-orders': 'Sales Orders',
+      '/vendors': 'Vendor Management',
+      '/stock-transfer': 'Stock Transfer',
+      '/billing': 'Billing',
+      '/patients': 'Patients',
+      '/settings': 'Settings',
+      '/upload': 'Upload Files',
+      '/files': 'View Files',
+      '/edit': 'Edit Files'
+    };
+    return titleMap[pathname] || 'Dashboard';
+  };
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -44,8 +66,18 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       />
       
       <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="px-6 py-8 mt-16 lg:mt-0 h-full overflow-auto">
-          {children}
+        <main className="h-full overflow-auto">
+          <div className="px-6 py-4 mt-16 lg:mt-0">
+            <PageHeader 
+              title={getPageTitle(location.pathname)}
+              notificationCount={3}
+              userName="John Smith"
+              userEmail="john.smith@company.com"
+            />
+          </div>
+          <div className="px-6 pb-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -178,17 +178,7 @@ export const InventoryDashboard = () => {
   const metrics = calculateInventoryMetrics();
   
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <PageHeader 
-        title="Inventory Dashboard"
-        subtitle="Overview of your inventory status and key metrics"
-        notificationCount={3}
-        userName="John Smith"
-        userEmail="john.smith@company.com"
-        onNotificationClick={() => console.log('Notifications clicked')}
-        onProfileClick={() => console.log('Profile clicked')}
-      />
+    <div className="space-y-6 pt-4">
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

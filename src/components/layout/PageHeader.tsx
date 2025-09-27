@@ -13,7 +13,6 @@ import {
 
 interface PageHeaderProps {
   title: string;
-  subtitle?: string;
   notificationCount?: number;
   userName?: string;
   userEmail?: string;
@@ -25,7 +24,6 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ 
   title, 
-  subtitle,
   notificationCount = 0,
   userName = "John Doe",
   userEmail = "john@company.com",
@@ -35,13 +33,10 @@ export const PageHeader = ({
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="flex items-center justify-between pb-6 border-b border-border">
+    <div className="flex items-center justify-between py-4 border-b border-border">
       {/* Left side - Title */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-        {subtitle && (
-          <p className="text-muted-foreground mt-2">{subtitle}</p>
-        )}
+        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
       </div>
 
       {/* Right side - Notifications and Profile */}
