@@ -334,16 +334,16 @@ export const StockTransfer = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newTransfer) => {
+        onSave={(newTransfer: any) => {
           setTransfers([...transfers, newTransfer]);
           setIsNewTransferOpen(false);
         }}
-        onUpdate={(updatedTransfer) => {
+        onUpdate={(updatedTransfer: any) => {
           setTransfers(transfers.map(t => t.id === updatedTransfer.id ? updatedTransfer : t));
           setEditingTransfer(null);
           setIsEditMode(false);
         }}
-        onDelete={(transferId) => {
+        onDelete={(transferId: string) => {
           setTransfers(transfers.filter(t => t.transferId !== transferId));
           setEditingTransfer(null);
         }}

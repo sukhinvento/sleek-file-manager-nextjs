@@ -364,16 +364,16 @@ export const VendorManagement = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newVendor) => {
+        onSave={(newVendor: any) => {
           setVendors([...vendors, newVendor]);
           setIsAddVendorOpen(false);
         }}
-        onUpdate={(updatedVendor) => {
+        onUpdate={(updatedVendor: any) => {
           setVendors(vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v));
           setEditingVendor(null);
           setIsEditMode(false);
         }}
-        onDelete={(vendorId) => {
+        onDelete={(vendorId: string) => {
           setVendors(vendors.filter(v => v.vendorId !== vendorId));
           setEditingVendor(null);
         }}
