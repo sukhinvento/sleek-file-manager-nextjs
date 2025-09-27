@@ -218,12 +218,12 @@ export const SalesOrders = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[25%] font-semibold">Order Details</TableHead>
-                <TableHead className="w-[20%] font-semibold">Customer</TableHead>
-                <TableHead className="w-[15%] font-semibold">Status & Items</TableHead>
-                <TableHead className="w-[15%] font-semibold">Timeline</TableHead>
-                <TableHead className="w-[15%] font-semibold">Financial</TableHead>
-                <TableHead className="w-[10%] font-semibold text-right">Actions</TableHead>
+                <TableHead className="font-semibold">Order Details</TableHead>
+                <TableHead className="font-semibold">Customer</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Timeline</TableHead>
+                <TableHead className="font-semibold">Amount</TableHead>
+                <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -234,37 +234,22 @@ export const SalesOrders = () => {
                 >
                   {/* Order Details */}
                   <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                          <Package className="h-5 w-5 text-slate-600" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground text-base">
-                            {order.orderNumber}
-                          </div>
-                          <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md inline-block">
-                            ID: {order.id}
-                          </div>
-                        </div>
+                    <div className="space-y-1">
+                      <div className="font-semibold text-foreground">
+                        {order.orderNumber}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''} ordered
+                      <div className="text-sm text-muted-foreground">
+                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                       </div>
                     </div>
                   </TableCell>
 
                   {/* Customer */}
                   <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-foreground">
-                          {order.customerName}
-                        </span>
-                      </div>
+                    <div className="space-y-1">
+                      <div className="font-medium">{order.customerName}</div>
                       <div className="text-sm text-muted-foreground">
-                        Customer Order
+                        {order.shippingAddress.split(',')[0]}
                       </div>
                     </div>
                   </TableCell>

@@ -68,7 +68,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-50">
+    <div className="flex h-screen w-full bg-[#f7fafc]">
       {/* Overlay for mobile when sidebar is open */}
       {isMobileMenuOpen && (
         <div 
@@ -109,7 +109,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       </div>
       
       <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen overflow-hidden pt-20 lg:pt-16">
+        <main className="h-screen overflow-hidden pt-20 lg:pt-16 bg-[#f7fafc]">
           <div className="h-full overflow-y-auto px-6 py-6">
             {children}
           </div>

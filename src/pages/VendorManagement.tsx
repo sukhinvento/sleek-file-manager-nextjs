@@ -446,12 +446,12 @@ export const VendorManagement = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[30%] font-semibold">Vendor Details</TableHead>
-                <TableHead className="w-[20%] font-semibold">Contact & Location</TableHead>
-                <TableHead className="w-[15%] font-semibold">Category & Status</TableHead>
-                <TableHead className="w-[15%] font-semibold">Performance</TableHead>
-                <TableHead className="w-[10%] font-semibold">Financial</TableHead>
-                <TableHead className="w-[10%] font-semibold text-right">Actions</TableHead>
+                <TableHead className="font-semibold">Vendor Details</TableHead>
+                <TableHead className="font-semibold">Contact Info</TableHead>
+                <TableHead className="font-semibold">Category & Status</TableHead>
+                <TableHead className="font-semibold">Performance</TableHead>
+                <TableHead className="font-semibold">Financial</TableHead>
+                <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -486,39 +486,32 @@ export const VendorManagement = () => {
                     </div>
                   </TableCell>
 
-                  {/* Contact & Location */}
+                  {/* Contact Info */}
                   <TableCell className="py-4">
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <div className="flex items-center text-sm">
-                        <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <span className="font-medium">{vendor.phone}</span>
+                        <Phone className="w-4 h-4 mr-2" />
+                        {vendor.phone}
                       </div>
                       <div className="flex items-center text-sm">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <span className="text-primary hover:underline cursor-pointer">
-                          {vendor.email}
-                        </span>
+                        <Mail className="w-4 h-4 mr-2" />
+                        {vendor.email}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span>{vendor.city}, {vendor.state}</span>
+                        {vendor.city}, {vendor.state}
                       </div>
                     </div>
                   </TableCell>
 
                   {/* Category & Status */}
                   <TableCell className="py-4">
-                    <div className="space-y-3">
-                      <Badge 
-                        variant="outline" 
-                        className="bg-blue-50 text-blue-700 border-blue-200 font-medium"
-                      >
+                    <div className="space-y-2">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                         {vendor.category}
                       </Badge>
-                      <div className="flex flex-col gap-2">
-                        <StatusBadge status={vendor.status} />
-                        <RiskBadge level={vendor.riskLevel} />
-                      </div>
+                      <StatusBadge status={vendor.status} />
+                      <RiskBadge level={vendor.riskLevel} />
                     </div>
                   </TableCell>
 

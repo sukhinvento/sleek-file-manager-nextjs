@@ -37,11 +37,11 @@ export const PageHeader = ({
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="bg-background border-b border-border px-6 py-4">
+    <div className="bg-[#1a202c] border-b border-[#2d3748] px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - Title */}
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+          <h1 className="text-2xl font-semibold text-white">{title}</h1>
         </div>
 
         {/* Right side - Actions, Notifications and Profile */}
@@ -66,7 +66,7 @@ export const PageHeader = ({
             variant="ghost"
             size="icon"
             onClick={onNotificationClick}
-            className="relative"
+            className="relative text-gray-300 hover:text-white hover:bg-[#2d3748]"
           >
             <Bell className="h-5 w-5" />
             {notificationCount > 0 && (
@@ -83,10 +83,10 @@ export const PageHeader = ({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-[#2d3748]">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={userAvatar} alt={userName} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
+                <AvatarFallback className="bg-[#2d3748] text-white">
                   {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
