@@ -316,7 +316,7 @@ export const ModernSOOverlay = ({
       headerActions={headerActions}
       quickActions={quickActions}
     >
-      <div className="flex h-full overflow-hidden bg-gradient-to-br from-background to-muted/20">
+      <div className="flex h-full overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-muted/20">
         {/* Left Panel - Order & Customer Information */}
         <div className="w-80 border-r border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto">
           <div className="p-6 space-y-6">
@@ -490,7 +490,7 @@ export const ModernSOOverlay = ({
         </div>
 
         {/* Right Panel - Order Items */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <div className="h-full p-6">
             <Card className="h-full border-border/50">
               <CardHeader className="pb-4 border-b border-border/50">
@@ -504,7 +504,7 @@ export const ModernSOOverlay = ({
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden p-0">
+              <CardContent className="flex-1 overflow-y-auto p-0">
                 <div className="h-full overflow-y-auto p-6">
                   <OrderItems
                     items={items}
