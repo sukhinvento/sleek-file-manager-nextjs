@@ -145,7 +145,10 @@ export const PurchaseOrders = () => {
     <>
       {/* Summary Cards - Full Width with Horizontal Scroll */}
         <div className="w-full">
-          <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted pb-2">
+          <div 
+            className="w-full overflow-x-auto overflow-y-hidden pb-2 scrollbar-show" 
+            onScroll={() => {}}
+          >
             <div className="flex gap-4 pb-2 w-max min-w-full">
               <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

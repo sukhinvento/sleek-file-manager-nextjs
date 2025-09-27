@@ -12,6 +12,28 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Show scrollbar for horizontal scroll containers */
+  .scrollbar-show {
+    -ms-overflow-style: auto !important;  /* IE and Edge */
+    scrollbar-width: thin !important;  /* Firefox */
+    scrollbar-color: hsl(var(--muted-foreground)) transparent !important;
+  }
+  .scrollbar-show::-webkit-scrollbar {
+    display: block !important;
+    height: 6px !important;
+    width: 6px !important;
+  }
+  .scrollbar-show::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  .scrollbar-show::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground)) !important;
+    border-radius: 3px !important;
+  }
+  .scrollbar-show::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground) / 0.5) !important;
+  }
 }
 
 @layer base {
