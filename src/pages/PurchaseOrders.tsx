@@ -142,11 +142,11 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Summary Cards - Viewport Constrained */}
-        <div className="w-full max-w-full">
-          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
-            <div className="flex gap-4 pb-2" style={{ width: 'max-content', minWidth: '100%' }}>
+    <div className="w-full max-w-none px-4 py-6 space-y-6 overflow-x-hidden">
+        {/* Summary Cards - Full Width with Horizontal Scroll */}
+        <div className="w-full">
+          <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted pb-2">
+            <div className="flex gap-4 pb-2 w-max min-w-full">
               <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
@@ -216,10 +216,10 @@ export const PurchaseOrders = () => {
           </div>
         </div>
 
-        {/* Filters and Search - Viewport Constrained */}
-        <div className="w-full max-w-full bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4">
+        {/* Filters and Search - Full Width */}
+        <div className="w-full bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 overflow-hidden">
           {/* Status Filter Pills */}
-          <div className="w-full max-w-full overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
+          <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-muted">
             <div className="flex gap-2 pb-2 w-max min-w-full">
             {statuses.map(status => (
               <Button
@@ -235,7 +235,7 @@ export const PurchaseOrders = () => {
           </div>
           
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-full">
+          <div className="flex flex-col sm:flex-row gap-3 w-full overflow-hidden">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -260,7 +260,7 @@ export const PurchaseOrders = () => {
         </div>
 
         {/* Purchase Orders Responsive Table/Cards */}
-        <div className="w-full max-w-full overflow-hidden">
+        <div className="w-full overflow-hidden">
           <MobileTableView
             data={filteredOrders}
             columns={[
