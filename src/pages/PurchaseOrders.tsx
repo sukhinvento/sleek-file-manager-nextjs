@@ -6,6 +6,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MobileTableView } from "@/components/ui/mobile-table-view";
 import { purchaseOrdersData } from '../data/purchaseOrderData';
 import { PurchaseOrder } from '../types/purchaseOrder';
 import { toast } from "@/hooks/use-toast";
@@ -141,7 +142,7 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="flex flex-col gap-16">
+    <div className="flex flex-col gap-6">
       {/* Summary Cards - Horizontally scrollable */}
       <div>
         <div className="overflow-x-auto max-w-full pb-2">
@@ -215,151 +216,152 @@ export const PurchaseOrders = () => {
         </div>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Filters and Search */}
-        <div className="flex flex-col md:flex-row gap-4 p-4">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {statuses.map(status => (
-              <Button
-                key={status}
-                variant={selectedStatus === status ? 'default' : 'outline'}
-                className="rounded-full whitespace-nowrap"
-                onClick={() => setSelectedStatus(status)}
-              >
-                {status}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="flex gap-3 flex-1">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search by PO number, vendor, or address..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" onClick={() => setIsFilterModalOpen(true)}>
-              <Filter className="mr-2 h-4 w-4" /> Filters
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 p-4">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {statuses.map(status => (
+            <Button
+              key={status}
+              variant={selectedStatus === status ? 'default' : 'outline'}
+              className="rounded-full whitespace-nowrap"
+              onClick={() => setSelectedStatus(status)}
+            >
+              {status}
             </Button>
-            <Button variant="outline" onClick={() => setIsSortModalOpen(true)}>
-              <ArrowUpDown className="mr-2 h-4 w-4" /> Sort
-            </Button>
-          </div>
+          ))}
         </div>
-
-        {/* Purchase Orders Table */}
-        <Card className="border-border/50 shadow-sm">
-          <div className="overflow-x-auto max-w-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>PO Details</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Timeline</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id} className="cursor-pointer hover:bg-muted/30">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{order.poNumber}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {order.items.length} items
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Created by: {order.createdBy}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{order.vendorName}</div>
-                        <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
-                        <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <StatusBadge status={order.status} />
-                        {order.approvedBy && (
-                          <div className="text-xs text-muted-foreground">
-                            Approved by: {order.approvedBy}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm">
-                          <span className="font-medium">Ordered:</span> {order.orderDate}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <span className="font-medium">Due:</span> {order.deliveryDate}
-                        </div>
-                        {order.fulfilmentDate && (
-                          <div className="text-sm text-green-600">
-                            <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-semibold text-lg">
-                          ${order.total.toLocaleString()}
-                        </div>
-                        {order.paidAmount > 0 && (
-                          <div className="text-sm text-green-600">
-                            Paid: ${order.paidAmount.toLocaleString()}
-                          </div>
-                        )}
-                        <div className="text-xs text-muted-foreground">
-                          {order.paymentMethod}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewOrder(order)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditOrder(order)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Order
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="text-red-600"
-                          >
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Delete Order
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        
+        <div className="flex gap-3 flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by PO number, vendor, or address..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        </Card>
+          <Button variant="outline" onClick={() => setIsFilterModalOpen(true)}>
+            <Filter className="mr-2 h-4 w-4" /> Filters
+          </Button>
+          <Button variant="outline" onClick={() => setIsSortModalOpen(true)}>
+            <ArrowUpDown className="mr-2 h-4 w-4" /> Sort
+          </Button>
+        </div>
+      </div>
 
+      {/* Purchase Orders Responsive Table/Cards */}
+      <div>
+        <MobileTableView
+          data={filteredOrders}
+          columns={[
+            {
+              key: 'poNumber',
+              label: 'PO Number',
+              render: (value, order) => (
+                <div>
+                  <div className="font-medium">{value}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {order.items.length} items
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Created by: {order.createdBy}
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'vendorName',
+              label: 'Vendor',
+              render: (value, order) => (
+                <div>
+                  <div className="font-medium">{value}</div>
+                  <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
+                  <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              render: (value, order) => (
+                <div className="space-y-2">
+                  <StatusBadge status={value} />
+                  {order.approvedBy && (
+                    <div className="text-xs text-muted-foreground">
+                      Approved by: {order.approvedBy}
+                    </div>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'orderDate',
+              label: 'Timeline',
+              render: (value, order) => (
+                <div className="space-y-1">
+                  <div className="text-sm">
+                    <span className="font-medium">Ordered:</span> {value}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">Due:</span> {order.deliveryDate}
+                  </div>
+                  {order.fulfilmentDate && (
+                    <div className="text-sm text-green-600">
+                      <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
+                    </div>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'total',
+              label: 'Amount',
+              render: (value, order) => (
+                <div>
+                  <div className="font-semibold text-lg">
+                    ${value.toLocaleString()}
+                  </div>
+                  {order.paidAmount > 0 && (
+                    <div className="text-sm text-green-600">
+                      Paid: ${order.paidAmount.toLocaleString()}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground">
+                    {order.paymentMethod}
+                  </div>
+                </div>
+              )
+            }
+          ]}
+          getTitle={(order) => order.poNumber}
+          getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
+          getStatus={(order) => order.status}
+          getStatusColor={(order) => {
+            const colors = {
+              'Pending': 'yellow',
+              'Approved': 'blue',
+              'Delivered': 'green',
+              'Cancelled': 'red',
+              'Partial': 'orange'
+            };
+            return colors[order.status as keyof typeof colors] || 'gray';
+          }}
+          getActions={(order) => [
+            {
+              label: 'Edit',
+              onClick: () => handleEditOrder(order),
+              variant: 'outline' as const
+            },
+            {
+              label: 'Delete',
+              onClick: () => handleDeleteOrder(order.id),
+              variant: 'destructive' as const
+            }
+          ]}
+          onRowClick={handleViewOrder}
+        />
       </div>
 
       {/* Purchase Order Modal */}
