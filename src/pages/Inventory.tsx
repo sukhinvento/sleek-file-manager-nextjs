@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, Package, AlertTriangle, Calendar, Edit, Trash2, TrendingUp, Clock, Eye, MoreVertical, Tag, DollarSign } from 'lucide-react';
 import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
@@ -137,6 +137,18 @@ export const Inventory = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'inventory') {
+        setIsNewItemOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   const categories = ['All', 'Medication', 'Medical Supplies', 'Equipment'];
   const stockStatuses = ['All', 'Critical', 'Low', 'Normal'];
@@ -315,7 +327,7 @@ export const Inventory = () => {
 
       {/* Enhanced Inventory Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -523,6 +535,56 @@ export const Inventory = () => {
           </p>
         </div>
       </ModernInventoryOverlay>
+      {/* Enhanced Inventory Overlays */}
+      <InventoryFormOverlay
+        isOpen={isNewItemOpen}
+        onClose={() => setIsNewItemOpen(false)}
+        isEdit={false}
+        onSave={(newItem: any) => {
+          const newInventoryItem = {
+            ...newItem,
+            id: Math.max(...items.map(i => i.id)) + 1,
+            expiryDate: newItem.expiryDate || '2025-12-31',
+            location: newItem.location || 'Main Storage',
+            lastRestocked: new Date().toISOString().split('T')[0],
+            reorderPoint: Math.floor(newItem.minStock * 1.5)
+          };
+          setItems([...items, newInventoryItem]);
+          setIsNewItemOpen(false);
+          toast({
+            title: "Item Added",
+            description: "New inventory item has been successfully added.",
+          });
+        }}
+      />
+      
+      <InventoryFormOverlay
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingItem(null);
+        }}
+        item={editingItem}
+        isEdit={isEditMode}
+        onUpdate={(updatedItem: any) => {
+          setItems(items.map(item => 
+            item.id === parseInt(updatedItem.id) ? {
+              ...updatedItem,
+              id: parseInt(updatedItem.id),
+              expiryDate: updatedItem.expiryDate || item.expiryDate,
+              location: updatedItem.location || item.location,
+              lastRestocked: item.lastRestocked,
+              reorderPoint: item.reorderPoint
+            } : item
+          ));
+          setIsFormOpen(false);
+          setEditingItem(null);
+          toast({
+            title: "Item Updated",
+            description: "Inventory item has been successfully updated.",
+          });
+        }}
+      />
     </div>
   );
 };

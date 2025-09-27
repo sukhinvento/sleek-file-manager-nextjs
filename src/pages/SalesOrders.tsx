@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, Calendar, User, Package, TrendingUp, DollarSign, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, Truck } from 'lucide-react';
 import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,18 @@ export const SalesOrders = () => {
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'sales-order') {
+        setIsNewOrderOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   const statuses = ['All', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   const paymentStatuses = ['All', 'Paid', 'Pending', 'Overdue'];
@@ -200,7 +212,7 @@ export const SalesOrders = () => {
 
       {/* Enhanced Sales Orders Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">

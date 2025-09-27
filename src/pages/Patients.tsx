@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, User, Phone, Mail, Calendar } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 
 // Sample patient data
 const patients = [
@@ -74,6 +75,19 @@ const StatusBadge = ({ status }: { status: string }) => {
 export const Patients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'patient') {
+        setIsAddPatientOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   const statuses = ['All', 'Active', 'Admitted', 'Discharged', 'Critical'];
   const filteredPatients = patients.filter(patient => {
@@ -160,7 +174,7 @@ export const Patients = () => {
 
       {/* Patients Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
           <TableHeader>
             <TableRow>
@@ -228,6 +242,29 @@ export const Patients = () => {
           </Table>
         </div>
       </Card>
+      {/* Patient Add Modal Placeholder */}
+      {isAddPatientOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-lg font-semibold mb-4">Add New Patient</h2>
+            <p className="text-muted-foreground mb-4">Patient form would go here...</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setIsAddPatientOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                setIsAddPatientOpen(false);
+                toast({
+                  title: "Patient Added",
+                  description: "New patient has been successfully added.",
+                });
+              }}>
+                Add Patient
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

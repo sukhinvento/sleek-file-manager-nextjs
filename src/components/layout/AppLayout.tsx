@@ -37,13 +37,28 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const getCreateButtonConfig = (pathname: string) => {
     const configMap: Record<string, { text: string; action: () => void }> = {
       '/inventory-dashboard': { text: 'Add Item', action: () => navigate('/inventory') },
-      '/inventory': { text: 'Add Item', action: () => console.log('Add inventory item') },
-      '/purchase-orders': { text: 'New Order', action: () => console.log('Create purchase order') },
-      '/sales-orders': { text: 'New Order', action: () => console.log('Create sales order') },
-      '/vendors': { text: 'Add Vendor', action: () => console.log('Add vendor') },
-      '/patients': { text: 'Add Patient', action: () => console.log('Add patient') },
-      '/billing': { text: 'New Invoice', action: () => console.log('Create invoice') },
-      '/stock-transfer': { text: 'New Transfer', action: () => console.log('Create transfer') },
+      '/inventory': { text: 'Add Item', action: () => {
+        // Trigger inventory modal - this will be handled by the page component
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'inventory' } }));
+      }},
+      '/purchase-orders': { text: 'New Order', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'purchase-order' } }));
+      }},
+      '/sales-orders': { text: 'New Order', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'sales-order' } }));
+      }},
+      '/vendors': { text: 'Add Vendor', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'vendor' } }));
+      }},
+      '/patients': { text: 'Add Patient', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'patient' } }));
+      }},
+      '/billing': { text: 'New Invoice', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'invoice' } }));
+      }},
+      '/stock-transfer': { text: 'New Transfer', action: () => {
+        window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'stock-transfer' } }));
+      }},
     };
     return configMap[pathname];
   };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, ArrowRight, MapPin, Package, Clock, CheckCircle, AlertTriangle, Eye, Edit, MoreVertical, Truck, User } from 'lucide-react';
 import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
@@ -149,6 +149,18 @@ export const StockTransfer = () => {
   const [isViewTransferOpen, setIsViewTransferOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'stock-transfer') {
+        setIsNewTransferOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   const statuses = ['All', 'Pending', 'Approved', 'In Transit', 'Completed', 'Cancelled'];
   const priorities = ['All', 'Low', 'Normal', 'High', 'Critical'];
@@ -334,7 +346,7 @@ export const StockTransfer = () => {
 
       {/* Enhanced Stock Transfers Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">

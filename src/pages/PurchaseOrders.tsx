@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical } from 'lucide-react';
 import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,18 @@ export const PurchaseOrders = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'purchase-order') {
+        setIsNewOrderOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   const statuses = ['All', 'Pending', 'Approved', 'Delivered', 'Cancelled'];
   const vendors = ['All', ...Array.from(new Set(purchaseOrders.map(o => o.vendorName)))];

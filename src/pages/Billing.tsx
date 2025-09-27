@@ -165,7 +165,7 @@ export const Billing = () => {
 
       {/* Billing Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
           <TableHeader>
             <TableRow>

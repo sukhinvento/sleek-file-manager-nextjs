@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MapPin, Phone, Mail, Building2, User, CreditCard, Eye, Edit, MoreVertical, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { FilterLayout } from "@/components/ui/filter-layout";
 import { Input } from "@/components/ui/input";
@@ -227,6 +227,18 @@ export const VendorManagement = () => {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'vendor') {
+        setIsAddVendorOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
+
   const statuses = ['All', 'Active', 'Inactive', 'Pending'];
   const categories = ['All', ...Array.from(new Set(vendors.map(v => v.category)))];
   const riskLevels = ['All', 'Low', 'Medium', 'High'];
@@ -428,7 +440,7 @@ export const VendorManagement = () => {
 
       {/* Enhanced Vendors Table */}
       <Card className="border-border/50 shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
