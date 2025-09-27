@@ -28,7 +28,7 @@ const sizeClasses = {
   default: 'w-[90vw] max-w-[1200px]',
   large: 'w-[95vw] max-w-[1400px]',
   full: 'w-[98vw] max-w-[1600px]',
-  medium: 'w-[65vw] max-w-[65vw]'
+  medium: 'w-[60vw] max-w-[60vw]'
 };
 
 export const ModernInventoryOverlay = ({ 

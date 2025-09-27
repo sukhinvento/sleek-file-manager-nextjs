@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { purchaseOrdersData } from '../data/purchaseOrderData';
 import { PurchaseOrder } from '../types/purchaseOrder';
 import { toast } from "@/hooks/use-toast";
+import { ModernPOOverlay } from '../components/purchase-orders/ModernPOOverlay';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
@@ -305,71 +306,32 @@ export const PurchaseOrders = () => {
           </div>
         </Card>
 
-        {/* New Order Modal Placeholder */}
-        {isNewOrderOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">New Purchase Order</h2>
-              <p className="text-muted-foreground mb-4">Purchase order form would go here...</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsNewOrderOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setIsNewOrderOpen(false);
-                  toast({
-                    title: "Purchase Order Created",
-                    description: "New purchase order has been successfully created.",
-                  });
-                }}>
-                  Create Order
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Order Modal Placeholder */}
-        {editingOrder && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-lg font-semibold mb-4">
-                {isEditMode ? 'Edit' : 'View'} Purchase Order
-              </h2>
-              <div className="space-y-2 mb-4">
-                <p><strong>PO Number:</strong> {editingOrder.poNumber}</p>
-                <p><strong>Vendor:</strong> {editingOrder.vendorName}</p>
-                <p><strong>Status:</strong> {editingOrder.status}</p>
-                <p><strong>Total:</strong> ${editingOrder.total.toLocaleString()}</p>
-                <p><strong>Items:</strong> {editingOrder.items.length}</p>
-                {editingOrder.notes && (
-                  <p><strong>Notes:</strong> {editingOrder.notes}</p>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => {
-                  setEditingOrder(null);
-                  setIsEditMode(false);
-                }}>
-                  Close
-                </Button>
-                {isEditMode && (
-                  <Button onClick={() => {
-                    setEditingOrder(null);
-                    setIsEditMode(false);
-                    toast({
-                      title: "Purchase Order Updated",
-                      description: `Purchase order ${editingOrder.poNumber} has been successfully updated.`,
-                    });
-                  }}>
-                    Save Changes
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Purchase Order Modal */}
+      <ModernPOOverlay
+        order={editingOrder}
+        isOpen={isNewOrderOpen || !!editingOrder}
+        onClose={() => {
+          setIsNewOrderOpen(false);
+          setEditingOrder(null);
+          setIsEditMode(false);
+        }}
+        isEdit={isEditMode}
+        onSave={(newOrder) => {
+          setPurchaseOrders([...purchaseOrders, newOrder]);
+          setIsNewOrderOpen(false);
+        }}
+        onUpdate={(updatedOrder) => {
+          setPurchaseOrders(purchaseOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+          setEditingOrder(null);
+          setIsEditMode(false);
+        }}
+        onDelete={(orderId) => {
+          setPurchaseOrders(purchaseOrders.filter(o => o.id !== orderId));
+          setEditingOrder(null);
+        }}
+      />
     </div>
   );
 };
