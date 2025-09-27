@@ -311,7 +311,7 @@ export const ModernPOOverlay = ({
       statusColor={getStatusColor(order?.status)}
       headerActions={headerActions}
       quickActions={quickActions}
-      size="full"
+      size="medium"
     >
       <div className="flex h-full">
         {/* Left Sidebar - Order Info */}

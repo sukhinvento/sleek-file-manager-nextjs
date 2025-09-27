@@ -312,7 +312,7 @@ export const ModernSOOverlay = ({
       subtitle={order ? `Created on ${order.orderDate}` : 'Create a new sales order'}
       status={order?.status}
       statusColor={order?.status ? statusColors[order.status] : 'pending'}
-      size="full"
+      size="medium"
       headerActions={headerActions}
       quickActions={quickActions}
     >

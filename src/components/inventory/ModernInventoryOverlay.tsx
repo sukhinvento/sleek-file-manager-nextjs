@@ -14,7 +14,7 @@ interface ModernInventoryOverlayProps {
   children: React.ReactNode;
   headerActions?: React.ReactNode;
   quickActions?: React.ReactNode;
-  size?: 'default' | 'large' | 'full';
+  size?: 'default' | 'large' | 'full' | 'medium';
 }
 
 const statusColors = {
@@ -27,7 +27,8 @@ const statusColors = {
 const sizeClasses = {
   default: 'w-[90vw] max-w-[1200px]',
   large: 'w-[95vw] max-w-[1400px]',
-  full: 'w-[98vw] max-w-[1600px]'
+  full: 'w-[98vw] max-w-[1600px]',
+  medium: 'w-[65vw] max-w-[65vw]'
 };
 
 export const ModernInventoryOverlay = ({ 
@@ -40,7 +41,7 @@ export const ModernInventoryOverlay = ({
   children, 
   headerActions,
   quickActions,
-  size = 'large'
+  size = 'medium'
 }: ModernInventoryOverlayProps) => {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>

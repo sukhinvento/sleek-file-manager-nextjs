@@ -297,7 +297,7 @@ export const ModernStockTransferOverlay = ({
       subtitle={transfer ? `Requested on ${transfer.requestDate}` : 'Create a new stock transfer request'}
       status={transfer?.status}
       statusColor={transfer?.status ? statusColors[transfer.status] : 'pending'}
-      size="full"
+      size="medium"
       headerActions={headerActions}
       quickActions={quickActions}
     >
