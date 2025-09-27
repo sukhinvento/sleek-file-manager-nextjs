@@ -142,13 +142,13 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Summary Cards - Mobile First Responsive */}
-        <div className="w-full">
-          <div className="overflow-x-auto pb-2">
-            <div className="flex gap-4 min-w-fit px-2">
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+    <div className="min-h-screen w-full max-w-full overflow-hidden bg-background">
+      <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Summary Cards - Viewport Constrained */}
+        <div className="w-full max-w-full">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
+            <div className="flex gap-4 pb-2" style={{ width: 'max-content', minWidth: '100%' }}>
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
@@ -157,7 +157,7 @@ export const PurchaseOrders = () => {
                   <div className="text-xl sm:text-2xl font-bold">{totalOrders}</div>
                 </CardContent>
               </Card>
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
                   <Clock className="h-4 w-4 text-yellow-500" />
@@ -169,7 +169,7 @@ export const PurchaseOrders = () => {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
                   <CheckCircle className="h-4 w-4 text-blue-500" />
@@ -179,7 +179,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
                 </CardContent>
               </Card>
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Delivered</CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-500" />
@@ -189,7 +189,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
                 </CardContent>
               </Card>
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Value</CardTitle>
                   <DollarSign className="h-4 w-4 text-green-500" />
@@ -201,7 +201,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
                 </CardContent>
               </Card>
-              <Card className="min-w-[140px] sm:min-w-[160px] animate-fade-in hover-scale">
+              <Card className="flex-shrink-0 w-36 sm:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Avg Order</CardTitle>
                   <Package className="h-4 w-4 text-purple-500" />
@@ -217,10 +217,11 @@ export const PurchaseOrders = () => {
           </div>
         </div>
 
-        {/* Filters and Search - Mobile First */}
-        <div className="bg-card rounded-lg border p-4 space-y-4">
+        {/* Filters and Search - Viewport Constrained */}
+        <div className="w-full max-w-full bg-card rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4">
           {/* Status Filter Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="w-full max-w-full overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
+            <div className="flex gap-2 pb-2 w-max min-w-full">
             {statuses.map(status => (
               <Button
                 key={status}
@@ -231,10 +232,11 @@ export const PurchaseOrders = () => {
                 {status}
               </Button>
             ))}
+            </div>
           </div>
           
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-full">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -245,7 +247,7 @@ export const PurchaseOrders = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
                 <Filter className="mr-1 h-4 w-4" /> 
                 <span className="hidden sm:inline">Filters</span>
@@ -259,7 +261,7 @@ export const PurchaseOrders = () => {
         </div>
 
         {/* Purchase Orders Responsive Table/Cards */}
-        <div className="w-full">
+        <div className="w-full max-w-full overflow-hidden">
           <MobileTableView
             data={filteredOrders}
             columns={[
