@@ -315,7 +315,7 @@ export const ModernPOOverlay = ({
     >
       <div className="flex h-full flex-col">
         {/* Top Section - Order Info (Desktop: Horizontal layout, Mobile: Full width) */}
-        <div className="flex-shrink-0 bg-muted/30 border-b border-border/50 overflow-y-auto">
+        <div className="flex-shrink-0 bg-muted/30 border-b border-border/50">
           <div className="p-3 sm:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
               {/* Order Summary */}
@@ -460,9 +460,9 @@ export const ModernPOOverlay = ({
         {/* Middle Section - Products Table (Desktop and Mobile) */}
         <div className="flex-1 flex flex-col overflow-y-auto border-b border-border/50">
           {/* Items Section */}
-          <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
+          <div id="items-section" className="flex-1 p-3 sm:p-6 overflow-y-auto">
             <Card className="h-full">
-              <CardHeader>
+              <CardHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-b">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <CardTitle className="flex items-center text-base sm:text-lg">
                     <Package className="h-5 w-5 mr-2" />
