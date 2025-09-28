@@ -349,18 +349,18 @@ export const PurchaseOrders = () => {
             </Card>
             
             {/* Total Value Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden">
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Value</p>
-                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Value</p>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                       ${(totalValue / 1000).toFixed(0)}K
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-purple-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
                     </div>
                   </div>
                 </div>
@@ -368,10 +368,10 @@ export const PurchaseOrders = () => {
                 {/* Value Breakdown */}
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <span className="text-purple-600">Paid: ${((totalValue - pendingValue) / 1000).toFixed(0)}K</span>
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    <span className="text-emerald-600">Paid: ${((totalValue - pendingValue) / 1000).toFixed(0)}K</span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-purple-700 font-medium">
+                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
                     <span>+8%</span>
                   </div>
@@ -379,22 +379,22 @@ export const PurchaseOrders = () => {
               </CardContent>
               
               {/* Background Icon */}
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-purple-500/5 transform translate-x-3 translate-y-3" />
+              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Average Order Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 relative overflow-hidden">
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 relative overflow-hidden">
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Avg Order</p>
-                    <div className="text-2xl font-bold text-rose-900 dark:text-rose-100">
+                    <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Avg Order</p>
+                    <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                       ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-rose-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-rose-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-orange-500/10 rounded-full flex items-center justify-center z-10">
+                      <Package className="h-5 w-5 text-orange-600" />
                     </div>
                   </div>
                 </div>
@@ -402,8 +402,8 @@ export const PurchaseOrders = () => {
                 {/* Trend Analysis */}
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1">
-                    <div className="flex-1 h-1 bg-rose-200 rounded">
-                      <div className="w-3/4 h-1 bg-rose-500 rounded"></div>
+                    <div className="flex-1 h-1 bg-orange-200 rounded">
+                      <div className="w-3/4 h-1 bg-orange-500 rounded"></div>
                     </div>
                     <span className="text-xs text-green-600 flex items-center gap-1">
                       <TrendingUp className="h-3 w-3" />
@@ -414,7 +414,7 @@ export const PurchaseOrders = () => {
               </CardContent>
               
               {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-rose-500/5 transform translate-x-3 translate-y-3" />
+              <Package className="absolute bottom-0 right-0 h-12 w-12 text-orange-500/5 transform translate-x-3 translate-y-3" />
             </Card>
           </div>
         </div>

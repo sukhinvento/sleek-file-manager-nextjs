@@ -111,16 +111,6 @@ export function MobileTableView<T>({
                   {(getActions || onRowClick) && (
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {onRowClick && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onRowClick(item)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
                         {getActions?.(item)?.map((action, actionIndex) => {
                           const IconComponent = action.icon;
                           return (

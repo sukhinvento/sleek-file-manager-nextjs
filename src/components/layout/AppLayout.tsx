@@ -147,7 +147,7 @@ export const AppLayout = ({
         </span>
         
         {/* Right - Alert, Create Button, and Profile */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Create Button */}
           {getCreateButtonConfig(location.pathname) && (
             <Button
