@@ -147,7 +147,18 @@ export const AppLayout = ({
         </span>
         
         {/* Right - Alert, Create Button, and Profile */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Create Button */}
+          {getCreateButtonConfig(location.pathname) && (
+            <Button
+              onClick={getCreateButtonConfig(location.pathname)?.action}
+              className="action-button-primary h-8 w-8 p-0"
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+
           {/* Notifications */}
           <div className="relative">
             <Button
@@ -164,17 +175,6 @@ export const AppLayout = ({
               </Badge>
             </Button>
           </div>
-          
-          {/* Create Button */}
-          {getCreateButtonConfig(location.pathname) && (
-            <Button
-              onClick={getCreateButtonConfig(location.pathname)?.action}
-              className="bg-slate-600 text-white hover:bg-slate-700 h-8 w-8 p-0"
-              size="sm"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
 
           {/* User Profile */}
           <DropdownMenu>
