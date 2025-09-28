@@ -145,9 +145,8 @@ export const PurchaseOrders = () => {
     <>
       {/* Summary Cards - Full Width with Horizontal Scroll */}
             <div 
-              className="flex flex-nowrap gap-3 sm:gap-4 pb-2 w-max px-4 overflow-x-auto overflow-y-hidden scrollbar-show overscroll-x-contain touch-pan-x" 
+              className="flex flex-wrap lg:flex-nowrap gap-3 sm:gap-4 pb-2 px-4 overflow-x-auto lg:overflow-x-visible overflow-y-hidden scrollbar-hide overscroll-x-contain touch-pan-x" 
               style={{ WebkitOverflowScrolling: 'touch' }}
-              onScroll={() => {}}
             >
               <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
