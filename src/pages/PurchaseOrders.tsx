@@ -421,7 +421,7 @@ export const PurchaseOrders = () => {
       </section>
 
       {/* Filters Section - Sticky */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
         {/* Desktop Layout - All in one line */}
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
           {/* Status Filter Pills */}
