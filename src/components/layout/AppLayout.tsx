@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, ChevronLeft, ChevronRight, Bell, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Sidebar } from './Sidebar';
 import { PageHeader } from './PageHeader';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -123,10 +125,49 @@ export const AppLayout = ({
       
       {/* Mobile Header */}
       <div className="fixed top-0 left-0 right-0 h-14 bg-[#1a202c] z-30 flex items-center justify-between px-4 lg:hidden">
-        <span className="text-white text-lg font-semibold truncate">Enterprise</span>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 rounded-lg text-white hover:bg-gray-700 transition-colors flex-shrink-0">
+        {/* Left - Hamburger Menu */}
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 rounded-lg text-white hover:bg-gray-700 transition-colors flex-shrink-0"
+        >
           <Menu size={20} />
         </button>
+        
+        {/* Center - Page Title */}
+        <span className="text-white text-lg font-semibold truncate flex-1 text-center">
+          {getPageTitle(location.pathname)}
+        </span>
+        
+        {/* Right - Alert and Create Button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Notifications */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+            >
+              <Bell className="h-4 w-4" />
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs"
+              >
+                3
+              </Badge>
+            </Button>
+          </div>
+          
+          {/* Create Button */}
+          {getCreateButtonConfig(location.pathname) && (
+            <Button
+              onClick={getCreateButtonConfig(location.pathname)?.action}
+              className="bg-slate-600 text-white hover:bg-slate-700 h-8 w-8 p-0"
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
