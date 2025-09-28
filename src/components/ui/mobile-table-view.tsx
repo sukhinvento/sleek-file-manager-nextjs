@@ -1,7 +1,9 @@
 import React from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { MobileResponsiveCard } from './mobile-responsive-card';
+import { Eye } from 'lucide-react';
 
 interface MobileTableViewProps<T> {
   data: T[];
@@ -18,6 +20,7 @@ interface MobileTableViewProps<T> {
     label: string;
     onClick: () => void;
     variant?: 'default' | 'destructive' | 'outline';
+    icon?: React.ComponentType<{ className?: string }>;
   }>;
   onRowClick?: (item: T) => void;
   showMobileCards?: boolean;
@@ -109,22 +112,30 @@ export function MobileTableView<T>({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {onRowClick && (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => onRowClick(item)}
-                            className="text-xs text-blue-600 hover:text-blue-800"
+                            className="h-8 w-8 p-0"
                           >
-                            View
-                          </button>
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         )}
-                        {getActions?.(item)?.map((action, actionIndex) => (
-                          <button
-                            key={actionIndex}
-                            onClick={action.onClick}
-                            className="text-xs text-gray-600 hover:text-gray-800"
-                          >
-                            {action.label}
-                          </button>
-                        ))}
+                        {getActions?.(item)?.map((action, actionIndex) => {
+                          const IconComponent = action.icon;
+                          return (
+                            <Button
+                              key={actionIndex}
+                              variant={action.variant === 'destructive' ? 'destructive' : 'ghost'}
+                              size="sm"
+                              onClick={action.onClick}
+                              className="h-8 w-8 p-0"
+                              title={action.label}
+                            >
+                              {IconComponent && <IconComponent className="h-4 w-4" />}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </TableCell>
                   )}

@@ -11,7 +11,10 @@ import {
   Clock, 
   CheckCircle, 
   TrendingUp, 
-  DollarSign
+  DollarSign,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
@@ -71,6 +74,18 @@ export const PurchaseOrders = () => {
   
   // Sort state
   const [sortConfig, setSortConfig] = useState({ field: 'orderDate', direction: 'desc' });
+
+  // Listen for global create modal events
+  useEffect(() => {
+    const handleOpenCreateModal = (event: any) => {
+      if (event.detail?.type === 'purchase-order') {
+        setIsNewOrderOpen(true);
+      }
+    };
+
+    window.addEventListener('openCreateModal', handleOpenCreateModal);
+    return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
+  }, []);
 
   // Get unique values for filters
   const statuses = ['All', ...Array.from(new Set(purchaseOrders.map(order => order.status)))];
@@ -592,9 +607,9 @@ export const PurchaseOrders = () => {
             }
           }}
           getActions={(order) => [
-            { label: 'View', onClick: () => handleViewOrder(order) },
-            { label: 'Edit', onClick: () => handleEditOrder(order) },
-            { label: 'Delete', onClick: () => handleDeleteOrder(order.id), variant: 'destructive' as const }
+            { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
+            { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
+            { label: 'Delete', onClick: () => handleDeleteOrder(order.id), variant: 'destructive' as const, icon: Trash2 }
           ]}
           onRowClick={(order) => handleViewOrder(order)}
         />
