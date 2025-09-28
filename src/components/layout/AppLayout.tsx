@@ -1,7 +1,15 @@
 import { useState } from 'react';
-import { Menu, ChevronLeft, ChevronRight, Bell, Plus } from 'lucide-react';
+import { Menu, ChevronLeft, ChevronRight, Bell, Plus, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { Sidebar } from './Sidebar';
 import { PageHeader } from './PageHeader';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -138,7 +146,7 @@ export const AppLayout = ({
           {getPageTitle(location.pathname)}
         </span>
         
-        {/* Right - Alert and Create Button */}
+        {/* Right - Alert, Create Button, and Profile */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Notifications */}
           <div className="relative">
@@ -167,18 +175,52 @@ export const AppLayout = ({
               <Plus className="h-4 w-4" />
             </Button>
           )}
+
+          {/* User Profile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-gray-700 p-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="" alt="John Smith" />
+                  <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                    JS
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <div className="flex flex-col space-y-1 p-2">
+                <p className="text-sm font-medium leading-none">John Smith</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  john.smith@company.com
+                </p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       
-      {/* Page Header - Fixed at top */}
-      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 mt-14 lg:mt-0`}>
+      {/* Desktop Header - Only show on desktop */}
+      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 hidden lg:block`}>
         <PageHeader title={getPageTitle(location.pathname)} notificationCount={3} userName="John Smith" userEmail="john.smith@company.com" onCreateClick={getCreateButtonConfig(location.pathname)?.action} createButtonText={getCreateButtonConfig(location.pathname)?.text} />
       </div>
       
       <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen pt-28 lg:pt-16 bg-[#f7fafc] flex flex-col min-w-0">
+        <main className="h-screen pt-14 lg:pt-16 bg-[#f7fafc] flex flex-col min-w-0">
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 sm:py-6 min-w-0 bg-white">
             {children}
           </div>
