@@ -673,11 +673,9 @@ export const VendorManagement = () => {
           )}
         </div>
 
-        {/* Mobile Table View */}
+        {/* Mobile Cards View */}
         <div className="md:hidden">
-          <MobileTableView
-            data={mobileDisplayedItems}
-            renderCard={(vendor: VendorWithRisk) => (
+          {mobileDisplayedItems.map((vendor: VendorWithRisk) => (
               <Card key={vendor.id} className="mb-3">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -741,14 +739,10 @@ export const VendorManagement = () => {
                       <p className="font-bold text-green-600">${(vendor.totalValue / 1000).toFixed(0)}K</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-            hasMoreItems={hasMoreItems}
-            isLoading={isLoading}
-            onLoadMore={loadMoreItems}
-          />
-        </div>
+                 </CardContent>
+               </Card>
+             ))}
+         </div>
       </div>
 
       {/* Vendor Modal */}

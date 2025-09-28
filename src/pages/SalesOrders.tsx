@@ -628,11 +628,9 @@ export const SalesOrders = () => {
           )}
         </div>
 
-        {/* Mobile Table View */}
+        {/* Mobile Cards View */}
         <div className="md:hidden">
-          <MobileTableView
-            data={mobileDisplayedItems}
-            renderCard={(order: SalesOrder) => (
+          {mobileDisplayedItems.map((order: SalesOrder) => (
               <Card key={order.id} className="mb-3">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -694,14 +692,10 @@ export const SalesOrders = () => {
                       <p className="font-bold text-lg">${order.total.toLocaleString()}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-            hasMoreItems={hasMoreItems}
-            isLoading={isLoading}
-            onLoadMore={loadMoreItems}
-          />
-        </div>
+                 </CardContent>
+               </Card>
+             ))}
+         </div>
       </div>
 
       {/* Sales Order Modal */}

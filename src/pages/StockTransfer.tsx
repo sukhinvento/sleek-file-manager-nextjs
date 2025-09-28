@@ -643,11 +643,9 @@ export const StockTransfer = () => {
           )}
         </div>
 
-        {/* Mobile Table View */}
+        {/* Mobile Cards View */}
         <div className="md:hidden">
-          <MobileTableView
-            data={mobileDisplayedItems}
-            renderCard={(transfer: StockTransferType) => (
+          {mobileDisplayedItems.map((transfer: StockTransferType) => (
               <Card key={transfer.id} className="mb-3">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -711,14 +709,10 @@ export const StockTransfer = () => {
                       </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-            hasMoreItems={hasMoreItems}
-            isLoading={isLoading}
-            onLoadMore={loadMoreItems}
-          />
-        </div>
+                 </CardContent>
+               </Card>
+             ))}
+         </div>
       </div>
 
       {/* Stock Transfer Modal */}
