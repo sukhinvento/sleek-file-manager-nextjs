@@ -59,125 +59,107 @@ export const MobileResponsiveCard = ({
   // Enhanced card for purchase orders
   if (orderDetails && vendorDetails && timeline && amount) {
     return (
-      <Card className="w-full mb-3 animate-fade-in hover-scale cursor-pointer" onClick={onViewClick}>
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+      <Card className="w-full animate-fade-in hover-scale cursor-pointer transition-all duration-200" onClick={onViewClick}>
+        <CardContent className="p-3">
+          {/* Header - PO Number and Status */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Package className="h-4 w-4 text-primary" />
-                <CardTitle className="text-sm font-bold">{orderDetails.poNumber}</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {orderDetails.itemCount} items • Created by {orderDetails.createdBy}
-              </p>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold truncate">{orderDetails.poNumber}</h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  {orderDetails.itemCount} items
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 ml-2">
-              {status && (
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs font-medium px-2 py-1 ${
-                    status === 'Pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                    status === 'Approved' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' :
-                    status === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
-                    'bg-gray-50 text-gray-700 border-gray-200'
-                  }`}
-                >
-                  {status}
-                </Badge>
-              )}
-              {actions.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {onViewClick && (
-                      <DropdownMenuItem onClick={onViewClick}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                    )}
-                    {actions.map((action, index) => (
-                      <DropdownMenuItem key={index} onClick={action.onClick}>
-                        {action.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+            {status && (
+              <Badge 
+                variant="outline" 
+                className={`text-xs font-medium flex-shrink-0 ${
+                  status === 'Pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                  status === 'Approved' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' :
+                  status === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                  'bg-gray-50 text-gray-700 border-gray-200'
+                }`}
+              >
+                {status}
+              </Badge>
+            )}
           </div>
-        </CardHeader>
-        
-        <CardContent className="pt-0 space-y-3">
-          {/* Vendor Information */}
-          <div className="bg-muted/20 rounded-lg p-2">
-            <div className="flex items-center gap-2 mb-1">
-              <User className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">Vendor Details</span>
+
+          {/* Key Information Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Vendor */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <User className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs font-medium">Vendor</span>
+              </div>
+              <p className="text-xs font-semibold truncate">{vendorDetails.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{vendorDetails.contact}</p>
             </div>
-            <div className="space-y-0.5">
-              <p className="text-xs font-semibold">{vendorDetails.name}</p>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">{vendorDetails.contact}</span>
+
+            {/* Amount */}
+            <div className="space-y-1 text-right">
+              <div className="flex items-center justify-end gap-1">
+                <span className="text-xs font-medium">Total</span>
+                <CreditCard className="h-3 w-3 text-muted-foreground" />
               </div>
-              <div className="flex items-center gap-1">
-                <Phone className="h-2.5 w-2.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{vendorDetails.phone}</span>
-              </div>
+              <p className="text-sm font-bold text-primary">${amount.total.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{amount.paymentMethod}</p>
             </div>
           </div>
 
           {/* Timeline */}
-          <div className="bg-muted/20 rounded-lg p-2">
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium">Timeline</span>
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Ordered:</span>
+          <div className="mt-3 pt-3 border-t border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Ordered</span>
                 <span className="text-xs font-medium">{timeline.orderDate}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Due:</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">Due</span>
                 <span className="text-xs font-medium">{timeline.deliveryDate}</span>
               </div>
-              {timeline.fulfilmentDate && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Delivered:</span>
-                  <span className="text-xs font-medium text-green-600">{timeline.fulfilmentDate}</span>
-                </div>
-              )}
             </div>
+            {timeline.fulfilmentDate && (
+              <div className="text-center mt-1">
+                <span className="text-xs text-green-600 font-medium">
+                  Delivered: {timeline.fulfilmentDate}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Amount */}
-          <div className="bg-muted/20 rounded-lg p-2">
-            <div className="flex items-center gap-2 mb-1">
-              <CreditCard className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium">Payment</span>
+          {/* Actions Menu */}
+          {actions.length > 0 && (
+            <div className="absolute top-2 right-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted/50">
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onViewClick && (
+                    <DropdownMenuItem onClick={onViewClick}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Details
+                    </DropdownMenuItem>
+                  )}
+                  {actions.map((action, index) => (
+                    <DropdownMenuItem key={index} onClick={action.onClick}>
+                      {action.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="space-y-0.5">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Total Amount:</span>
-                <span className="text-sm font-bold text-primary">${amount.total.toLocaleString()}</span>
-              </div>
-              {amount.paid > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Paid:</span>
-                  <span className="text-xs font-medium text-green-600">${amount.paid.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Method:</span>
-                <span className="text-xs font-medium">{amount.paymentMethod}</span>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     );

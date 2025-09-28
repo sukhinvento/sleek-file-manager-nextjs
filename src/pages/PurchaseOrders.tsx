@@ -145,7 +145,7 @@ export const PurchaseOrders = () => {
     <>
       {/* Summary Cards - Full Width with Horizontal Scroll */}
             <div 
-              className="flex flex-nowrap gap-3 sm:gap-4 pb-2 w-max pr-2 overflow-x-auto overflow-y-hidden scrollbar-show overscroll-x-contain touch-pan-x" 
+              className="flex flex-nowrap gap-3 sm:gap-4 pb-2 w-max px-4 overflow-x-auto overflow-y-hidden scrollbar-show overscroll-x-contain touch-pan-x" 
               style={{ WebkitOverflowScrolling: 'touch' }}
               onScroll={() => {}}
             >
@@ -217,7 +217,7 @@ export const PurchaseOrders = () => {
             </div>
 
         {/* Filters and Search - Responsive Layout */}
-        <div className="bg-card rounded-lg border p-3 sm:p-4 space-y-3 lg:space-y-0 overflow-hidden">
+        <div className="bg-card rounded-lg border p-4 space-y-3 lg:space-y-0 overflow-hidden mb-4">
           {/* Desktop Layout - All in one line */}
           <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
             {/* Status Filter Pills */}

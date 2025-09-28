@@ -38,7 +38,7 @@ export function MobileTableView<T>({
     return (
       <>
         {/* Mobile Cards View */}
-        <div className="block lg:hidden px-4 space-y-4">
+        <div className="block lg:hidden p-4 space-y-3">
           {data.map((item, index) => (
             <MobileResponsiveCard
               key={index}
