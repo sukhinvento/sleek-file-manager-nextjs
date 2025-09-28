@@ -116,7 +116,7 @@ export const SortModal = ({ isOpen, onClose, onApplySort }: SortModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:w-[90vw] sm:max-w-md sm:max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowUpDown className="h-5 w-5" />
