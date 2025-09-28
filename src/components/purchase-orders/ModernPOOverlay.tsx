@@ -313,9 +313,9 @@ export const ModernPOOverlay = ({
       quickActions={quickActions}
       size="medium"
     >
-      <div className="flex h-full flex-col lg:flex-row">
-        {/* Left Sidebar - Order Info */}
-        <div className="w-full lg:w-80 bg-muted/30 border-r border-border/50 flex-shrink-0 overflow-y-auto order-2 lg:order-1">
+      <div className="flex h-full flex-col lg:flex-row lg:divide-x lg:divide-border/50">
+        {/* Left Sidebar - Order Info (Desktop: 1/3 width, Mobile: Full width) */}
+        <div className="w-full lg:w-1/3 bg-muted/30 flex-shrink-0 overflow-y-auto order-2 lg:order-1">
           <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
             {/* Order Summary */}
             <Card>
@@ -455,8 +455,8 @@ export const ModernPOOverlay = ({
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto order-1 lg:order-2">
+        {/* Main Content Area - Products Table (Desktop: 1/3 width, Mobile: Full width) */}
+        <div className="flex-1 lg:w-1/3 flex flex-col overflow-y-auto order-1 lg:order-2">
           {/* Items Section */}
           <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
             <Card className="h-full">
@@ -476,7 +476,113 @@ export const ModernPOOverlay = ({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg overflow-hidden">
+                {/* Mobile Cards View */}
+                <div className="lg:hidden space-y-3">
+                  {items.map((item, index) => (
+                    <Card key={index} className="border">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Product</Label>
+                              {(isEditMode || !order) ? (
+                                <AutosuggestInput
+                                  value={item.name}
+                                  onChange={(value) => updateItem(index, 'name', value)}
+                                  onSelect={(stockItem) => {
+                                    updateItem(index, 'name', stockItem.name);
+                                    updateItem(index, 'unitPrice', stockItem.unitPrice);
+                                    updateItem(index, 'qty', 1);
+                                    updateItem(index, 'discount', 0);
+                                  }}
+                                  placeholder="Search products..."
+                                />
+                              ) : (
+                                <div className="font-medium mt-1">{item.name}</div>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Quantity</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.qty} 
+                                    onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                                    className="mt-1" 
+                                    min="1"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.qty}</div>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Unit Price</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.unitPrice} 
+                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                                    className="mt-1"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Discount (%)</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.discount} 
+                                    onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                                    className="mt-1"
+                                    min="0"
+                                    max="100"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.discount}%</div>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Subtotal</Label>
+                                <div className="mt-1 font-bold text-lg">₹{item.subtotal?.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {(isEditMode || !order) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeItem(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {items.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      No items added yet. Click "Add Item" to get started.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden lg:block border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
@@ -582,9 +688,12 @@ export const ModernPOOverlay = ({
               </CardContent>
             </Card>
           </div>
+        </div>
 
+        {/* Right Sidebar - Comments & Options (Desktop: 1/3 width, Mobile: Hidden/Included in main) */}
+        <div className="hidden lg:flex lg:w-1/3 lg:flex-col lg:order-3 bg-muted/20 overflow-y-auto">
           {/* Notes Section */}
-          <div className="p-6 pt-0">
+          <div className="p-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center">
@@ -598,11 +707,57 @@ export const ModernPOOverlay = ({
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="Add notes, special instructions, or remarks for this order..."
                   disabled={!isEditMode && !!order}
-                  className="min-h-[80px] resize-none"
+                  className="min-h-[120px] resize-none"
                 />
               </CardContent>
             </Card>
           </div>
+
+          {/* Additional Options Card */}
+          <div className="p-6 pt-0">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <Package className="h-4 w-4 mr-2" />
+                  Shipping & Delivery
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="shippingAddress" className="text-xs font-medium text-muted-foreground">Shipping Address</Label>
+                  <Textarea
+                    id="shippingAddress"
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder="Enter shipping address"
+                    disabled={!isEditMode && !!order}
+                    className="mt-1 min-h-[80px] resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Mobile Notes Section - Only visible on mobile */}
+        <div className="lg:hidden order-3 p-3 sm:p-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Notes & Remarks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Add notes, special instructions, or remarks for this order..."
+                disabled={!isEditMode && !!order}
+                className="min-h-[80px] resize-none"
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </ModernInventoryOverlay>

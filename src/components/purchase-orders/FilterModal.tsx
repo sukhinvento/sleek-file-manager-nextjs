@@ -183,16 +183,16 @@ export const FilterModal = ({ isOpen, onClose, onApplyFilters, vendors, statuses
           </div>
         </div>
 
-        <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleClear}>
+        <DialogFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-4">
+          <Button variant="outline" onClick={handleClear} className="w-full sm:w-auto">
             <X className="h-4 w-4 mr-2" />
             Clear All
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleApply}>
+            <Button onClick={handleApply} className="w-full sm:w-auto">
               Apply Filters
             </Button>
           </div>
