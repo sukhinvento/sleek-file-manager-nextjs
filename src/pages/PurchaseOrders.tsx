@@ -169,69 +169,118 @@ export const PurchaseOrders = () => {
       <section className="bg-card rounded-xl border shadow-sm space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
         <div className="h-scroll scroll-mask p-4">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold">{totalOrders}</div>
-              </CardContent>
-            </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ${(pendingValue / 1000).toFixed(0)}K pending value
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
-                <CheckCircle className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">{approvedOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
-              </CardContent>
-            </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Delivered</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold text-green-600">{deliveredOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
-              </CardContent>
-            </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Total Value</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold text-green-600">
-                  ${(totalValue / 1000).toFixed(0)}K
+            {/* Total Orders Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-primary bg-gradient-to-br from-background to-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Orders</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-foreground">{totalOrders}</div>
+                    <div className="flex items-center gap-1 text-xs text-green-600">
+                      <TrendingUp className="h-3 w-3" />
+                      <span>+12% vs last month</span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-primary/10 rounded-lg">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium">Avg Order</CardTitle>
-                <Package className="h-4 w-4 text-purple-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                  ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
+            
+            {/* Pending Orders Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-yellow-500 bg-gradient-to-br from-background to-yellow-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-yellow-700">{pendingOrders}</div>
+                    <div className="text-xs text-muted-foreground">
+                      ${(pendingValue / 1000).toFixed(0)}K value
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-yellow-600" />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Average order value</p>
+              </CardContent>
+            </Card>
+            
+            {/* Approved Orders Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-blue-500 bg-gradient-to-br from-background to-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approved</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-700">{approvedOrders}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Ready for delivery
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Delivered Orders Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-green-500 bg-gradient-to-br from-background to-green-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivered</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-green-700">{deliveredOrders}</div>
+                    <div className="flex items-center gap-1 text-xs text-green-600">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>On time: 95%</span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-green-100 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Total Value Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-emerald-500 bg-gradient-to-br from-background to-emerald-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Value</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-emerald-700">
+                      ${(totalValue / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Lifetime orders
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-emerald-100 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Average Order Card */}
+            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-purple-500 bg-gradient-to-br from-background to-purple-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg Order</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-700">
+                      ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-purple-600">
+                      <TrendingUp className="h-3 w-3" />
+                      <span>Growing</span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 p-2 bg-purple-100 rounded-lg">
+                    <Package className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
