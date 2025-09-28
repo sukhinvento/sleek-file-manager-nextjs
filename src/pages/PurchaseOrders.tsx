@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, DollarSign, ArrowUpDown } from 'lucide-react';
+import { Search, Plus, Filter, MapPin, Calendar, Package, TrendingUp, AlertTriangle, Clock, CheckCircle, Eye, Edit, MoreVertical, DollarSign, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { MobileTableView } from "@/components/ui/mobile-table-view";
 import { purchaseOrdersData } from '../data/purchaseOrderData';
 import { PurchaseOrder } from '../types/purchaseOrder';
 import { toast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { ModernPOOverlay } from '../components/purchase-orders/ModernPOOverlay';
 import { FilterModal } from '../components/purchase-orders/FilterModal';
 import { SortModal } from '../components/purchase-orders/SortModal';
@@ -44,6 +47,11 @@ export const PurchaseOrders = () => {
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<any>({});
   const [sortConfig, setSortConfig] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const isMobile = useIsMobile();
 
   // Listen for global create modal events
   useEffect(() => {
@@ -98,6 +106,24 @@ export const PurchaseOrders = () => {
     if (aValue > bValue) return direction === 'asc' ? 1 : -1;
     return 0;
   });
+
+  // Infinite scroll for mobile
+  const { displayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
+    data: filteredOrders,
+    itemsPerPage,
+    enabled: isMobile
+  });
+
+  // Desktop pagination
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPageData = isMobile ? displayedItems : filteredOrders.slice(startIndex, endIndex);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus, selectedVendor, appliedFilters, sortConfig]);
 
   // Calculate metrics
   const totalOrders = purchaseOrders.length;
@@ -304,7 +330,7 @@ export const PurchaseOrders = () => {
         {/* Purchase Orders Responsive Table/Cards */}
         <div className="overflow-hidden mt-6">
           <MobileTableView
-            data={filteredOrders}
+            data={currentPageData}
             columns={[
               {
                 key: 'poNumber',
@@ -412,6 +438,75 @@ export const PurchaseOrders = () => {
             ]}
             onRowClick={handleViewOrder}
           />
+
+          {/* Mobile Infinite Scroll Loading */}
+          {isMobile && isLoading && (
+            <div className="flex justify-center items-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading more orders...</span>
+            </div>
+          )}
+
+          {/* Mobile Load More Button (fallback) */}
+          {isMobile && hasMoreItems && !isLoading && (
+            <div className="flex justify-center py-4">
+              <Button variant="outline" onClick={loadMoreItems}>
+                Load More Orders
+              </Button>
+            </div>
+          )}
+
+          {/* Desktop Pagination */}
+          {!isMobile && totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6">
+              <p className="text-sm text-muted-foreground">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
+              </p>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNumber;
+                    if (totalPages <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPage > totalPages - 3) {
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      pageNumber = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(pageNumber)}
+                          isActive={currentPage === pageNumber}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
 
         {/* Purchase Order Modal */}
