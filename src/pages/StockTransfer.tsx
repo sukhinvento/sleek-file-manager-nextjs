@@ -127,6 +127,8 @@ export const StockTransfer = () => {
   const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<StockTransferType | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -448,11 +450,11 @@ export const StockTransfer = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -489,11 +491,11 @@ export const StockTransfer = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsFilterModalOpen(true)}>
               <Filter className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Filters</span>
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsSortModalOpen(true)}>
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -646,7 +648,7 @@ export const StockTransfer = () => {
         {/* Mobile Cards View */}
         <div className="md:hidden">
           {mobileDisplayedItems.map((transfer: StockTransferType) => (
-              <Card key={transfer.id} className="mb-3">
+              <Card key={transfer.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
