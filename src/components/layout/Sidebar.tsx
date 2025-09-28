@@ -78,7 +78,7 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <div className="px-3 py-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
+      <div className="px-3 py-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-4rem)]">
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Main</p>}
           <nav className="mt-2 space-y-1">
