@@ -58,7 +58,9 @@ export const Sidebar = ({
     >
       <div className="flex items-center h-16 px-4 border-b border-gray-800">
         <div className="flex-1 overflow-hidden">
-          <h2 className={`text-xl font-bold text-white whitespace-nowrap nav-text ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>MedSystem</h2>
+          <div className={`text-lg sm:text-xl font-bold text-white whitespace-nowrap nav-text ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+            MedSystem
+          </div>
         </div>
         <div className="flex items-center flex-shrink-0">
           <button 

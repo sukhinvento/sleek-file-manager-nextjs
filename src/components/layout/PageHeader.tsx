@@ -41,7 +41,7 @@ export const PageHeader = ({
       <div className="flex items-center justify-between gap-2">
         {/* Left side - Title */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-2xl font-semibold text-white truncate">{title}</h1>
+          <h1 className="text-xl font-bold text-white truncate">{title}</h1>
         </div>
 
         {/* Right side - Actions, Notifications and Profile */}
