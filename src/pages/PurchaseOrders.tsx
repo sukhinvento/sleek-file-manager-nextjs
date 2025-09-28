@@ -179,7 +179,7 @@ export const PurchaseOrders = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Summary Cards Section */}
       <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
         <div className="h-scroll py-4">
