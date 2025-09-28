@@ -166,11 +166,10 @@ export const PurchaseOrders = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards Section */}
-      <section className="bg-card rounded-xl border shadow-sm p-4">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">Overview</h2>
-        <div className="h-scroll scrollbar-hide scroll-mask">
+      <section className="bg-card rounded-xl border shadow-sm space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
+        <div className="h-scroll scroll-mask p-4">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
@@ -179,7 +178,7 @@ export const PurchaseOrders = () => {
                 <div className="text-xl sm:text-2xl font-bold">{totalOrders}</div>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
                 <Clock className="h-4 w-4 text-yellow-500" />
@@ -191,7 +190,7 @@ export const PurchaseOrders = () => {
                 </p>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
                 <CheckCircle className="h-4 w-4 text-blue-500" />
@@ -201,7 +200,7 @@ export const PurchaseOrders = () => {
                 <p className="text-xs text-muted-foreground mt-1">Ready for delivery</p>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Delivered</CardTitle>
                 <TrendingUp className="h-4 w-4 text-green-500" />
@@ -211,7 +210,7 @@ export const PurchaseOrders = () => {
                 <p className="text-xs text-muted-foreground mt-1">Successfully completed</p>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Total Value</CardTitle>
                 <DollarSign className="h-4 w-4 text-green-500" />
@@ -223,7 +222,7 @@ export const PurchaseOrders = () => {
                 <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
               </CardContent>
             </Card>
-            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
+            <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Avg Order</CardTitle>
                 <Package className="h-4 w-4 text-purple-500" />
@@ -240,93 +239,91 @@ export const PurchaseOrders = () => {
       </section>
 
       {/* Filters Section - Sticky */}
-      <section className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-        <div className="bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden mx-4 sm:mx-0">
-          {/* Desktop Layout - All in one line */}
-          <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
-            {/* Status Filter Pills */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-2 pb-2 w-max min-w-0">
-                {statuses.map(status => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    className="rounded-full whitespace-nowrap text-sm px-3 py-1 animate-fade-in"
-                    onClick={() => setSelectedStatus(status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
+        {/* Desktop Layout - All in one line */}
+        <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
+          {/* Status Filter Pills */}
+          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex gap-2 pb-2 w-max min-w-0">
+              {statuses.map(status => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-sm px-3 py-1 animate-fade-in"
+                  onClick={() => setSelectedStatus(status)}
+                >
+                  {status}
+                </Button>
+              ))}
             </div>
-            
-            {/* Search and Action Buttons */}
-            <div className="flex gap-3 flex-shrink-0 min-w-0">
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search PO, vendor, or address..."
-                  className="pl-8 text-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+          </div>
+          
+          {/* Search and Action Buttons */}
+          <div className="flex gap-3 flex-shrink-0 min-w-0">
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search PO, vendor, or address..."
+                className="pl-8 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+              <Filter className="mr-1 h-4 w-4" /> 
+              Filters
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown className="mr-1 h-4 w-4" /> 
+              Sort
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile/Tablet Layout - Stacked */}
+        <div className="lg:hidden space-y-3">
+          {/* Status Filter Pills */}
+          <div className="overflow-x-auto overflow-y-hidden">
+            <div className="flex gap-2 pb-2 w-max min-w-full">
+              {statuses.map(status => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
+                  onClick={() => setSelectedStatus(status)}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Search and Action Buttons */}
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search orders..."
+                className="pl-8 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
                 <Filter className="mr-1 h-4 w-4" /> 
-                Filters
+                <span className="hidden sm:inline">Filters</span>
               </Button>
               <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
                 <ArrowUpDown className="mr-1 h-4 w-4" /> 
-                Sort
+                <span className="hidden sm:inline">Sort</span>
               </Button>
             </div>
           </div>
-
-          {/* Mobile/Tablet Layout - Stacked */}
-          <div className="lg:hidden space-y-3">
-            {/* Status Filter Pills */}
-            <div className="overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-2 pb-2 w-max min-w-full">
-                {statuses.map(status => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
-                    onClick={() => setSelectedStatus(status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Search and Action Buttons */}
-            <div className="flex gap-2 flex-wrap">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search orders..."
-                  className="pl-8 text-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
-                  <Filter className="mr-1 h-4 w-4" /> 
-                  <span className="hidden sm:inline">Filters</span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
-                  <ArrowUpDown className="mr-1 h-4 w-4" /> 
-                  <span className="hidden sm:inline">Sort</span>
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
-      </section>
+      </div>
 
       {/* Purchase Orders Table Section */}
       <section className="bg-card rounded-xl border shadow-sm overflow-hidden">
