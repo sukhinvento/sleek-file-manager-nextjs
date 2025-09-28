@@ -181,8 +181,8 @@ export const PurchaseOrders = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards Section */}
-      <section className="bg-card rounded-xl border shadow-sm space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll scroll-mask p-4">
+      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
+        <div className="h-scroll py-4">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Orders Card */}
             <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
@@ -508,188 +508,183 @@ export const PurchaseOrders = () => {
       </div>
 
       {/* Purchase Orders Table Section */}
-      <section className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold text-foreground">Purchase Orders</h2>
-        </div>
-        <MobileTableView
-          data={currentPageData}
-          columns={[
-            {
-              key: 'poNumber',
-              label: 'PO Number',
-              render: (value, order) => (
-                <div>
-                  <div className="font-medium">{value}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {order.items.length} items
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Created by: {order.createdBy}
-                  </div>
-                </div>
-              )
-            },
-            {
-              key: 'vendorName',
-              label: 'Vendor',
-              render: (value, order) => (
-                <div>
-                  <div className="font-medium">{value}</div>
-                  <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
-                  <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
-                </div>
-              )
-            },
-            {
-              key: 'status',
-              label: 'Status',
-              render: (value, order) => (
-                <div className="space-y-2">
-                  <StatusBadge status={value} />
-                  {order.approvedBy && (
-                    <div className="text-xs text-muted-foreground">
-                      Approved by: {order.approvedBy}
-                    </div>
-                  )}
-                </div>
-              )
-            },
-            {
-              key: 'orderDate',
-              label: 'Timeline',
-              render: (value, order) => (
-                <div className="space-y-1">
-                  <div className="text-sm">
-                    <span className="font-medium">Ordered:</span> {value}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Due:</span> {order.deliveryDate}
-                  </div>
-                  {order.fulfilmentDate && (
-                    <div className="text-sm text-green-600">
-                      <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
-                    </div>
-                  )}
-                </div>
-              )
-            },
-            {
-              key: 'total',
-              label: 'Amount',
-              render: (value, order) => (
-                <div>
-                  <div className="font-semibold text-lg">
-                    ${value.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {order.paymentMethod}
-                  </div>
-                  {order.paidAmount > 0 && (
-                    <div className="text-xs text-green-600">
-                      Paid: ${order.paidAmount.toLocaleString()}
-                    </div>
-                  )}
-                </div>
-              )
-            }
-          ]}
-          getTitle={(order) => order.poNumber}
-          getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
-          getStatus={(order) => order.status}
-          getStatusColor={(order) => {
-            switch (order.status.toLowerCase()) {
-              case 'pending': return 'yellow';
-              case 'approved': return 'blue';
-              case 'delivered': return 'green';
-              case 'cancelled': return 'red';
-              default: return 'gray';
-            }
-          }}
-          getActions={(order) => [
-            { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
-            { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
-            { label: 'Delete', onClick: () => handleDeleteOrder(order.id), variant: 'destructive' as const, icon: Trash2 }
-          ]}
-          onRowClick={(order) => handleViewOrder(order)}
-        />
-
-        {/* Desktop Pagination */}
-        {!isMobile && totalPages > 1 && (
-          <div className="p-4 border-t">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
-
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(pageNumber)}
-                        isActive={currentPage === pageNumber}
-                        className="cursor-pointer"
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
-
-        {/* Mobile: Show loading indicator and load more button */}
-        {isMobile && (
-          <div className="p-4 border-t text-center">
-            {hasMoreItems ? (
-              <div className="space-y-2">
+      <MobileTableView
+        data={currentPageData}
+        columns={[
+          {
+            key: 'poNumber',
+            label: 'PO Number',
+            render: (value, order) => (
+              <div>
+                <div className="font-medium">{value}</div>
                 <div className="text-sm text-muted-foreground">
-                  Showing {mobileDisplayedItems.length} of {sortedOrders.length} orders
+                  {order.items.length} items
                 </div>
-                {isLoading ? (
-                  <div className="text-sm text-muted-foreground">Loading...</div>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    onClick={loadMoreItems}
-                    className="w-full"
-                  >
-                    Load More
-                  </Button>
+                <div className="text-sm text-muted-foreground">
+                  Created by: {order.createdBy}
+                </div>
+              </div>
+            )
+          },
+          {
+            key: 'vendorName',
+            label: 'Vendor',
+            render: (value, order) => (
+              <div>
+                <div className="font-medium">{value}</div>
+                <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
+                <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
+              </div>
+            )
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (value, order) => (
+              <div className="space-y-2">
+                <StatusBadge status={value} />
+                {order.approvedBy && (
+                  <div className="text-xs text-muted-foreground">
+                    Approved by: {order.approvedBy}
+                  </div>
                 )}
               </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                All {sortedOrders.length} orders loaded
+            )
+          },
+          {
+            key: 'orderDate',
+            label: 'Timeline',
+            render: (value, order) => (
+              <div className="space-y-1">
+                <div className="text-sm">
+                  <span className="font-medium">Ordered:</span> {value}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium">Due:</span> {order.deliveryDate}
+                </div>
+                {order.fulfilmentDate && (
+                  <div className="text-sm text-green-600">
+                    <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </section>
+            )
+          },
+          {
+            key: 'total',
+            label: 'Amount',
+            render: (value, order) => (
+              <div>
+                <div className="font-semibold text-lg">
+                  ${value.toLocaleString()}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {order.paymentMethod}
+                </div>
+                {order.paidAmount > 0 && (
+                  <div className="text-xs text-green-600">
+                    Paid: ${order.paidAmount.toLocaleString()}
+                  </div>
+                )}
+              </div>
+            )
+          }
+        ]}
+        getTitle={(order) => order.poNumber}
+        getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
+        getStatus={(order) => order.status}
+        getStatusColor={(order) => {
+          switch (order.status.toLowerCase()) {
+            case 'pending': return 'yellow';
+            case 'approved': return 'blue';
+            case 'delivered': return 'green';
+            case 'cancelled': return 'red';
+            default: return 'gray';
+          }
+        }}
+        getActions={(order) => [
+          { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
+          { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
+          { label: 'Delete', onClick: () => handleDeleteOrder(order.id), variant: 'destructive' as const, icon: Trash2 }
+        ]}
+        onRowClick={(order) => handleViewOrder(order)}
+      />
+
+      {/* Desktop Pagination */}
+      {!isMobile && totalPages > 1 && (
+        <div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNumber;
+                if (totalPages <= 5) {
+                  pageNumber = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i;
+                } else {
+                  pageNumber = currentPage - 2 + i;
+                }
+
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(pageNumber)}
+                      isActive={currentPage === pageNumber}
+                      className="cursor-pointer"
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {/* Mobile: Show loading indicator and load more button */}
+      {isMobile && (
+        <div className="text-center">
+          {hasMoreItems ? (
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                Showing {mobileDisplayedItems.length} of {sortedOrders.length} orders
+              </div>
+              {isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  onClick={loadMoreItems}
+                  className="w-full"
+                >
+                  Load More
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              All {sortedOrders.length} orders loaded
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       <ModernPOOverlay

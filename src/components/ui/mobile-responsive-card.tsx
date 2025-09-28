@@ -59,7 +59,7 @@ export const MobileResponsiveCard = ({
   // Enhanced card for purchase orders
   if (orderDetails && vendorDetails && timeline && amount) {
     return (
-      <Card className="w-full animate-fade-in hover-scale cursor-pointer transition-all duration-200" onClick={onViewClick}>
+      <Card className="w-full animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={onViewClick}>
         <CardContent className="p-3">
           {/* Header - PO Number and Status */}
           <div className="flex items-center justify-between mb-3">
