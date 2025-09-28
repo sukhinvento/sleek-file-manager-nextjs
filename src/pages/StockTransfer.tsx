@@ -543,12 +543,12 @@ export const StockTransfer = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <StatusBadge status={transfer.status} />
-                          <PriorityBadge priority={transfer.priority} />
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex flex-wrap gap-1">
+                           <StatusBadge status={transfer.status} />
+                           <PriorityBadge priority={transfer.priority} />
+                         </div>
+                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="text-sm font-medium">Requested by:</div>

@@ -535,12 +535,12 @@ export const SalesOrders = () => {
                           <div className="text-sm text-muted-foreground">{order.customerEmail}</div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <StatusBadge status={order.status} />
-                          <StatusBadge status={order.paymentStatus} type="payment" />
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex flex-wrap gap-1">
+                           <StatusBadge status={order.status} />
+                           <StatusBadge status={order.paymentStatus} type="payment" />
+                         </div>
+                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="text-sm">

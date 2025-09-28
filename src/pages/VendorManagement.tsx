@@ -568,15 +568,15 @@ export const VendorManagement = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            {vendor.category}
-                          </Badge>
-                          <StatusBadge status={vendor.status} />
-                          <RiskBadge level={vendor.riskLevel} />
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex flex-wrap gap-1">
+                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                             {vendor.category}
+                           </Badge>
+                           <StatusBadge status={vendor.status} />
+                           <RiskBadge level={vendor.riskLevel} />
+                         </div>
+                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="text-lg font-bold">{vendor.totalOrders}</div>

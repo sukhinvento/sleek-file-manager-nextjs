@@ -540,16 +540,16 @@ export const PurchaseOrders = () => {
           {
             key: 'status',
             label: 'Status',
-            render: (value, order) => (
-              <div className="space-y-2">
-                <StatusBadge status={value} />
-                {order.approvedBy && (
-                  <div className="text-xs text-muted-foreground">
-                    Approved by: {order.approvedBy}
-                  </div>
-                )}
-              </div>
-            )
+             render: (value, order) => (
+               <div className="flex flex-wrap gap-1">
+                 <StatusBadge status={value} />
+                 {order.approvedBy && (
+                   <div className="text-xs text-muted-foreground">
+                     Approved by: {order.approvedBy}
+                   </div>
+                 )}
+               </div>
+             )
           },
           {
             key: 'orderDate',

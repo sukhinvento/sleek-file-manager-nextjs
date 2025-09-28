@@ -176,13 +176,13 @@ export const MobileResponsiveCard = ({
               <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 ml-2">
-            {status && (
-              <Badge variant="outline" className={`text-xs ${statusColor}`}>
-                {status}
-              </Badge>
-            )}
-            {actions.length > 0 && (
+           <div className="flex flex-wrap items-center gap-1 ml-2">
+             {status && (
+               <Badge variant="outline" className={`text-xs ${statusColor}`}>
+                 {status}
+               </Badge>
+             )}
+             {actions.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
