@@ -178,9 +178,7 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
                       <Package className="h-5 w-5 text-blue-600" />
                     </div>
                   </div>
@@ -219,9 +217,7 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
                       <Clock className="h-5 w-5 text-amber-600" />
                     </div>
                   </div>
@@ -276,9 +272,7 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{approvedOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
                       <CheckCircle className="h-5 w-5 text-emerald-600" />
                     </div>
                   </div>
@@ -311,9 +305,7 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-green-900 dark:text-green-100">{deliveredOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
                       <TrendingUp className="h-5 w-5 text-green-600" />
                     </div>
                   </div>
@@ -352,9 +344,7 @@ export const PurchaseOrders = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center z-10">
                       <DollarSign className="h-5 w-5 text-purple-600" />
                     </div>
                   </div>
@@ -388,9 +378,7 @@ export const PurchaseOrders = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-rose-500/10 rounded-full flex items-center justify-center">
-                    </div>
-                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-rose-500/10 rounded-full flex items-center justify-center z-10">
                       <Package className="h-5 w-5 text-rose-600" />
                     </div>
                   </div>
