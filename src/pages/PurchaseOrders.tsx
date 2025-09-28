@@ -178,8 +178,11 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full"></div>
-                    <Package className="h-5 w-5 text-blue-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-blue-600" />
+                    </div>
                   </div>
                 </div>
                 
@@ -216,14 +219,17 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full"></div>
-                    <Clock className="h-5 w-5 text-amber-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
                   </div>
                 </div>
                 
                 {/* Progress Circle */}
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="relative w-8 h-8">
+                  <div className="relative w-8 h-8 flex items-center justify-center">
                     <svg className="w-8 h-8 transform -rotate-90">
                       <circle
                         cx="16"
@@ -246,7 +252,7 @@ export const PurchaseOrders = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-bold text-amber-700">
+                      <span className="text-[10px] font-bold text-amber-700 leading-none">
                         {Math.round((pendingOrders / totalOrders) * 100)}%
                       </span>
                     </div>
@@ -270,8 +276,11 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{approvedOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full"></div>
-                    <CheckCircle className="h-5 w-5 text-emerald-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    </div>
                   </div>
                 </div>
                 
@@ -302,8 +311,11 @@ export const PurchaseOrders = () => {
                     <div className="text-2xl font-bold text-green-900 dark:text-green-100">{deliveredOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full"></div>
-                    <TrendingUp className="h-5 w-5 text-green-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                    </div>
                   </div>
                 </div>
                 
@@ -340,8 +352,11 @@ export const PurchaseOrders = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full"></div>
-                    <DollarSign className="h-5 w-5 text-purple-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-purple-600" />
+                    </div>
                   </div>
                 </div>
                 
@@ -373,8 +388,11 @@ export const PurchaseOrders = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-rose-500/10 rounded-full"></div>
-                    <Package className="h-5 w-5 text-rose-600 relative z-10" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-rose-500/10 rounded-full flex items-center justify-center">
+                    </div>
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-rose-600" />
+                    </div>
                   </div>
                 </div>
                 
