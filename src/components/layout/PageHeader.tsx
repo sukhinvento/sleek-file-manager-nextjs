@@ -37,11 +37,11 @@ export const PageHeader = ({
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="bg-card border-b border-border px-3 py-3 sm:px-6 sm:py-4">
+    <div className="bg-[#1a202c] border-b border-gray-700 px-3 py-3 sm:px-6 sm:py-4">
       <div className="flex items-center justify-between gap-2">
         {/* Left side - Title */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-card-foreground truncate">{title}</h1>
+          <h1 className="text-xl font-bold text-white truncate">{title}</h1>
         </div>
 
         {/* Right side - Actions, Notifications and Profile */}
@@ -79,7 +79,7 @@ export const PageHeader = ({
             variant="ghost"
             size="sm"
             onClick={onNotificationClick}
-            className="relative text-muted-foreground hover:text-foreground hover:bg-muted h-8 w-8 p-0"
+            className="relative text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
           >
             <Bell className="h-4 w-4" />
             {notificationCount > 0 && (
@@ -96,7 +96,7 @@ export const PageHeader = ({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-muted p-0">
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-gray-700 p-0">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={userAvatar} alt={userName} />
                 <AvatarFallback className="bg-muted text-muted-foreground text-xs">
