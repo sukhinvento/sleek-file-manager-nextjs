@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
+import { FilterModal } from '@/components/purchase-orders/FilterModal';
+import { SortModal } from '@/components/purchase-orders/SortModal';
 import { InventoryFormOverlay } from '@/components/inventory/InventoryFormOverlay';
 import { InventoryItem } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -687,6 +689,21 @@ export const Inventory = () => {
              ))}
          </div>
       </div>
+
+      {/* Filter and Sort Modals */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onApplyFilters={() => {}}
+        vendors={[]}
+        statuses={statuses}
+      />
+      
+      <SortModal
+        isOpen={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        onApplySort={() => {}}
+      />
 
       {/* Inventory Item Modal */}
       <InventoryFormOverlay
