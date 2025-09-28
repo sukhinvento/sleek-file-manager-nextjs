@@ -313,150 +313,152 @@ export const ModernPOOverlay = ({
       quickActions={quickActions}
       size="medium"
     >
-      <div className="flex h-full flex-col lg:flex-row lg:divide-x lg:divide-border/50">
-        {/* Left Sidebar - Order Info (Desktop: 1/3 width, Mobile: Full width) */}
-        <div className="w-full lg:w-1/3 bg-muted/30 flex-shrink-0 overflow-y-auto order-2 lg:order-1">
-          <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-            {/* Order Summary */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <Package className="h-4 w-4 mr-2" />
-                  Order Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (18%)</span>
-                  <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-semibold">
-                  <span>Total</span>
-                  <span className="text-lg">₹{totals.total.toFixed(2)}</span>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="flex h-full flex-col">
+        {/* Top Section - Order Info (Desktop: Horizontal layout, Mobile: Full width) */}
+        <div className="flex-shrink-0 bg-muted/30 border-b border-border/50 overflow-y-auto">
+          <div className="p-3 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+              {/* Order Summary */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Package className="h-4 w-4 mr-2" />
+                    Order Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tax (18%)</span>
+                    <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span className="text-lg">₹{totals.total.toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Vendor Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  Vendor Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="vendorName" className="text-xs font-medium text-muted-foreground">Vendor Name</Label>
-                  <Input
-                    id="vendorName"
-                    value={vendorName}
-                    onChange={(e) => setVendorName(e.target.value)}
-                    placeholder="Enter vendor name"
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vendorEmail" className="text-xs font-medium text-muted-foreground">Email</Label>
-                  <Input
-                    id="vendorEmail"
-                    type="email"
-                    value={vendorEmail}
-                    onChange={(e) => setVendorEmail(e.target.value)}
-                    placeholder="vendor@example.com"
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vendorPhone" className="text-xs font-medium text-muted-foreground">Phone</Label>
-                  <Input
-                    id="vendorPhone"
-                    value={vendorPhone}
-                    onChange={(e) => setVendorPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vendorAddress" className="text-xs font-medium text-muted-foreground">Address</Label>
-                  <Textarea
-                    id="vendorAddress"
-                    value={vendorAddress}
-                    onChange={(e) => setVendorAddress(e.target.value)}
-                    placeholder="Enter vendor address"
-                    disabled={!isEditMode && !!order}
-                    className="mt-1 min-h-[60px]"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              {/* Vendor Information */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    Vendor Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="vendorName" className="text-xs font-medium text-muted-foreground">Vendor Name</Label>
+                    <Input
+                      id="vendorName"
+                      value={vendorName}
+                      onChange={(e) => setVendorName(e.target.value)}
+                      placeholder="Enter vendor name"
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vendorEmail" className="text-xs font-medium text-muted-foreground">Email</Label>
+                    <Input
+                      id="vendorEmail"
+                      type="email"
+                      value={vendorEmail}
+                      onChange={(e) => setVendorEmail(e.target.value)}
+                      placeholder="vendor@example.com"
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vendorPhone" className="text-xs font-medium text-muted-foreground">Phone</Label>
+                    <Input
+                      id="vendorPhone"
+                      value={vendorPhone}
+                      onChange={(e) => setVendorPhone(e.target.value)}
+                      placeholder="+1 (555) 000-0000"
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vendorAddress" className="text-xs font-medium text-muted-foreground">Address</Label>
+                    <Textarea
+                      id="vendorAddress"
+                      value={vendorAddress}
+                      onChange={(e) => setVendorAddress(e.target.value)}
+                      placeholder="Enter vendor address"
+                      disabled={!isEditMode && !!order}
+                      className="mt-1 min-h-[60px]"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Order Details */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Order Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                  <Input
-                    id="orderDate"
-                    type="date"
-                    value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                  <Input
-                    id="deliveryDate"
-                    type="date"
-                    value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="net-30">Net 30 Days</SelectItem>
-                      <SelectItem value="net-15">Net 15 Days</SelectItem>
-                      <SelectItem value="net-7">Net 7 Days</SelectItem>
-                      <SelectItem value="cod">Cash on Delivery</SelectItem>
-                      <SelectItem value="advance">Advance Payment</SelectItem>
-                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Order Details */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Order Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
+                    <Input
+                      id="orderDate"
+                      type="date"
+                      value={orderDate}
+                      onChange={(e) => setOrderDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="net-30">Net 30 Days</SelectItem>
+                        <SelectItem value="net-15">Net 15 Days</SelectItem>
+                        <SelectItem value="net-7">Net 7 Days</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                        <SelectItem value="advance">Advance Payment</SelectItem>
+                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
-        {/* Main Content Area - Products Table (Desktop: 1/3 width, Mobile: Full width) */}
-        <div className="flex-1 lg:w-1/3 flex flex-col overflow-y-auto order-1 lg:order-2">
+        {/* Middle Section - Products Table (Desktop and Mobile) */}
+        <div className="flex-1 flex flex-col overflow-y-auto border-b border-border/50">
           {/* Items Section */}
           <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
             <Card className="h-full">
@@ -690,74 +692,53 @@ export const ModernPOOverlay = ({
           </div>
         </div>
 
-        {/* Right Sidebar - Comments & Options (Desktop: 1/3 width, Mobile: Hidden/Included in main) */}
-        <div className="hidden lg:flex lg:w-1/3 lg:flex-col lg:order-3 bg-muted/20 overflow-y-auto">
-          {/* Notes Section */}
-          <div className="p-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Notes & Remarks
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add notes, special instructions, or remarks for this order..."
-                  disabled={!isEditMode && !!order}
-                  className="min-h-[120px] resize-none"
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Additional Options Card */}
-          <div className="p-6 pt-0">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <Package className="h-4 w-4 mr-2" />
-                  Shipping & Delivery
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="shippingAddress" className="text-xs font-medium text-muted-foreground">Shipping Address</Label>
+        {/* Bottom Section - Comments & Options */}
+        <div className="flex-shrink-0 bg-muted/20">
+          <div className="p-3 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              {/* Notes Section */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Notes & Remarks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <Textarea
-                    id="shippingAddress"
-                    value={shippingAddress}
-                    onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="Enter shipping address"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add notes, special instructions, or remarks for this order..."
                     disabled={!isEditMode && !!order}
-                    className="mt-1 min-h-[80px] resize-none"
+                    className="min-h-[100px] resize-none"
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                </CardContent>
+              </Card>
 
-        {/* Mobile Notes Section - Only visible on mobile */}
-        <div className="lg:hidden order-3 p-3 sm:p-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Notes & Remarks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Add notes, special instructions, or remarks for this order..."
-                disabled={!isEditMode && !!order}
-                className="min-h-[80px] resize-none"
-              />
-            </CardContent>
-          </Card>
+              {/* Shipping & Delivery Section */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Package className="h-4 w-4 mr-2" />
+                    Shipping & Delivery
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="shippingAddress" className="text-xs font-medium text-muted-foreground">Shipping Address</Label>
+                    <Textarea
+                      id="shippingAddress"
+                      value={shippingAddress}
+                      onChange={(e) => setShippingAddress(e.target.value)}
+                      placeholder="Enter shipping address"
+                      disabled={!isEditMode && !!order}
+                      className="mt-1 min-h-[100px] resize-none"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </ModernInventoryOverlay>
