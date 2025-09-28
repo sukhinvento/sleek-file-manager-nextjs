@@ -134,8 +134,8 @@ export const Inventory = () => {
     <div className="flex flex-col space-y-6">
       {/* Summary Cards - Horizontally scrollable */}
       <div className="mb-6">
-        <div className="overflow-x-auto max-w-full pb-2">
-          <div className="inline-flex w-max gap-4 pr-6">
+        <div className="h-scroll scrollbar-hide px-4 pb-2">
+          <div className="flex flex-nowrap gap-4 w-max">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -182,7 +182,7 @@ export const Inventory = () => {
       <div className="flex-1 overflow-y-auto space-y-6">
         {/* Filters and Search */}
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 h-scroll scrollbar-hide pb-2 min-w-0">
             {categories.map(category => (
               <Button
                 key={category}

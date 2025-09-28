@@ -144,10 +144,8 @@ export const PurchaseOrders = () => {
   return (
     <>
       {/* Summary Cards - Full Width with Horizontal Scroll */}
-            <div 
-              className="w-full max-w-full min-w-0 flex flex-nowrap gap-3 sm:gap-4 pb-2 px-4 overflow-x-auto overflow-y-hidden scrollbar-hide overscroll-x-contain touch-pan-x" 
-              style={{ WebkitOverflowScrolling: 'touch' }}
-            >
+            <div className="h-scroll scrollbar-hide scroll-mask px-4 pb-2">
+              <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
               <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
@@ -213,6 +211,7 @@ export const PurchaseOrders = () => {
                   <p className="text-xs text-muted-foreground mt-1">Average order value</p>
                 </CardContent>
               </Card>
+              </div>
             </div>
 
         {/* Filters and Search - Responsive Layout */}

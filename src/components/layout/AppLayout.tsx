@@ -107,9 +107,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         />
       </div>
       
-      <div className={`flex-1 transition-all duration-300 ml-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen pt-28 lg:pt-16 bg-[#f7fafc] flex flex-col">
-          <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
+      <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+        <main className="h-screen pt-28 lg:pt-16 bg-[#f7fafc] flex flex-col min-w-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 sm:py-6 min-w-0">
             {children}
           </div>
         </main>

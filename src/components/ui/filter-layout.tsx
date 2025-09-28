@@ -66,7 +66,7 @@ export const FilterLayout = ({
 
           {/* Quick Filter Groups - Contained scrollable area */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-2 pr-4">
+            <div className="flex items-center gap-6 h-scroll scrollbar-hide pb-2 pr-4">
               {filterGroups.map((group) => (
                 <div key={group.id} className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">

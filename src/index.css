@@ -6,11 +6,31 @@
 @layer utilities {
   /* Hide scrollbar for WebKit browsers */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
   }
   .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Horizontal scroll utility */
+  .h-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .h-scroll::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Scroll fade mask for better UX */
+  .scroll-mask {
+    mask-image: linear-gradient(90deg, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
   }
   
   /* Show scrollbar for horizontal scroll containers */
