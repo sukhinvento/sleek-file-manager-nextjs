@@ -166,8 +166,7 @@ export const PurchaseOrders = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards Section */}
-      <section className="bg-card rounded-xl border shadow-sm p-4">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">Overview</h2>
+      <section>
         <div className="h-scroll scrollbar-hide scroll-mask">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             <Card className="flex-shrink-0 w-32 sm:w-36 md:w-40 animate-fade-in hover-scale">
@@ -241,7 +240,7 @@ export const PurchaseOrders = () => {
 
       {/* Filters Section - Sticky */}
       <section className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-        <div className="bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden mx-4 sm:mx-0">
+        <div className="p-4 space-y-3 lg:space-y-0 overflow-hidden">
           {/* Desktop Layout - All in one line */}
           <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
             {/* Status Filter Pills */}
@@ -330,9 +329,6 @@ export const PurchaseOrders = () => {
 
       {/* Purchase Orders Table Section */}
       <section className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold text-foreground">Purchase Orders</h2>
-        </div>
         <MobileTableView
           data={currentPageData}
           columns={[
