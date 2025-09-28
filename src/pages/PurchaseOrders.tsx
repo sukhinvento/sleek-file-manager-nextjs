@@ -168,120 +168,250 @@ export const PurchaseOrders = () => {
       {/* Summary Cards Section */}
       <section className="bg-card rounded-xl border shadow-sm space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
         <div className="h-scroll scroll-mask p-4">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
+          <div className="flex flex-nowrap gap-4 sm:gap-6 w-max">
             {/* Total Orders Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-primary bg-gradient-to-br from-background to-muted/30">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Orders</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-foreground">{totalOrders}</div>
-                    <div className="flex items-center gap-1 text-xs text-green-600">
-                      <TrendingUp className="h-3 w-3" />
-                      <span>+12% vs last month</span>
-                    </div>
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Orders</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-primary/10 rounded-lg">
-                    <Package className="h-5 w-5 text-primary" />
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-blue-500/10 rounded-full"></div>
+                    <Package className="h-8 w-8 text-blue-600 relative z-10" />
                   </div>
                 </div>
+                
+                {/* Mini Chart */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-end gap-1 h-6">
+                      {[3, 5, 4, 6, 8, 7, 9, 8, 6, 7].map((height, i) => (
+                        <div 
+                          key={i} 
+                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
+                          style={{ height: `${height * 3}px` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
+                    <TrendingUp className="h-4 w-4" />
+                    +12%
+                  </div>
+                </div>
+                <p className="text-xs text-blue-700/70">vs last month</p>
               </CardContent>
+              
+              {/* Background Icon */}
+              <Package className="absolute bottom-0 right-0 h-24 w-24 text-blue-500/5 transform translate-x-6 translate-y-6" />
             </Card>
             
             {/* Pending Orders Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-yellow-500 bg-gradient-to-br from-background to-yellow-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-yellow-700">{pendingOrders}</div>
-                    <div className="text-xs text-muted-foreground">
-                      ${(pendingValue / 1000).toFixed(0)}K value
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-amber-900 dark:text-amber-100">{pendingOrders}</div>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-amber-500/10 rounded-full"></div>
+                    <Clock className="h-8 w-8 text-amber-600 relative z-10" />
+                  </div>
+                </div>
+                
+                {/* Progress Circle */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="relative w-12 h-12">
+                    <svg className="w-12 h-12 transform -rotate-90">
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="20"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="transparent"
+                        className="text-amber-200"
+                      />
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="20"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="transparent"
+                        strokeDasharray={`${(pendingOrders / totalOrders) * 125.6} 125.6`}
+                        className="text-amber-500"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-bold text-amber-700">
+                        {Math.round((pendingOrders / totalOrders) * 100)}%
+                      </span>
                     </div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800">${(pendingValue / 1000).toFixed(0)}K value</p>
+                    <p className="text-xs text-amber-600/70">awaiting approval</p>
                   </div>
                 </div>
               </CardContent>
+              
+              {/* Background Icon */}
+              <Clock className="absolute bottom-0 right-0 h-24 w-24 text-amber-500/5 transform translate-x-6 translate-y-6" />
             </Card>
             
             {/* Approved Orders Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-blue-500 bg-gradient-to-br from-background to-blue-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approved</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-blue-700">{approvedOrders}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Ready for delivery
-                    </div>
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Approved</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-emerald-900 dark:text-emerald-100">{approvedOrders}</div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-emerald-500/10 rounded-full"></div>
+                    <CheckCircle className="h-8 w-8 text-emerald-600 relative z-10" />
+                  </div>
+                </div>
+                
+                {/* Status Indicators */}
+                <div className="space-y-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-emerald-200 rounded-full h-2">
+                      <div 
+                        className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: '85%' }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-emerald-700">85%</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-emerald-600">Ready for delivery</span>
+                    <span className="text-emerald-700 font-medium">{approvedOrders}/{totalOrders}</span>
                   </div>
                 </div>
               </CardContent>
+              
+              {/* Background Icon */}
+              <CheckCircle className="absolute bottom-0 right-0 h-24 w-24 text-emerald-500/5 transform translate-x-6 translate-y-6" />
             </Card>
             
             {/* Delivered Orders Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-green-500 bg-gradient-to-br from-background to-green-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivered</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-green-700">{deliveredOrders}</div>
-                    <div className="flex items-center gap-1 text-xs text-green-600">
-                      <CheckCircle className="h-3 w-3" />
-                      <span>On time: 95%</span>
-                    </div>
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Delivered</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-green-900 dark:text-green-100">{deliveredOrders}</div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-green-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-green-500/10 rounded-full"></div>
+                    <TrendingUp className="h-8 w-8 text-green-600 relative z-10" />
                   </div>
                 </div>
+                
+                {/* Performance Metrics */}
+                <div className="space-y-2 mb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-green-600">On-time delivery</span>
+                    <span className="text-sm font-bold text-green-700">95%</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[8, 6, 9, 7, 8, 9, 8, 7, 9].map((height, i) => (
+                      <div 
+                        key={i} 
+                        className="bg-green-400 rounded-sm h-1"
+                        style={{ opacity: height / 10 }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600/70">Success rate trending up</p>
+                </div>
               </CardContent>
+              
+              {/* Background Icon */}
+              <TrendingUp className="absolute bottom-0 right-0 h-24 w-24 text-green-500/5 transform translate-x-6 translate-y-6" />
             </Card>
             
             {/* Total Value Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-emerald-500 bg-gradient-to-br from-background to-emerald-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Value</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-emerald-700">
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Total Value</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-purple-900 dark:text-purple-100">
                       ${(totalValue / 1000).toFixed(0)}K
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Lifetime orders
-                    </div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-emerald-100 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-purple-500/10 rounded-full"></div>
+                    <DollarSign className="h-8 w-8 text-purple-600 relative z-10" />
+                  </div>
+                </div>
+                
+                {/* Value Breakdown */}
+                <div className="space-y-2 mb-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-purple-600">Paid: ${((totalValue - pendingValue) / 1000).toFixed(0)}K</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-purple-300 rounded-full"></div>
+                    <span className="text-purple-600">Pending: ${(pendingValue / 1000).toFixed(0)}K</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-purple-700 font-medium mt-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>Growing 8% monthly</span>
                   </div>
                 </div>
               </CardContent>
+              
+              {/* Background Icon */}
+              <DollarSign className="absolute bottom-0 right-0 h-24 w-24 text-purple-500/5 transform translate-x-6 translate-y-6" />
             </Card>
             
             {/* Average Order Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 animate-fade-in hover-scale shadow-lg border-l-4 border-l-purple-500 bg-gradient-to-br from-background to-purple-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg Order</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-700">
+            <Card className="flex-shrink-0 w-48 sm:w-52 md:w-56 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 relative overflow-hidden">
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Avg Order</p>
+                    <div className="text-3xl sm:text-4xl font-bold text-rose-900 dark:text-rose-100">
                       ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-purple-600">
-                      <TrendingUp className="h-3 w-3" />
-                      <span>Growing</span>
-                    </div>
                   </div>
-                  <div className="flex-shrink-0 p-2 bg-purple-100 rounded-lg">
-                    <Package className="h-5 w-5 text-purple-600" />
+                  <div className="relative">
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-rose-500/10 rounded-full"></div>
+                    <Package className="h-8 w-8 text-rose-600 relative z-10" />
                   </div>
                 </div>
+                
+                {/* Trend Analysis */}
+                <div className="space-y-2 mb-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-rose-600">This month</span>
+                    <span className="font-medium text-rose-700">
+                      ${totalOrders > 0 ? ((totalValue / totalOrders) * 1.05 / 1000).toFixed(0) : 0}K
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="flex-1 h-1 bg-rose-200 rounded">
+                      <div className="w-3/4 h-1 bg-rose-500 rounded"></div>
+                    </div>
+                    <span className="text-xs text-green-600 flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      +5%
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-600/70">Order size increasing</p>
+                </div>
               </CardContent>
+              
+              {/* Background Icon */}
+              <Package className="absolute bottom-0 right-0 h-24 w-24 text-rose-500/5 transform translate-x-6 translate-y-6" />
             </Card>
           </div>
         </div>
