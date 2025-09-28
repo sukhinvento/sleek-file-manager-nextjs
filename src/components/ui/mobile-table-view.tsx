@@ -87,9 +87,8 @@ export function MobileTableView<T>({
 
         {/* Desktop Table View */}
         <div className="hidden lg:block">
-          <Card className="border-border/50 shadow-sm">
-            <div className="overflow-x-auto max-w-full">
-          <Table>
+          <div className="overflow-x-auto max-w-full rounded-xl border">
+            <Table className="rounded-xl overflow-hidden">
             <TableHeader>
               <TableRow>
                 {columns.map((column, index) => (
@@ -132,9 +131,8 @@ export function MobileTableView<T>({
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-            </div>
-          </Card>
+            </Table>
+          </div>
         </div>
       </>
     );
