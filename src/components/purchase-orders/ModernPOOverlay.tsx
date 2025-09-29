@@ -349,38 +349,65 @@ export const ModernPOOverlay = ({
   // Initial layout measurement when modal opens
   useLayoutEffect(() => {
     if (!isOpen) return;
-    
+
     const container = containerRef.current;
     if (!container) return;
 
-    // Immediate measurement to prevent flicker
-    const width = container.clientWidth;
-    const isNarrow = width < 700;
-    setIsNarrowLayout(isNarrow);
-    
-    console.log('POOverlay v2025-09-29-1 initial', { width, isNarrowLayout: isNarrow, isOpen });
+    const measure = () => {
+      // Prefer precise box measurement
+      let width = container.getBoundingClientRect().width || container.clientWidth || 0;
+      // Fallback if width is 0 (not yet laid out)
+      if (width === 0) {
+        // Approximate overlay width: mobile uses 100vw, >=sm uses ~75vw for size="wide"
+        const vw = window.innerWidth;
+        width = vw < 640 ? vw : Math.round(vw * 0.75);
+      }
+      const isNarrow = width < 700;
+      setIsNarrowLayout(isNarrow);
+      console.log('POOverlay v2025-09-29-2 initial', { width, isNarrowLayout: isNarrow, isOpen });
+    };
+
+    // Measure now and on next frame to avoid 0 width
+    measure();
+    const raf = requestAnimationFrame(measure);
+
+    return () => cancelAnimationFrame(raf);
   }, [isOpen]);
 
   // Monitor container width for responsive layout when modal is open
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const container = containerRef.current;
     if (!container) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
+    const handleMeasure = (width: number) => {
+      const isNarrow = width < 700;
+      setIsNarrowLayout(isNarrow);
+      console.log('POOverlay v2025-09-29-2 resize', { width, isNarrowLayout: isNarrow, isOpen });
+    };
+
+    const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width } = entry.contentRect;
-        const isNarrow = width < 700;
-        setIsNarrowLayout(isNarrow);
-        console.log('POOverlay v2025-09-29-1 resize', { width, isNarrowLayout: isNarrow, isOpen });
+        handleMeasure(entry.contentRect.width);
       }
     });
 
-    resizeObserver.observe(container);
+    ro.observe(container);
+
+    // Window resize fallback
+    const onWindowResize = () => {
+      const width = container.getBoundingClientRect().width || container.clientWidth;
+      handleMeasure(width);
+    };
+    window.addEventListener('resize', onWindowResize);
+
+    // Initial fallback measure in case RO misses first paint
+    onWindowResize();
 
     return () => {
-      resizeObserver.disconnect();
+      ro.disconnect();
+      window.removeEventListener('resize', onWindowResize);
     };
   }, [isOpen]);
 
@@ -612,7 +639,7 @@ export const ModernPOOverlay = ({
       size="wide"
     >
       {/* Container for width monitoring */}
-      <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-1">
+      <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-2">
         
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
