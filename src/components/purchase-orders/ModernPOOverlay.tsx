@@ -47,6 +47,41 @@ const mockVendors: Vendor[] = [
   }
 ];
 
+// Mock location data for shipping destinations
+interface Location {
+  id: string;
+  name: string;
+  address: string;
+  type: 'warehouse' | 'clinic' | 'hospital';
+}
+
+const mockLocations: Location[] = [
+  {
+    id: 'l1',
+    name: 'Main Warehouse',
+    address: '123 Storage Street, Industrial Area, IN 12345',
+    type: 'warehouse'
+  },
+  {
+    id: 'l2', 
+    name: 'Central Hospital',
+    address: '456 Health Avenue, Medical District, MD 67890',
+    type: 'hospital'
+  },
+  {
+    id: 'l3',
+    name: 'Downtown Clinic',
+    address: '789 Care Lane, Downtown, DT 54321',
+    type: 'clinic'
+  },
+  {
+    id: 'l4',
+    name: 'Regional Distribution Center',
+    address: '321 Logistics Blvd, Distribution Hub, DH 98765',
+    type: 'warehouse'
+  }
+];
+
 // Custom Vendor Autosuggest Component
 interface VendorAutosuggestProps {
   value: string;
@@ -127,6 +162,111 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
                       <span className="truncate">{vendor.phone}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="ml-2 shrink-0">
+                  <Badge variant="outline" className="text-xs">Select</Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Location Autosuggest Component
+interface LocationAutosuggestProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSelect: (location: Location) => void;
+  locations: Location[];
+  disabled?: boolean;
+  className?: string;
+}
+
+const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, className }: LocationAutosuggestProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
+
+  useEffect(() => {
+    if (value.trim() === '') {
+      setFilteredLocations([]);
+      setIsOpen(false);
+      return;
+    }
+
+    const filtered = locations.filter(location =>
+      location.name.toLowerCase().includes(value.toLowerCase()) ||
+      location.address.toLowerCase().includes(value.toLowerCase()) ||
+      location.type.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredLocations(filtered);
+    setIsOpen(filtered.length > 0);
+  }, [value, locations]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+  };
+
+  const handleLocationSelect = (location: Location) => {
+    onSelect(location);
+    setIsOpen(false);
+  };
+
+  const handleInputFocus = () => {
+    if (value.trim() && filteredLocations.length > 0) {
+      setIsOpen(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    setTimeout(() => setIsOpen(false), 150);
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'warehouse': return 'bg-blue-100 text-blue-800';
+      case 'hospital': return 'bg-green-100 text-green-800';
+      case 'clinic': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      <Textarea
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder="Search locations or enter custom address"
+        disabled={disabled}
+        className="w-full min-h-[60px]"
+      />
+      {isOpen && filteredLocations.length > 0 && (
+        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {filteredLocations.map((location) => (
+            <div
+              key={location.id}
+              className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0 transition-all duration-200"
+              onClick={() => handleLocationSelect(location)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="font-medium text-foreground text-sm truncate">{location.name}</div>
+                    <Badge variant="outline" className={`text-xs ${getTypeColor(location.type)}`}>
+                      {location.type}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Package className="h-3 w-3" />
+                      <span className="truncate">{location.address}</span>
                     </div>
                   </div>
                 </div>
@@ -508,14 +648,24 @@ export const ModernPOOverlay = ({
                       Shipping Address
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="shippingAddress" className="text-xs font-medium text-muted-foreground">Delivery Address</Label>
-                      <Textarea
-                        id="shippingAddress"
+                      <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
+                      <LocationAutosuggest
                         value={shippingAddress}
-                        onChange={(e) => setShippingAddress(e.target.value)}
-                        placeholder="Enter shipping/delivery address"
+                        onChange={(value) => setShippingAddress(value)}
+                        onSelect={(location) => setShippingAddress(location.address)}
+                        locations={mockLocations}
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="shippingNotes" className="text-xs font-medium text-muted-foreground">Delivery Notes</Label>
+                      <Textarea
+                        id="shippingNotes"
+                        placeholder="Add special delivery instructions, access codes, contact person, etc."
                         disabled={!isEditMode && !!order}
                         className="mt-1 min-h-[60px]"
                       />
