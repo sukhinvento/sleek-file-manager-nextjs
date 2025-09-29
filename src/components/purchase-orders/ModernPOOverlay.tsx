@@ -597,7 +597,7 @@ export const ModernPOOverlay = ({
         
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
-          <div className="grid grid-cols-[30%_70%] gap-6 h-full">
+          <div className="grid grid-cols-2 gap-6 h-full">
         
         {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
         <div className="flex flex-col gap-4 p-6 overflow-y-auto">
