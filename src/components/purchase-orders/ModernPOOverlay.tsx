@@ -719,11 +719,11 @@ export const ModernPOOverlay = ({
         </div>
 
         {/* Right Column - Products Table (Top) & Notes (Bottom) */}
-        <div className="flex flex-col gap-4 p-6">
+        <div className="flex flex-col gap-4 p-6 h-full">
           
-          {/* Products Table - Top Section */}
-          <Card className="flex-1 flex flex-col">
-            <CardHeader className="pb-3">
+          {/* Products Table - Top Section (75% of screen) */}
+          <Card className="flex flex-col" style={{ height: '75vh' }}>
+            <CardHeader className="pb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center">
                   <Package className="h-4 w-4 mr-2" />
@@ -743,17 +743,18 @@ export const ModernPOOverlay = ({
                   No items added yet. Click "Add Item" to get started.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="w-20">Qty</TableHead>
-                      <TableHead className="w-24">Price</TableHead>
-                      <TableHead className="w-20">Disc%</TableHead>
-                      <TableHead className="w-24">Subtotal</TableHead>
-                      {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
-                    </TableRow>
-                  </TableHeader>
+                <div className="h-full overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background">
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="w-20">Qty</TableHead>
+                        <TableHead className="w-24">Price</TableHead>
+                        <TableHead className="w-20">Disc%</TableHead>
+                        <TableHead className="w-24">Subtotal</TableHead>
+                        {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {items.map((item, index) => (
                       <TableRow key={index}>
@@ -832,27 +833,28 @@ export const ModernPOOverlay = ({
                         )}
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Additional Notes - Bottom Section */}
-          <Card className="flex-shrink-0">
+          {/* Additional Notes - Bottom Section (25% of remaining space) */}
+          <Card className="flex-shrink-0" style={{ height: '20vh' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Additional Notes
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-full">
               <Textarea
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
                 disabled={!isEditMode && !!order}
-                className="min-h-[100px] resize-none"
+                className="h-full resize-none"
               />
             </CardContent>
           </Card>
