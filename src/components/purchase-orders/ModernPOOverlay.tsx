@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -346,15 +346,34 @@ export const ModernPOOverlay = ({
     setIsEditMode(isEdit);
   }, [order, isEdit]);
 
-  // Monitor container width for responsive layout
+  // Initial layout measurement when modal opens
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Immediate measurement to prevent flicker
+    const width = container.clientWidth;
+    const isNarrow = width < 700;
+    setIsNarrowLayout(isNarrow);
+    
+    console.log('POOverlay v2025-09-29-1 initial', { width, isNarrowLayout: isNarrow, isOpen });
+  }, [isOpen]);
+
+  // Monitor container width for responsive layout when modal is open
   useEffect(() => {
+    if (!isOpen) return;
+    
     const container = containerRef.current;
     if (!container) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width } = entry.contentRect;
-        setIsNarrowLayout(width < 700);
+        const isNarrow = width < 700;
+        setIsNarrowLayout(isNarrow);
+        console.log('POOverlay v2025-09-29-1 resize', { width, isNarrowLayout: isNarrow, isOpen });
       }
     });
 
@@ -363,7 +382,7 @@ export const ModernPOOverlay = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [isOpen]);
 
   const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
 
@@ -593,7 +612,7 @@ export const ModernPOOverlay = ({
       size="wide"
     >
       {/* Container for width monitoring */}
-      <div ref={containerRef} className="h-full">
+      <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-1">
         
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
