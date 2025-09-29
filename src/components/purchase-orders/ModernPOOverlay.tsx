@@ -14,6 +14,39 @@ import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { AutosuggestInput } from './AutosuggestInput';
 import { PurchaseOrder, PurchaseOrderItem, StockItem } from '../../types/purchaseOrder';
 
+// Mock vendor data for autocomplete
+interface Vendor {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+const mockVendors: Vendor[] = [
+  {
+    id: 'v1',
+    name: 'MedSupply Inc.',
+    email: 'orders@medsupply.com',
+    phone: '+1 (555) 123-4567',
+    address: '123 Medical Ave, Healthcare City, HC 12345'
+  },
+  {
+    id: 'v2',
+    name: 'PharmaCorp',
+    email: 'procurement@pharmacorp.com',
+    phone: '+1 (555) 987-6543',
+    address: '456 Pharmacy St, Wellness Town, WT 67890'
+  },
+  {
+    id: 'v3',
+    name: 'HealthTech Solutions',
+    email: 'sales@healthtech.com',
+    phone: '+1 (555) 555-0123',
+    address: '789 Innovation Blvd, Tech Valley, TV 54321'
+  }
+];
+
 interface ModernPOOverlayProps {
   order: PurchaseOrder | null;
   isOpen: boolean;
@@ -329,50 +362,56 @@ export const ModernPOOverlay = ({
                       Vendor Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="vendorName" className="text-xs font-medium text-muted-foreground">Vendor Name</Label>
-                      <Input
-                        id="vendorName"
-                        value={vendorName}
-                        onChange={(e) => setVendorName(e.target.value)}
-                        placeholder="Enter vendor name"
-                        disabled={!isEditMode && !!order}
-                        className="mt-1"
-                      />
+                      <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          id="vendorSelect"
+                          value={vendorName}
+                          onChange={(e) => {
+                            setVendorName(e.target.value);
+                            const existingVendor = mockVendors.find(v => 
+                              v.name.toLowerCase().includes(e.target.value.toLowerCase())
+                            );
+                            if (existingVendor && e.target.value === existingVendor.name) {
+                              setVendorEmail(existingVendor.email);
+                              setVendorPhone(existingVendor.phone);
+                              setVendorAddress(existingVendor.address);
+                            }
+                          }}
+                          placeholder="Search or enter vendor name"
+                          disabled={!isEditMode && !!order}
+                          list="vendors-list"
+                        />
+                        <datalist id="vendors-list">
+                          {mockVendors.map((vendor) => (
+                            <option key={vendor.id} value={vendor.name} />
+                          ))}
+                        </datalist>
+                      </div>
                     </div>
+                    
+                    {vendorName && (
+                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                        <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
+                          <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
+                          <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
-                      <Label htmlFor="vendorEmail" className="text-xs font-medium text-muted-foreground">Email</Label>
-                      <Input
-                        id="vendorEmail"
-                        type="email"
-                        value={vendorEmail}
-                        onChange={(e) => setVendorEmail(e.target.value)}
-                        placeholder="vendor@example.com"
-                        disabled={!isEditMode && !!order}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="vendorPhone" className="text-xs font-medium text-muted-foreground">Phone</Label>
-                      <Input
-                        id="vendorPhone"
-                        value={vendorPhone}
-                        onChange={(e) => setVendorPhone(e.target.value)}
-                        placeholder="+1 (555) 000-0000"
-                        disabled={!isEditMode && !!order}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="vendorAddress" className="text-xs font-medium text-muted-foreground">Vendor Address</Label>
+                      <Label htmlFor="vendorComments" className="text-xs font-medium text-muted-foreground">Comments</Label>
                       <Textarea
-                        id="vendorAddress"
-                        value={vendorAddress}
-                        onChange={(e) => setVendorAddress(e.target.value)}
-                        placeholder="Enter vendor address"
+                        id="vendorComments"
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
+                        placeholder="Add any comments or special instructions for this vendor"
                         disabled={!isEditMode && !!order}
-                        className="mt-1 min-h-[60px]"
+                        className="mt-1 min-h-[80px]"
                       />
                     </div>
                   </CardContent>
