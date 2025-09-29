@@ -319,62 +319,88 @@ export const ModernPOOverlay = ({
           <div className="p-3 sm:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              {/* Left Column - Vendor Information */}
-              <Card className="h-fit">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <User className="h-4 w-4 mr-2" />
-                    Vendor Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label htmlFor="vendorName" className="text-xs font-medium text-muted-foreground">Vendor Name</Label>
-                    <Input
-                      id="vendorName"
-                      value={vendorName}
-                      onChange={(e) => setVendorName(e.target.value)}
-                      placeholder="Enter vendor name"
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="vendorEmail" className="text-xs font-medium text-muted-foreground">Email</Label>
-                    <Input
-                      id="vendorEmail"
-                      type="email"
-                      value={vendorEmail}
-                      onChange={(e) => setVendorEmail(e.target.value)}
-                      placeholder="vendor@example.com"
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="vendorPhone" className="text-xs font-medium text-muted-foreground">Phone</Label>
-                    <Input
-                      id="vendorPhone"
-                      value={vendorPhone}
-                      onChange={(e) => setVendorPhone(e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="vendorAddress" className="text-xs font-medium text-muted-foreground">Address</Label>
-                    <Textarea
-                      id="vendorAddress"
-                      value={vendorAddress}
-                      onChange={(e) => setVendorAddress(e.target.value)}
-                      placeholder="Enter vendor address"
-                      disabled={!isEditMode && !!order}
-                      className="mt-1 min-h-[60px]"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Left Column - Vendor Information & Shipping */}
+              <div className="space-y-4">
+                {/* Vendor Information */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      Vendor Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label htmlFor="vendorName" className="text-xs font-medium text-muted-foreground">Vendor Name</Label>
+                      <Input
+                        id="vendorName"
+                        value={vendorName}
+                        onChange={(e) => setVendorName(e.target.value)}
+                        placeholder="Enter vendor name"
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vendorEmail" className="text-xs font-medium text-muted-foreground">Email</Label>
+                      <Input
+                        id="vendorEmail"
+                        type="email"
+                        value={vendorEmail}
+                        onChange={(e) => setVendorEmail(e.target.value)}
+                        placeholder="vendor@example.com"
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vendorPhone" className="text-xs font-medium text-muted-foreground">Phone</Label>
+                      <Input
+                        id="vendorPhone"
+                        value={vendorPhone}
+                        onChange={(e) => setVendorPhone(e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vendorAddress" className="text-xs font-medium text-muted-foreground">Vendor Address</Label>
+                      <Textarea
+                        id="vendorAddress"
+                        value={vendorAddress}
+                        onChange={(e) => setVendorAddress(e.target.value)}
+                        placeholder="Enter vendor address"
+                        disabled={!isEditMode && !!order}
+                        className="mt-1 min-h-[60px]"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Shipping Address */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center">
+                      <Truck className="h-4 w-4 mr-2" />
+                      Shipping Address
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <Label htmlFor="shippingAddress" className="text-xs font-medium text-muted-foreground">Delivery Address</Label>
+                      <Textarea
+                        id="shippingAddress"
+                        value={shippingAddress}
+                        onChange={(e) => setShippingAddress(e.target.value)}
+                        placeholder="Enter shipping/delivery address"
+                        disabled={!isEditMode && !!order}
+                        className="mt-1 min-h-[60px]"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Right Column - Summary & Order Details */}
               <div className="flex flex-col gap-4">
