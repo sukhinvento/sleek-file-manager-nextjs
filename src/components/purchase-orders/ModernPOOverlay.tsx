@@ -47,6 +47,101 @@ const mockVendors: Vendor[] = [
   }
 ];
 
+// Custom Vendor Autosuggest Component
+interface VendorAutosuggestProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSelect: (vendor: Vendor) => void;
+  vendors: Vendor[];
+  disabled?: boolean;
+  className?: string;
+}
+
+const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, className }: VendorAutosuggestProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
+
+  useEffect(() => {
+    if (value.trim() === '') {
+      setFilteredVendors([]);
+      setIsOpen(false);
+      return;
+    }
+
+    const filtered = vendors.filter(vendor =>
+      vendor.name.toLowerCase().includes(value.toLowerCase()) ||
+      vendor.email.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredVendors(filtered);
+    setIsOpen(filtered.length > 0);
+  }, [value, vendors]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+
+  const handleVendorSelect = (vendor: Vendor) => {
+    onSelect(vendor);
+    setIsOpen(false);
+  };
+
+  const handleInputFocus = () => {
+    if (value.trim() && filteredVendors.length > 0) {
+      setIsOpen(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay to allow click on dropdown items
+    setTimeout(() => setIsOpen(false), 150);
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      <Input
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder="Search or enter vendor name"
+        disabled={disabled}
+        className="w-full"
+      />
+      {isOpen && filteredVendors.length > 0 && (
+        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {filteredVendors.map((vendor) => (
+            <div
+              key={vendor.id}
+              className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0 transition-all duration-200"
+              onClick={() => handleVendorSelect(vendor)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground text-sm truncate">{vendor.name}</div>
+                  <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                    <div className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      <span className="truncate">{vendor.email}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span className="truncate">{vendor.phone}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="ml-2 shrink-0">
+                  <Badge variant="outline" className="text-xs">Select</Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface ModernPOOverlayProps {
   order: PurchaseOrder | null;
   isOpen: boolean;
@@ -365,31 +460,19 @@ export const ModernPOOverlay = ({
                   <CardContent className="space-y-4">
                     <div>
                       <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          id="vendorSelect"
-                          value={vendorName}
-                          onChange={(e) => {
-                            setVendorName(e.target.value);
-                            const existingVendor = mockVendors.find(v => 
-                              v.name.toLowerCase().includes(e.target.value.toLowerCase())
-                            );
-                            if (existingVendor && e.target.value === existingVendor.name) {
-                              setVendorEmail(existingVendor.email);
-                              setVendorPhone(existingVendor.phone);
-                              setVendorAddress(existingVendor.address);
-                            }
-                          }}
-                          placeholder="Search or enter vendor name"
-                          disabled={!isEditMode && !!order}
-                          list="vendors-list"
-                        />
-                        <datalist id="vendors-list">
-                          {mockVendors.map((vendor) => (
-                            <option key={vendor.id} value={vendor.name} />
-                          ))}
-                        </datalist>
-                      </div>
+                      <VendorAutosuggest
+                        value={vendorName}
+                        onChange={(value) => setVendorName(value)}
+                        onSelect={(vendor) => {
+                          setVendorName(vendor.name);
+                          setVendorEmail(vendor.email);
+                          setVendorPhone(vendor.phone);
+                          setVendorAddress(vendor.address);
+                        }}
+                        vendors={mockVendors}
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
                     </div>
                     
                     {vendorName && (
