@@ -354,7 +354,7 @@ export const ModernPOOverlay = ({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width } = entry.contentRect;
-        setIsNarrowLayout(width < 750);
+        setIsNarrowLayout(width < 700);
       }
     });
 
