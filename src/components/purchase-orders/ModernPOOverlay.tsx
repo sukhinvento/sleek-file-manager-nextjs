@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -313,6 +313,9 @@ export const ModernPOOverlay = ({
   const [remarks, setRemarks] = useState<string>('');
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data
   useEffect(() => {
@@ -342,6 +345,25 @@ export const ModernPOOverlay = ({
     }
     setIsEditMode(isEdit);
   }, [order, isEdit]);
+
+  // Monitor container width for responsive layout
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        setIsNarrowLayout(width < 700);
+      }
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
 
@@ -570,8 +592,12 @@ export const ModernPOOverlay = ({
       quickActions={quickActions}
       size="wide"
     >
-      {/* Large Screen Layout: Two Columns */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 h-full">
+      {/* Container for width monitoring */}
+      <div ref={containerRef} className="h-full">
+        
+        {/* Wide Layout: Two Columns (Left & Right) */}
+        {!isNarrowLayout ? (
+          <div className="grid grid-cols-2 gap-6 h-full">
         
         {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
         <div className="flex flex-col gap-4 p-6 overflow-y-auto">
@@ -858,11 +884,11 @@ export const ModernPOOverlay = ({
               />
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Small Screen Layout: Single Column (Rows) */}
-      <div className="lg:hidden flex flex-col gap-4 p-4 overflow-y-auto h-full">
+          </div>
+          </div>
+        ) : (
+          /* Narrow Layout: Single Column (Rows) */
+          <div className="flex flex-col gap-4 p-4 overflow-y-auto h-full">
         
         {/* Order Summary */}
         <Card>
@@ -1146,6 +1172,8 @@ export const ModernPOOverlay = ({
             />
           </CardContent>
         </Card>
+        </div>
+        )}
       </div>
     </ModernInventoryOverlay>
   );
