@@ -311,7 +311,7 @@ export const ModernPOOverlay = ({
       statusColor={getStatusColor(order?.status)}
       headerActions={headerActions}
       quickActions={quickActions}
-      size="medium"
+      size="wide"
     >
       <div className="flex h-full flex-col">
         {/* Top Section - Order Info (Desktop: Horizontal layout, Mobile: Full width) */}
