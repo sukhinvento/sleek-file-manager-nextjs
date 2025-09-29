@@ -317,38 +317,10 @@ export const ModernPOOverlay = ({
         {/* Top Section - Order Info (Desktop: Horizontal layout, Mobile: Full width) */}
         <div className="flex-shrink-0 bg-muted/30 border-b border-border/50">
           <div className="p-3 sm:p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-              {/* Order Summary */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <Package className="h-4 w-4 mr-2" />
-                    Order Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax (18%)</span>
-                    <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span className="text-lg">₹{totals.total.toFixed(2)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Vendor Information */}
-              <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Left Column - Vendor Information */}
+              <Card className="h-fit">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center">
                     <User className="h-4 w-4 mr-2" />
@@ -404,55 +376,89 @@ export const ModernPOOverlay = ({
                 </CardContent>
               </Card>
 
-              {/* Order Details */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Order Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                    <Input
-                      id="orderDate"
-                      type="date"
-                      value={orderDate}
-                      onChange={(e) => setOrderDate(e.target.value)}
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="net-30">Net 30 Days</SelectItem>
-                        <SelectItem value="net-15">Net 15 Days</SelectItem>
-                        <SelectItem value="net-7">Net 7 Days</SelectItem>
-                        <SelectItem value="cod">Cash on Delivery</SelectItem>
-                        <SelectItem value="advance">Advance Payment</SelectItem>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Right Column - Summary & Order Details */}
+              <div className="flex flex-col gap-4">
+                
+                {/* Order Summary - Top Section */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center">
+                      <Package className="h-4 w-4 mr-2" />
+                      Order Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tax (18%)</span>
+                      <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total</span>
+                      <span className="text-lg">₹{totals.total.toFixed(2)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Order Details - Bottom Section */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Order Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
+                      <Input
+                        id="orderDate"
+                        type="date"
+                        value={orderDate}
+                        onChange={(e) => setOrderDate(e.target.value)}
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
+                      <Input
+                        id="deliveryDate"
+                        type="date"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        disabled={!isEditMode && !!order}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="net-30">Net 30 Days</SelectItem>
+                          <SelectItem value="net-15">Net 15 Days</SelectItem>
+                          <SelectItem value="net-7">Net 7 Days</SelectItem>
+                          <SelectItem value="cod">Cash on Delivery</SelectItem>
+                          <SelectItem value="advance">Advance Payment</SelectItem>
+                          <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+              </div>
             </div>
           </div>
         </div>
