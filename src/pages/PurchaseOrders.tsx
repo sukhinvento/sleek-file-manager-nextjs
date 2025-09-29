@@ -423,10 +423,10 @@ export const PurchaseOrders = () => {
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
         {/* Desktop Layout - All in one line */}
-        <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-center">
+        <div className="hidden lg:flex lg:items-center lg:gap-6 lg:justify-center lg:max-w-6xl lg:mx-auto">
           {/* Status Filter Pills */}
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-2 pb-2 w-max min-w-0">
+          <div className="overflow-x-auto overflow-y-hidden">
+            <div className="flex gap-2 pb-2 w-max">
               {statuses.map(status => (
                 <Button
                   key={status}
@@ -441,7 +441,7 @@ export const PurchaseOrders = () => {
           </div>
           
           {/* Search and Action Buttons */}
-          <div className="flex gap-3 flex-shrink-0 min-w-0">
+          <div className="flex gap-3 flex-shrink-0">
             <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
