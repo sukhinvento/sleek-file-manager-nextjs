@@ -314,8 +314,10 @@ export const ModernPOOverlay = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  const [isCardLayout, setIsCardLayout] = useState<boolean>(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data
   useEffect(() => {
@@ -359,6 +361,25 @@ export const ModernPOOverlay = ({
     });
 
     resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Monitor section width for card layout
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        setIsCardLayout(width < 600);
+      }
+    });
+
+    resizeObserver.observe(section);
 
     return () => {
       resizeObserver.disconnect();
@@ -745,7 +766,7 @@ export const ModernPOOverlay = ({
         </div>
 
         {/* Right Column - Products Table (Top) & Notes (Bottom) */}
-        <div className="flex flex-col gap-4 p-6 h-full">
+        <div ref={sectionRef} className="flex flex-col gap-4 p-6 h-full">
           
           {/* Products Table - Top Section (75% of screen) */}
           <Card className="flex flex-col" style={{ height: '75vh' }}>
@@ -767,6 +788,104 @@ export const ModernPOOverlay = ({
               {items.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                   No items added yet. Click "Add Item" to get started.
+                </div>
+              ) : isCardLayout ? (
+                <div className="space-y-3">
+                  {items.map((item, index) => (
+                    <Card key={index} className="border">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Product</Label>
+                              {(isEditMode || !order) ? (
+                                <AutosuggestInput
+                                  value={item.name}
+                                  onChange={(value) => updateItem(index, 'name', value)}
+                                  onSelect={(stockItem) => {
+                                    updateItem(index, 'name', stockItem.name);
+                                    updateItem(index, 'unitPrice', stockItem.unitPrice);
+                                    updateItem(index, 'qty', 1);
+                                    updateItem(index, 'discount', 0);
+                                  }}
+                                  placeholder="Search products..."
+                                />
+                              ) : (
+                                <div className="font-medium mt-1">{item.name}</div>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Quantity</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.qty} 
+                                    onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                                    className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                    min="1"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.qty}</div>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Unit Price</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.unitPrice} 
+                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                                    className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Discount (%)</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input 
+                                    type="number" 
+                                    value={item.discount} 
+                                    onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                                    className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="0"
+                                    max="100"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.discount}%</div>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Subtotal</Label>
+                                <div className="mt-1 font-bold text-lg">₹{item.subtotal?.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {(isEditMode || !order) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeItem(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               ) : (
                 <div className="h-full overflow-y-auto">
@@ -801,44 +920,44 @@ export const ModernPOOverlay = ({
                             <span className="font-medium">{item.name}</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {(isEditMode || !order) ? (
-                            <Input 
-                              type="number" 
-                              value={item.qty} 
-                              onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                              className="w-full"
-                              min="1"
-                            />
-                          ) : (
-                            <span>{item.qty}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {(isEditMode || !order) ? (
-                            <Input 
-                              type="number" 
-                              value={item.unitPrice} 
-                              onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                              className="w-full"
-                              min="0"
-                              step="0.01"
-                            />
-                          ) : (
-                            <span>₹{item.unitPrice?.toFixed(2)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {(isEditMode || !order) ? (
-                            <Input 
-                              type="number" 
-                              value={item.discount} 
-                              onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
-                              className="w-full"
-                              min="0"
-                              max="100"
-                            />
-                          ) : (
+                         <TableCell>
+                           {(isEditMode || !order) ? (
+                             <Input 
+                               type="number" 
+                               value={item.qty} 
+                               onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                               min="1"
+                             />
+                           ) : (
+                             <span>{item.qty}</span>
+                           )}
+                         </TableCell>
+                         <TableCell>
+                           {(isEditMode || !order) ? (
+                             <Input 
+                               type="number" 
+                               value={item.unitPrice} 
+                               onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                               min="0"
+                               step="0.01"
+                             />
+                           ) : (
+                             <span>₹{item.unitPrice?.toFixed(2)}</span>
+                           )}
+                         </TableCell>
+                         <TableCell>
+                           {(isEditMode || !order) ? (
+                             <Input 
+                               type="number" 
+                               value={item.discount} 
+                               onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                               min="0"
+                               max="100"
+                             />
+                           ) : (
                             <span>{item.discount}%</span>
                           )}
                         </TableCell>
