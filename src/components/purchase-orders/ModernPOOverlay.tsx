@@ -496,30 +496,19 @@ export const ModernPOOverlay = ({
   const headerActions = (
     <>
       {(isEditMode || !order) && (
-        <>
-          <Button variant="outline" onClick={() => {
-            if (order) {
-              setIsEditMode(false);
-            } else {
-              onClose();
-            }
-          }}>
-            Cancel
-          </Button>
-          <Button onClick={handleSaveOrder} disabled={isSaving} className="bg-slate-600 hover:bg-slate-700 text-white">
-            {isSaving ? (
-              <>
-                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {order ? 'Update Order' : 'Save Order'}
-              </>
-            )}
-          </Button>
-        </>
+        <Button onClick={handleSaveOrder} disabled={isSaving} className="bg-slate-600 hover:bg-slate-700 text-white">
+          {isSaving ? (
+            <>
+              <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              {order ? 'Update Order' : 'Save Order'}
+            </>
+          )}
+        </Button>
       )}
       
       {!isEditMode && order && !isReadOnly && (

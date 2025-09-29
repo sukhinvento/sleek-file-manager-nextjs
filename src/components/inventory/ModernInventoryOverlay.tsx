@@ -29,7 +29,7 @@ const sizeClasses = {
   large: 'w-full sm:w-[95vw] sm:max-w-[1400px]',
   full: 'w-full sm:w-[98vw] sm:max-w-[1600px]',
   medium: 'w-full sm:w-[80vw] md:w-[70vw] lg:w-[60vw] sm:max-w-[60vw]',
-  wide: 'w-full sm:w-[70vw] sm:max-w-[70vw]'
+  wide: 'w-full sm:w-[75vw] sm:max-w-[75vw]'
 };
 
 export const ModernInventoryOverlay = ({ 
@@ -68,14 +68,9 @@ export const ModernInventoryOverlay = ({
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2 ml-2">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 hidden sm:flex">
-                <Minimize2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 hidden sm:flex">
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground hover:text-foreground h-8 w-8 p-0">
-                <X className="h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={onClose} className="h-9 px-3 bg-background/90 hover:bg-destructive hover:text-destructive-foreground border-border/70">
+                <X className="h-4 w-4 mr-1" />
+                <span className="text-sm font-medium">Close</span>
               </Button>
             </div>
           </div>
