@@ -356,7 +356,7 @@ export const ModernPOOverlay = ({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width } = entry.contentRect;
-        setIsNarrowLayout(width < 700);
+        setIsNarrowLayout(width < 750);
       }
     });
 
@@ -618,7 +618,7 @@ export const ModernPOOverlay = ({
         
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
-          <div className="grid grid-cols-2 gap-6 h-full">
+          <div className="grid gap-6 h-full" style={{ gridTemplateColumns: '30% 70%' }}>
         
         {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
         <div className="flex flex-col gap-4 p-6 overflow-y-auto">
