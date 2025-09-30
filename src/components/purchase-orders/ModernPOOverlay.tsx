@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { AutosuggestInput } from './AutosuggestInput';
 import { PurchaseOrder, PurchaseOrderItem, StockItem } from '../../types/purchaseOrder';
+import { DatePicker } from "@/components/ui/date-picker";
 
 // Mock vendor data for autocomplete
 interface Vendor {
@@ -323,8 +324,8 @@ export const ModernPOOverlay = ({
   const [vendorPhone, setVendorPhone] = useState<string>('');
   const [vendorAddress, setVendorAddress] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState<string>('');
-  const [orderDate, setOrderDate] = useState<string>('');
-  const [deliveryDate, setDeliveryDate] = useState<string>('');
+  const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [paymentMethod, setPaymentMethod] = useState<string>('net-30');
   const [remarks, setRemarks] = useState<string>('');
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
@@ -342,8 +343,8 @@ export const ModernPOOverlay = ({
       setVendorPhone(order.vendorPhone || '');
       setVendorAddress(order.vendorAddress || '');
       setShippingAddress(order.shippingAddress || '');
-      setOrderDate(order.orderDate || '');
-      setDeliveryDate(order.deliveryDate || '');
+      setOrderDate(order.orderDate ? new Date(order.orderDate) : undefined);
+      setDeliveryDate(order.deliveryDate ? new Date(order.deliveryDate) : undefined);
       setPaymentMethod(order.paymentMethod || 'net-30');
       setRemarks(Array.isArray(order.remarks) ? order.remarks.map(r => r.message).join('\n') : order.remarks || '');
     } else {
@@ -354,8 +355,8 @@ export const ModernPOOverlay = ({
       setVendorPhone('');
       setVendorAddress('');
       setShippingAddress('');
-      setOrderDate(new Date().toISOString().split('T')[0]);
-      setDeliveryDate('');
+      setOrderDate(new Date());
+      setDeliveryDate(undefined);
       setPaymentMethod('net-30');
       setRemarks('');
     }
@@ -488,8 +489,8 @@ export const ModernPOOverlay = ({
         vendorPhone,
         vendorEmail,
         vendorAddress,
-        orderDate,
-        deliveryDate,
+        orderDate: orderDate ? orderDate.toISOString().split('T')[0] : '',
+        deliveryDate: deliveryDate ? deliveryDate.toISOString().split('T')[0] : '',
         fulfilmentDate: order?.fulfilmentDate || null,
         status: order?.status || 'Pending',
         items,
@@ -740,29 +741,23 @@ export const ModernPOOverlay = ({
                 <CardContent className="space-y-3">
                   <div>
                     <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                    <div className="relative mt-1">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        id="orderDate"
-                        type="date"
-                        value={orderDate}
-                        onChange={(e) => setOrderDate(e.target.value)}
+                    <div className="mt-1">
+                      <DatePicker
+                        date={orderDate}
+                        onDateChange={setOrderDate}
+                        placeholder="Select order date"
                         disabled={!isEditMode && !!order}
-                        className="pl-10 pr-3 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:pl-2"
                       />
                     </div>
                   </div>
                   <div>
                     <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                    <div className="relative mt-1">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        id="deliveryDate"
-                        type="date"
-                        value={deliveryDate}
-                        onChange={(e) => setDeliveryDate(e.target.value)}
+                    <div className="mt-1">
+                      <DatePicker
+                        date={deliveryDate}
+                        onDateChange={setDeliveryDate}
+                        placeholder="Select delivery date"
                         disabled={!isEditMode && !!order}
-                        className="pl-10 pr-3 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:pl-2"
                       />
                     </div>
                   </div>
@@ -1042,29 +1037,23 @@ export const ModernPOOverlay = ({
               <CardContent className="space-y-3">
                 <div>
                   <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                  <div className="relative mt-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="orderDate"
-                      type="date"
-                      value={orderDate}
-                      onChange={(e) => setOrderDate(e.target.value)}
+                  <div className="mt-1">
+                    <DatePicker
+                      date={orderDate}
+                      onDateChange={setOrderDate}
+                      placeholder="Select order date"
                       disabled={!isEditMode && !!order}
-                      className="pl-10 pr-3 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:pl-2"
                     />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                  <div className="relative mt-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
+                  <div className="mt-1">
+                    <DatePicker
+                      date={deliveryDate}
+                      onDateChange={setDeliveryDate}
+                      placeholder="Select delivery date"
                       disabled={!isEditMode && !!order}
-                      className="pl-10 pr-3 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:pl-2"
                     />
                   </div>
                 </div>
