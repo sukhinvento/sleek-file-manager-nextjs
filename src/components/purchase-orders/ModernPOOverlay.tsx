@@ -391,25 +391,24 @@ export const ModernPOOverlay = ({
   const addItem = (stockItem?: StockItem) => {
     if (isReadOnly) return;
 
-    if (stockItem) {
-      setItems([...items, {
-        name: stockItem.name,
-        qty: 1,
-        unitPrice: stockItem.unitPrice,
-        discount: 0,
-        subtotal: stockItem.unitPrice,
-        taxSlab: 18
-      }]);
-    } else {
-      setItems([...items, {
-        name: '',
-        qty: 1,
-        unitPrice: 0,
-        discount: 0,
-        subtotal: 0,
-        taxSlab: 18
-      }]);
-    }
+    const newItem = stockItem ? {
+      name: stockItem.name,
+      qty: 1,
+      unitPrice: stockItem.unitPrice,
+      discount: 0,
+      subtotal: stockItem.unitPrice,
+      taxSlab: 18
+    } : {
+      name: '',
+      qty: 1,
+      unitPrice: 0,
+      discount: 0,
+      subtotal: 0,
+      taxSlab: 18
+    };
+    
+    // Add new item at the beginning of the array to push existing items down
+    setItems([newItem, ...items]);
   };
 
   const removeItem = (index: number) => {
@@ -1077,7 +1076,7 @@ export const ModernPOOverlay = ({
                   {items.map((item, index) => (
                     <Card key={index} className="border">
                       <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
                           <div className="flex-1 space-y-3">
                             <div>
                               <Label className="text-xs font-medium text-muted-foreground">Product</Label>
@@ -1160,7 +1159,7 @@ export const ModernPOOverlay = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => removeItem(index)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start shrink-0 h-8 w-8 p-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
