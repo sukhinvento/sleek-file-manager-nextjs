@@ -1180,14 +1180,16 @@ export const ModernPOOverlay = ({
                           </div>
 
                           {(isEditMode || !order) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeItem(index)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 self-center shrink-0 h-8 w-8 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItem(index)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </CardContent>
