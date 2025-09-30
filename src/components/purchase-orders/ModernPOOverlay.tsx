@@ -618,7 +618,7 @@ export const ModernPOOverlay = ({
 
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
-          <div className="grid gap-6 h-full" style={{ gridTemplateColumns: '30% 70%' }}>
+          <div className="grid h-full" style={{ gridTemplateColumns: '30% 70%' }}>
 
             {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
             <div className="flex flex-col gap-4 p-6 overflow-y-auto">
@@ -784,13 +784,13 @@ export const ModernPOOverlay = ({
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto">
+                <CardContent className="flex-1 overflow-hidden">
                   {items.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                       No items added yet. Click "Add Item" to get started.
                     </div>
                   ) : (
-                    <div className="h-full overflow-y-auto">
+                    <div className="h-full">
                       <Table>
                         <TableHeader className="sticky top-0 bg-background">
                           <TableRow>
@@ -802,10 +802,13 @@ export const ModernPOOverlay = ({
                             {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
+                      </Table>
+                      <div style={{ height: '60vh', overflow: 'auto' }}>
+                        <Table>
+                          <TableBody>
                           {items.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
+                            <TableRow key={index} className='max-h-16'>
+                              <TableCell className="relative overflow-visible">
                                 {(isEditMode || !order) ? (
                                   <AutosuggestInput
                                     value={item.name}
@@ -880,15 +883,16 @@ export const ModernPOOverlay = ({
                               )}
                             </TableRow>
                           ))}
-                        </TableBody>
-                      </Table>
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Additional Notes - Bottom Section (25% of remaining space) */}
-              <Card className="flex-shrink-0" style={{ height: '20vh' }}>
+              <Card className="flex-shrink-0">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center">
                     <MessageSquare className="h-4 w-4 mr-2" />
@@ -901,7 +905,7 @@ export const ModernPOOverlay = ({
                     onChange={(e) => setRemarks(e.target.value)}
                     placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
                     disabled={!isEditMode && !!order}
-                    className="h-full resize-none"
+                    className="w-full min-h-[60px]"
                   />
                 </CardContent>
               </Card>
@@ -1102,7 +1106,7 @@ export const ModernPOOverlay = ({
                                     type="number"
                                     value={item.qty}
                                     onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                                    className="mt-1"
+                                    className="mt-1 max-w-[60px]"
                                     min="1"
                                   />
                                 ) : (
