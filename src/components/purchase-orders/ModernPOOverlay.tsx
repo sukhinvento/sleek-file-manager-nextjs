@@ -95,6 +95,7 @@ interface VendorAutosuggestProps {
 const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, className }: VendorAutosuggestProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   useEffect(() => {
     if (value.trim() === '') {
@@ -108,10 +109,14 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
       vendor.email.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredVendors(filtered);
-    setIsOpen(filtered.length > 0);
-  }, [value, vendors]);
+    // Only auto-open if user has interacted
+    if (userHasInteracted) {
+      setIsOpen(filtered.length > 0);
+    }
+  }, [value, vendors, userHasInteracted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserHasInteracted(true);
     onChange(e.target.value);
   };
 
@@ -121,6 +126,7 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
   };
 
   const handleInputFocus = () => {
+    setUserHasInteracted(true);
     if (value.trim() && filteredVendors.length > 0) {
       setIsOpen(true);
     }
@@ -128,7 +134,7 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
 
   const handleInputBlur = () => {
     // Delay to allow click on dropdown items
-    setTimeout(() => setIsOpen(false), 150);
+    setTimeout(() => setIsOpen(false), 200);
   };
 
   return (
@@ -148,8 +154,10 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
             <div
               key={vendor.id}
               className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0 transition-all duration-200"
-              onClick={() => handleVendorSelect(vendor)}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleVendorSelect(vendor);
+              }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -190,6 +198,7 @@ interface LocationAutosuggestProps {
 const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, className }: LocationAutosuggestProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   useEffect(() => {
     if (value.trim() === '') {
@@ -204,10 +213,14 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
       location.type.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredLocations(filtered);
-    setIsOpen(filtered.length > 0);
-  }, [value, locations]);
+    // Only auto-open if user has interacted
+    if (userHasInteracted) {
+      setIsOpen(filtered.length > 0);
+    }
+  }, [value, locations, userHasInteracted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUserHasInteracted(true);
     onChange(e.target.value);
   };
 
@@ -217,13 +230,14 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
   };
 
   const handleInputFocus = () => {
+    setUserHasInteracted(true);
     if (value.trim() && filteredLocations.length > 0) {
       setIsOpen(true);
     }
   };
 
   const handleInputBlur = () => {
-    setTimeout(() => setIsOpen(false), 150);
+    setTimeout(() => setIsOpen(false), 200);
   };
 
   const getTypeColor = (type: string) => {
@@ -252,8 +266,10 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
             <div
               key={location.id}
               className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0 transition-all duration-200"
-              onClick={() => handleLocationSelect(location)}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleLocationSelect(location);
+              }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -724,25 +740,31 @@ export const ModernPOOverlay = ({
                 <CardContent className="space-y-3">
                   <div>
                     <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                    <Input
-                      id="orderDate"
-                      type="date"
-                      value={orderDate}
-                      onChange={(e) => setOrderDate(e.target.value)}
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        id="orderDate"
+                        type="date"
+                        value={orderDate}
+                        onChange={(e) => setOrderDate(e.target.value)}
+                        disabled={!isEditMode && !!order}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
-                      disabled={!isEditMode && !!order}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                      <Input
+                        id="deliveryDate"
+                        type="date"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        disabled={!isEditMode && !!order}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
@@ -809,17 +831,21 @@ export const ModernPOOverlay = ({
                             <TableRow key={index} className='max-h-16'>
                               <TableCell className="relative overflow-visible min-w-72">
                                 {(isEditMode || !order) ? (
-                                  <AutosuggestInput
-                                    value={item.name}
-                                    onChange={(value) => updateItem(index, 'name', value)}
-                                    onSelect={(stockItem) => {
-                                      updateItem(index, 'name', stockItem.name);
-                                      updateItem(index, 'unitPrice', stockItem.unitPrice);
-                                      updateItem(index, 'qty', 1);
-                                      updateItem(index, 'discount', 0);
-                                    }}
-                                    placeholder="Search products..."
-                                  />
+                                   <AutosuggestInput
+                                     value={item.name}
+                                     onChange={(value) => updateItem(index, 'name', value)}
+                                     onSelect={(stockItem) => {
+                                       updateItem(index, 'name', stockItem.name);
+                                       updateItem(index, 'unitPrice', stockItem.unitPrice);
+                                       updateItem(index, 'qty', 1);
+                                       updateItem(index, 'discount', 0);
+                                       // Auto-add new empty row after selection
+                                       if (index === items.length - 1) {
+                                         addItem();
+                                       }
+                                     }}
+                                     placeholder="Search products..."
+                                   />
                                 ) : (
                                   <span className="font-medium">{item.name}</span>
                                 )}
@@ -1016,25 +1042,31 @@ export const ModernPOOverlay = ({
               <CardContent className="space-y-3">
                 <div>
                   <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                  <Input
-                    id="orderDate"
-                    type="date"
-                    value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="orderDate"
+                      type="date"
+                      value={orderDate}
+                      onChange={(e) => setOrderDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                  <Input
-                    id="deliveryDate"
-                    type="date"
-                    value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                    disabled={!isEditMode && !!order}
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
@@ -1089,6 +1121,10 @@ export const ModernPOOverlay = ({
                                     updateItem(index, 'unitPrice', stockItem.unitPrice);
                                     updateItem(index, 'qty', 1);
                                     updateItem(index, 'discount', 0);
+                                    // Auto-add new empty row after selection
+                                    if (index === items.length - 1) {
+                                      addItem();
+                                    }
                                   }}
                                   placeholder="Search products..."
                                 />
