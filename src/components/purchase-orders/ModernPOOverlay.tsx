@@ -748,7 +748,7 @@ export const ModernPOOverlay = ({
                         value={orderDate}
                         onChange={(e) => setOrderDate(e.target.value)}
                         disabled={!isEditMode && !!order}
-                        className="pl-10 [&::-webkit-calendar-picker-indicator]:hidden"
+                        className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       />
                     </div>
                   </div>
@@ -762,7 +762,7 @@ export const ModernPOOverlay = ({
                         value={deliveryDate}
                         onChange={(e) => setDeliveryDate(e.target.value)}
                         disabled={!isEditMode && !!order}
-                        className="pl-10 [&::-webkit-calendar-picker-indicator]:hidden"
+                        className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1050,7 +1050,7 @@ export const ModernPOOverlay = ({
                       value={orderDate}
                       onChange={(e) => setOrderDate(e.target.value)}
                       disabled={!isEditMode && !!order}
-                      className="pl-10 [&::-webkit-calendar-picker-indicator]:hidden"
+                      className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1064,7 +1064,7 @@ export const ModernPOOverlay = ({
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
                       disabled={!isEditMode && !!order}
-                      className="pl-10 [&::-webkit-calendar-picker-indicator]:hidden"
+                      className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
