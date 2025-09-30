@@ -1195,7 +1195,7 @@ export const ModernPOOverlay = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => removeItem(index)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start shrink-0 h-8 w-8 p-0"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 self-center shrink-0 h-8 w-8 p-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
