@@ -1106,7 +1106,7 @@ export const ModernPOOverlay = ({
                                     type="number"
                                     value={item.qty}
                                     onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                                    className="mt-1 max-w-[60px]"
+                                    className="mt-1 min-w-[60px]"
                                     min="1"
                                   />
                                 ) : (
