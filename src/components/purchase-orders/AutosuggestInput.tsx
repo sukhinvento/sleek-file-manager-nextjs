@@ -17,22 +17,38 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
 
   const updatePosition = useCallback(() => {
     const el = inputRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
+    const container = portalEl ?? document.body;
+    const containerRect = container.getBoundingClientRect();
+    const top = container === document.body
+      ? rect.bottom + window.scrollY
+      : rect.bottom - containerRect.top + (container as HTMLElement).scrollTop;
+    const left = container === document.body
+      ? rect.left + window.scrollX
+      : rect.left - containerRect.left + (container as HTMLElement).scrollLeft;
     setDropdownRect({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
+      top,
+      left,
       width: rect.width
     });
-  }, []);
+  }, [portalEl]);
 
   useEffect(() => {
     setQuery(value);
   }, [value]);
+
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const dialogContent = el.closest('[data-radix-dialog-content]') as HTMLElement | null;
+    setPortalEl(dialogContent ?? document.body);
+  }, [showSuggestions]);
 
   const handleInputChange = (inputValue: string) => {
     setQuery(inputValue);
@@ -61,6 +77,10 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
 
   const handleInputFocus = () => {
     setIsFocused(true);
+    // Ensure portal container stays within dialog to avoid outside-click interception
+    const el = inputRef.current;
+    const dialogContent = el?.closest('[data-radix-dialog-content]') as HTMLElement | null;
+    setPortalEl(dialogContent ?? document.body);
     if (query.length > 0) {
       const filtered = availableStock.filter(item =>
         item.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -90,16 +110,24 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
     const onResize = () => updatePosition();
     window.addEventListener('scroll', onScroll, true); // capture to catch inner scroll containers
     window.addEventListener('resize', onResize);
+    const container = portalEl;
+    if (container) {
+      container.addEventListener('scroll', onScroll, true);
+    }
     return () => {
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
+      if (container) {
+        container.removeEventListener('scroll', onScroll, true);
+      }
     };
-  }, [showSuggestions, updatePosition]);
+  }, [showSuggestions, updatePosition, portalEl]);
 
   // Portal dropdown (avoids clipping by overflow ancestors)
   const dropdown = showSuggestions && suggestions.length > 0 && typeof document !== 'undefined'
     ? createPortal(
         <div
+          onMouseDown={(e) => e.stopPropagation()}
           style={{ position: 'absolute', top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
           className="z-[10000] bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto mt-1"
           data-autosuggest-dropdown
@@ -118,7 +146,7 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
             </div>
           ))}
         </div>,
-        document.body
+        portalEl ?? document.body
       )
     : null;
 
