@@ -794,11 +794,11 @@ export const ModernPOOverlay = ({
                       <Table>
                         <TableHeader className="sticky top-0 bg-background">
                           <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="w-20">Qty</TableHead>
-                            <TableHead className="w-24">Price</TableHead>
-                            <TableHead className="w-20">Disc%</TableHead>
-                            <TableHead className="w-24">Subtotal</TableHead>
+                            <TableHead className="min-w-72">Product</TableHead>
+                            <TableHead className="min-w-20">Qty</TableHead>
+                            <TableHead className="min-w-24">Price</TableHead>
+                            <TableHead className="min-w-20">Disc%</TableHead>
+                            <TableHead className="min-w-24">Subtotal</TableHead>
                             {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
                           </TableRow>
                         </TableHeader>
@@ -808,7 +808,7 @@ export const ModernPOOverlay = ({
                           <TableBody>
                           {items.map((item, index) => (
                             <TableRow key={index} className='max-h-16'>
-                              <TableCell className="relative overflow-visible">
+                              <TableCell className="relative overflow-visible min-w-72">
                                 {(isEditMode || !order) ? (
                                   <AutosuggestInput
                                     value={item.name}
@@ -825,7 +825,7 @@ export const ModernPOOverlay = ({
                                   <span className="font-medium">{item.name}</span>
                                 )}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="min-w-20">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
@@ -838,7 +838,7 @@ export const ModernPOOverlay = ({
                                   <span>{item.qty}</span>
                                 )}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="min-w-24">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
@@ -852,7 +852,7 @@ export const ModernPOOverlay = ({
                                   <span>₹{item.unitPrice?.toFixed(2)}</span>
                                 )}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="min-w-20">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
