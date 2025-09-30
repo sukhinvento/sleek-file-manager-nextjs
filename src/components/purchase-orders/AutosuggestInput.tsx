@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Input } from "@/components/ui/input";
 import { availableStock } from '../../data/purchaseOrderData';
 import { StockItem } from '../../types/purchaseOrder';
@@ -15,6 +16,19 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
   const [suggestions, setSuggestions] = useState<StockItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
+
+  const updatePosition = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setDropdownRect({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+      width: rect.width
+    });
+  }, []);
 
   useEffect(() => {
     setQuery(value);
@@ -31,6 +45,8 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
       );
       setSuggestions(filtered);
       setShowSuggestions(true);
+      // Defer position update until after DOM paints input change
+      requestAnimationFrame(updatePosition);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -53,6 +69,7 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
       setSuggestions(filtered);
       setShowSuggestions(true);
     }
+    updatePosition();
   };
 
   const handleInputBlur = () => {
@@ -65,9 +82,48 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
     }, 200);
   };
 
+  // Reposition on window resize & scroll while open
+  useEffect(() => {
+    if (!showSuggestions) return;
+    updatePosition();
+    const onScroll = () => updatePosition();
+    const onResize = () => updatePosition();
+    window.addEventListener('scroll', onScroll, true); // capture to catch inner scroll containers
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [showSuggestions, updatePosition]);
+
+  // Portal dropdown (avoids clipping by overflow ancestors)
+  const dropdown = showSuggestions && suggestions.length > 0 && typeof document !== 'undefined'
+    ? createPortal(
+        <div
+          style={{ position: 'absolute', top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
+          className="z-[10000] bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto mt-1"
+          data-autosuggest-dropdown
+        >
+          {suggestions.map(item => (
+            <div
+              key={item.id}
+              className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0 transition-colors"
+              onClick={() => handleSelect(item)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <div className="font-medium text-foreground">{item.name}</div>
+              <div className="text-sm text-muted-foreground">{item.brand} • Stock: {item.stock} • ₹{item.unitPrice.toFixed(2)}</div>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )
+    : null;
+
   return (
-    <div className="relative">
+    <div className="relative" data-autosuggest-root>
       <Input
+        ref={inputRef}
         value={query}
         onChange={(e) => handleInputChange(e.target.value)}
         onFocus={handleInputFocus}
@@ -75,23 +131,8 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
         placeholder={placeholder}
         className="w-full"
       />
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((item) => (
-            <div
-              key={item.id}
-              className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0 transition-colors"
-              onClick={() => handleSelect(item)}
-              onMouseDown={(e) => e.preventDefault()} // Prevent blur before click
-            >
-              <div className="font-medium text-foreground">{item.name}</div>
-              <div className="text-sm text-muted-foreground">
-                {item.brand} • Stock: {item.stock} • ₹{item.unitPrice.toFixed(2)}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Portal-rendered dropdown */}
+      {dropdown}
     </div>
   );
 };

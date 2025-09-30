@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +63,7 @@ const mockLocations: Location[] = [
     type: 'warehouse'
   },
   {
-    id: 'l2', 
+    id: 'l2',
     name: 'Central Hospital',
     address: '456 Health Avenue, Medical District, MD 67890',
     type: 'hospital'
@@ -292,14 +292,14 @@ interface ModernPOOverlayProps {
   onDelete?: (orderId: string) => void;
 }
 
-export const ModernPOOverlay = ({ 
-  order, 
-  isOpen, 
-  onClose, 
-  isEdit = false, 
-  onSave, 
-  onUpdate, 
-  onDelete 
+export const ModernPOOverlay = ({
+  order,
+  isOpen,
+  onClose,
+  isEdit = false,
+  onSave,
+  onUpdate,
+  onDelete
 }: ModernPOOverlayProps) => {
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [vendorName, setVendorName] = useState<string>('');
@@ -314,7 +314,7 @@ export const ModernPOOverlay = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data
@@ -346,68 +346,43 @@ export const ModernPOOverlay = ({
     setIsEditMode(isEdit);
   }, [order, isEdit]);
 
-  // Initial layout measurement when modal opens
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    const measure = () => {
-      // Prefer precise box measurement
-      let width = container.getBoundingClientRect().width || container.clientWidth || 0;
-      // Fallback if width is 0 (not yet laid out)
-      if (width === 0) {
-        // Approximate overlay width: mobile uses 100vw, >=sm uses ~75vw for size="wide"
-        const vw = window.innerWidth;
-        width = vw < 640 ? vw : Math.round(vw * 0.75);
-      }
-      const isNarrow = width < 700;
-      setIsNarrowLayout(isNarrow);
-      console.log('POOverlay v2025-09-29-2 initial', { width, isNarrowLayout: isNarrow, isOpen });
-    };
-
-    // Measure now and on next frame to avoid 0 width
-    measure();
-    const raf = requestAnimationFrame(measure);
-
-    return () => cancelAnimationFrame(raf);
-  }, [isOpen]);
-
-  // Monitor container width for responsive layout when modal is open
+  // Responsive layout: prefer viewport media query (more stable) with container fallback.
   useEffect(() => {
     if (!isOpen) return;
 
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleMeasure = (width: number) => {
-      const isNarrow = width < 700;
-      setIsNarrowLayout(isNarrow);
-      console.log('POOverlay v2025-09-29-2 resize', { width, isNarrowLayout: isNarrow, isOpen });
-    };
-
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        handleMeasure(entry.contentRect.width);
+    // 1. Viewport-based media query (maps to Tailwind sm ~640px but we keep 1300px custom threshold)
+    const mq = window.matchMedia('(max-width: 1300px)');
+    const handleMQ = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsNarrowLayout(e.matches);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('POOverlay media query', { viewportNarrow: e.matches, vw: window.innerWidth });
       }
-    });
-
-    ro.observe(container);
-
-    // Window resize fallback
-    const onWindowResize = () => {
-      const width = container.getBoundingClientRect().width || container.clientWidth;
-      handleMeasure(width);
     };
-    window.addEventListener('resize', onWindowResize);
+    handleMQ(mq); // initial
+    mq.addEventListener('change', handleMQ as any);
 
-    // Initial fallback measure in case RO misses first paint
-    onWindowResize();
+    // 2. Optional container refinement: if container is artificially constrained wider/narrower than viewport.
+    const el = containerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (el) {
+      const measureContainer = () => {
+        const cw = el.getBoundingClientRect().width;
+        // Only force narrow if container itself shrinks below threshold while viewport is still wide.
+        if (cw < 600 && !mq.matches) {
+          setIsNarrowLayout(true);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('POOverlay container override', { containerWidth: cw, vw: window.innerWidth });
+          }
+        }
+      };
+      measureContainer();
+      ro = new ResizeObserver(measureContainer);
+      ro.observe(el);
+    }
 
     return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', onWindowResize);
+      mq.removeEventListener('change', handleMQ as any);
+      if (ro) ro.disconnect();
     };
   }, [isOpen]);
 
@@ -415,24 +390,24 @@ export const ModernPOOverlay = ({
 
   const addItem = (stockItem?: StockItem) => {
     if (isReadOnly) return;
-    
+
     if (stockItem) {
-      setItems([...items, { 
-        name: stockItem.name, 
-        qty: 1, 
-        unitPrice: stockItem.unitPrice, 
-        discount: 0, 
+      setItems([...items, {
+        name: stockItem.name,
+        qty: 1,
+        unitPrice: stockItem.unitPrice,
+        discount: 0,
         subtotal: stockItem.unitPrice,
-        taxSlab: 18 
+        taxSlab: 18
       }]);
     } else {
-      setItems([...items, { 
-        name: '', 
-        qty: 1, 
-        unitPrice: 0, 
-        discount: 0, 
-        subtotal: 0, 
-        taxSlab: 18 
+      setItems([...items, {
+        name: '',
+        qty: 1,
+        unitPrice: 0,
+        discount: 0,
+        subtotal: 0,
+        taxSlab: 18
       }]);
     }
   };
@@ -444,17 +419,17 @@ export const ModernPOOverlay = ({
 
   const updateItem = (index: number, field: string, value: any) => {
     if (isReadOnly) return;
-    
+
     const updatedItems = [...items];
     (updatedItems[index] as any)[field] = value;
-    
+
     if (field === 'qty' || field === 'unitPrice' || field === 'discount') {
       const qty = updatedItems[index].qty || 0;
       const unitPrice = updatedItems[index].unitPrice || 0;
       const discount = updatedItems[index].discount || 0;
       updatedItems[index].subtotal = (qty * unitPrice) * (1 - discount / 100);
     }
-    
+
     setItems(updatedItems);
   };
 
@@ -480,7 +455,7 @@ export const ModernPOOverlay = ({
 
     if (!vendorName.trim()) {
       toast({
-        title: "Validation Error", 
+        title: "Validation Error",
         description: "Please enter vendor name.",
         variant: "destructive",
       });
@@ -488,7 +463,7 @@ export const ModernPOOverlay = ({
     }
 
     setIsSaving(true);
-    
+
     try {
       const orderData: PurchaseOrder = {
         id: order?.id || `po-${Date.now()}`,
@@ -527,7 +502,7 @@ export const ModernPOOverlay = ({
           description: `Purchase order ${orderData.poNumber} has been created successfully.`,
         });
       }
-      
+
       onClose();
     } catch (error) {
       toast({
@@ -542,7 +517,7 @@ export const ModernPOOverlay = ({
 
   const handleDeleteOrder = async () => {
     if (!order?.id || !onDelete) return;
-    
+
     if (window.confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) {
       try {
         await onDelete(order.id);
@@ -578,7 +553,7 @@ export const ModernPOOverlay = ({
           )}
         </Button>
       )}
-      
+
       {!isEditMode && order && !isReadOnly && (
         <Button variant="outline" onClick={() => setIsEditMode(true)}>
           <Edit3 className="h-4 w-4 mr-2" />
@@ -640,585 +615,585 @@ export const ModernPOOverlay = ({
     >
       {/* Container for width monitoring */}
       <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-2">
-        
+
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
           <div className="grid gap-6 h-full" style={{ gridTemplateColumns: '30% 70%' }}>
-        
-        {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
-        <div className="flex flex-col gap-4 p-6 overflow-y-auto">
-          
-          {/* Order Summary - Top */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <DollarSign className="h-4 w-4 mr-2" />
-                Order Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (18%)</span>
-                <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span className="text-lg">₹{totals.total.toFixed(2)}</span>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Vendor Information */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Vendor Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
-                <VendorAutosuggest
-                  value={vendorName}
-                  onChange={(value) => setVendorName(value)}
-                  onSelect={(vendor) => {
-                    setVendorName(vendor.name);
-                    setVendorEmail(vendor.email);
-                    setVendorPhone(vendor.phone);
-                    setVendorAddress(vendor.address);
-                  }}
-                  vendors={mockVendors}
-                  disabled={!isEditMode && !!order}
-                  className="mt-1"
-                />
-              </div>
-              
-              {vendorName && (
-                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
-                    <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
-                    <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+            {/* Left Column - Summary, Vendor Info, Shipping, Order Details */}
+            <div className="flex flex-col gap-4 p-6 overflow-y-auto">
+
+              {/* Order Summary - Top */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Order Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tax (18%)</span>
+                    <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span className="text-lg">₹{totals.total.toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Shipping Address */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <Truck className="h-4 w-4 mr-2" />
-                Shipping Address
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
-                <LocationAutosuggest
-                  value={shippingAddress}
-                  onChange={(value) => setShippingAddress(value)}
-                  onSelect={(location) => setShippingAddress(location.address)}
-                  locations={mockLocations}
-                  disabled={!isEditMode && !!order}
-                  className="mt-1"
-                />
-              </div>
-            </CardContent>
-          </Card>
+              {/* Vendor Information */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    Vendor Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
+                    <VendorAutosuggest
+                      value={vendorName}
+                      onChange={(value) => setVendorName(value)}
+                      onSelect={(vendor) => {
+                        setVendorName(vendor.name);
+                        setVendorEmail(vendor.email);
+                        setVendorPhone(vendor.phone);
+                        setVendorAddress(vendor.address);
+                      }}
+                      vendors={mockVendors}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
 
-          {/* Order Details */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                Order Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-                <Input
-                  id="orderDate"
-                  type="date"
-                  value={orderDate}
-                  onChange={(e) => setOrderDate(e.target.value)}
-                  disabled={!isEditMode && !!order}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-                <Input
-                  id="deliveryDate"
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                  disabled={!isEditMode && !!order}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="net-30">Net 30 Days</SelectItem>
-                    <SelectItem value="net-15">Net 15 Days</SelectItem>
-                    <SelectItem value="net-7">Net 7 Days</SelectItem>
-                    <SelectItem value="cod">Cash on Delivery</SelectItem>
-                    <SelectItem value="advance">Advance Payment</SelectItem>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  {vendorName && (
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
+                        <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
+                        <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-        {/* Right Column - Products Table (Top) & Notes (Bottom) */}
-        <div className="flex flex-col gap-4 p-6 h-full">
-          
-          {/* Products Table - Top Section (75% of screen) */}
-          <Card className="flex flex-col" style={{ height: '75vh' }}>
-            <CardHeader className="pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center">
-                  <Package className="h-4 w-4 mr-2" />
-                  Order Items ({items.length})
-                </CardTitle>
-                {(isEditMode || !order) && (
-                  <Button onClick={() => addItem()} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-              {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
-                  No items added yet. Click "Add Item" to get started.
-                </div>
-              ) : (
-                <div className="h-full overflow-y-auto">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background">
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead className="w-20">Qty</TableHead>
-                        <TableHead className="w-24">Price</TableHead>
-                        <TableHead className="w-20">Disc%</TableHead>
-                        <TableHead className="w-24">Subtotal</TableHead>
-                        {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                  <TableBody>
-                    {items.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          {(isEditMode || !order) ? (
-                            <AutosuggestInput
-                              value={item.name}
-                              onChange={(value) => updateItem(index, 'name', value)}
-                              onSelect={(stockItem) => {
-                                updateItem(index, 'name', stockItem.name);
-                                updateItem(index, 'unitPrice', stockItem.unitPrice);
-                                updateItem(index, 'qty', 1);
-                                updateItem(index, 'discount', 0);
-                              }}
-                              placeholder="Search products..."
-                            />
-                          ) : (
-                            <span className="font-medium">{item.name}</span>
-                          )}
-                        </TableCell>
-                         <TableCell>
-                           {(isEditMode || !order) ? (
-                             <Input 
-                               type="number" 
-                               value={item.qty} 
-                               onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                               min="1"
-                             />
-                           ) : (
-                             <span>{item.qty}</span>
-                           )}
-                         </TableCell>
-                         <TableCell>
-                           {(isEditMode || !order) ? (
-                             <Input 
-                               type="number" 
-                               value={item.unitPrice} 
-                               onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                               min="0"
-                               step="0.01"
-                             />
-                           ) : (
-                             <span>₹{item.unitPrice?.toFixed(2)}</span>
-                           )}
-                         </TableCell>
-                         <TableCell>
-                           {(isEditMode || !order) ? (
-                             <Input 
-                               type="number" 
-                               value={item.discount} 
-                               onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
-                               className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                               min="0"
-                               max="100"
-                             />
-                           ) : (
-                            <span>{item.discount}%</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">₹{item.subtotal?.toFixed(2)}</span>
-                        </TableCell>
-                        {(isEditMode || !order) && (
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => removeItem(index)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              {/* Shipping Address */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Truck className="h-4 w-4 mr-2" />
+                    Shipping Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
+                    <LocationAutosuggest
+                      value={shippingAddress}
+                      onChange={(value) => setShippingAddress(value)}
+                      onSelect={(location) => setShippingAddress(location.address)}
+                      locations={mockLocations}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Additional Notes - Bottom Section (25% of remaining space) */}
-          <Card className="flex-shrink-0" style={{ height: '20vh' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Additional Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-full">
-              <Textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
-                disabled={!isEditMode && !!order}
-                className="h-full resize-none"
-              />
-            </CardContent>
-          </Card>
-          </div>
+              {/* Order Details */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Order Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
+                    <Input
+                      id="orderDate"
+                      type="date"
+                      value={orderDate}
+                      onChange={(e) => setOrderDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      disabled={!isEditMode && !!order}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="net-30">Net 30 Days</SelectItem>
+                        <SelectItem value="net-15">Net 15 Days</SelectItem>
+                        <SelectItem value="net-7">Net 7 Days</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                        <SelectItem value="advance">Advance Payment</SelectItem>
+                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Products Table (Top) & Notes (Bottom) */}
+            <div className="flex flex-col gap-4 p-6 h-full">
+
+              {/* Products Table - Top Section (75% of screen) */}
+              <Card className="flex flex-col" style={{ height: '75vh' }}>
+                <CardHeader className="pb-3 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold flex items-center">
+                      <Package className="h-4 w-4 mr-2" />
+                      Order Items ({items.length})
+                    </CardTitle>
+                    {(isEditMode || !order) && (
+                      <Button onClick={() => addItem()} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Item
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto">
+                  {items.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      No items added yet. Click "Add Item" to get started.
+                    </div>
+                  ) : (
+                    <div className="h-full overflow-y-auto">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-background">
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="w-20">Qty</TableHead>
+                            <TableHead className="w-24">Price</TableHead>
+                            <TableHead className="w-20">Disc%</TableHead>
+                            <TableHead className="w-24">Subtotal</TableHead>
+                            {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {items.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                {(isEditMode || !order) ? (
+                                  <AutosuggestInput
+                                    value={item.name}
+                                    onChange={(value) => updateItem(index, 'name', value)}
+                                    onSelect={(stockItem) => {
+                                      updateItem(index, 'name', stockItem.name);
+                                      updateItem(index, 'unitPrice', stockItem.unitPrice);
+                                      updateItem(index, 'qty', 1);
+                                      updateItem(index, 'discount', 0);
+                                    }}
+                                    placeholder="Search products..."
+                                  />
+                                ) : (
+                                  <span className="font-medium">{item.name}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                                    className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="1"
+                                  />
+                                ) : (
+                                  <span>{item.qty}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.unitPrice}
+                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                                    className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                ) : (
+                                  <span>₹{item.unitPrice?.toFixed(2)}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.discount}
+                                    onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                                    className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="0"
+                                    max="100"
+                                  />
+                                ) : (
+                                  <span>{item.discount}%</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-medium">₹{item.subtotal?.toFixed(2)}</span>
+                              </TableCell>
+                              {(isEditMode || !order) && (
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(index)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Additional Notes - Bottom Section (25% of remaining space) */}
+              <Card className="flex-shrink-0" style={{ height: '20vh' }}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Additional Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-full">
+                  <Textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
+                    disabled={!isEditMode && !!order}
+                    className="h-full resize-none"
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         ) : (
           /* Narrow Layout: Single Column (Rows) */
           <div className="flex flex-col gap-4 p-4 overflow-y-auto h-full">
-        
-        {/* Order Summary */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Order Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Tax (18%)</span>
-              <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Shipping</span>
-              <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span className="text-lg">₹{totals.total.toFixed(2)}</span>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Vendor Information */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              Vendor Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
-              <VendorAutosuggest
-                value={vendorName}
-                onChange={(value) => setVendorName(value)}
-                onSelect={(vendor) => {
-                  setVendorName(vendor.name);
-                  setVendorEmail(vendor.email);
-                  setVendorPhone(vendor.phone);
-                  setVendorAddress(vendor.address);
-                }}
-                vendors={mockVendors}
-                disabled={!isEditMode && !!order}
-                className="mt-1"
-              />
-            </div>
-            
-            {vendorName && (
-              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
-                  <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
-                  <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+            {/* Order Summary */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Order Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">₹{totals.subTotal.toFixed(2)}</span>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax (18%)</span>
+                  <span className="font-medium">₹{totals.tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span className="font-medium">₹{totals.shipping.toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="text-lg">₹{totals.total.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Shipping Address */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center">
-              <Truck className="h-4 w-4 mr-2" />
-              Shipping Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
-              <LocationAutosuggest
-                value={shippingAddress}
-                onChange={(value) => setShippingAddress(value)}
-                onSelect={(location) => setShippingAddress(location.address)}
-                locations={mockLocations}
-                disabled={!isEditMode && !!order}
-                className="mt-1"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            {/* Vendor Information */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Vendor Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
+                  <VendorAutosuggest
+                    value={vendorName}
+                    onChange={(value) => setVendorName(value)}
+                    onSelect={(vendor) => {
+                      setVendorName(vendor.name);
+                      setVendorEmail(vendor.email);
+                      setVendorPhone(vendor.phone);
+                      setVendorAddress(vendor.address);
+                    }}
+                    vendors={mockVendors}
+                    disabled={!isEditMode && !!order}
+                    className="mt-1"
+                  />
+                </div>
 
-        {/* Order Details */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Order Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
-              <Input
-                id="orderDate"
-                type="date"
-                value={orderDate}
-                onChange={(e) => setOrderDate(e.target.value)}
-                disabled={!isEditMode && !!order}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
-              <Input
-                id="deliveryDate"
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-                disabled={!isEditMode && !!order}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="net-30">Net 30 Days</SelectItem>
-                  <SelectItem value="net-15">Net 15 Days</SelectItem>
-                  <SelectItem value="net-7">Net 7 Days</SelectItem>
-                  <SelectItem value="cod">Cash on Delivery</SelectItem>
-                  <SelectItem value="advance">Advance Payment</SelectItem>
-                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+                {vendorName && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
+                    <div className="grid grid-cols-1 gap-2 text-sm">
+                      <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
+                      <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
+                      <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Products Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold flex items-center">
-                <Package className="h-4 w-4 mr-2" />
-                Order Items ({items.length})
-              </CardTitle>
-              {(isEditMode || !order) && (
-                <Button onClick={() => addItem()} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {items.map((item, index) => (
-                <Card key={index} className="border">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <Label className="text-xs font-medium text-muted-foreground">Product</Label>
-                          {(isEditMode || !order) ? (
-                            <AutosuggestInput
-                              value={item.name}
-                              onChange={(value) => updateItem(index, 'name', value)}
-                              onSelect={(stockItem) => {
-                                updateItem(index, 'name', stockItem.name);
-                                updateItem(index, 'unitPrice', stockItem.unitPrice);
-                                updateItem(index, 'qty', 1);
-                                updateItem(index, 'discount', 0);
-                              }}
-                              placeholder="Search products..."
-                            />
-                          ) : (
-                            <div className="font-medium mt-1">{item.name}</div>
+            {/* Shipping Address */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <Truck className="h-4 w-4 mr-2" />
+                  Shipping Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
+                  <LocationAutosuggest
+                    value={shippingAddress}
+                    onChange={(value) => setShippingAddress(value)}
+                    onSelect={(location) => setShippingAddress(location.address)}
+                    locations={mockLocations}
+                    disabled={!isEditMode && !!order}
+                    className="mt-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Order Details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Order Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
+                  <Input
+                    id="orderDate"
+                    type="date"
+                    value={orderDate}
+                    onChange={(e) => setOrderDate(e.target.value)}
+                    disabled={!isEditMode && !!order}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
+                  <Input
+                    id="deliveryDate"
+                    type="date"
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    disabled={!isEditMode && !!order}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="net-30">Net 30 Days</SelectItem>
+                      <SelectItem value="net-15">Net 15 Days</SelectItem>
+                      <SelectItem value="net-7">Net 7 Days</SelectItem>
+                      <SelectItem value="cod">Cash on Delivery</SelectItem>
+                      <SelectItem value="advance">Advance Payment</SelectItem>
+                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Products Table */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center">
+                    <Package className="h-4 w-4 mr-2" />
+                    Order Items ({items.length})
+                  </CardTitle>
+                  {(isEditMode || !order) && (
+                    <Button onClick={() => addItem()} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {items.map((item, index) => (
+                    <Card key={index} className="border">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Product</Label>
+                              {(isEditMode || !order) ? (
+                                <AutosuggestInput
+                                  value={item.name}
+                                  onChange={(value) => updateItem(index, 'name', value)}
+                                  onSelect={(stockItem) => {
+                                    updateItem(index, 'name', stockItem.name);
+                                    updateItem(index, 'unitPrice', stockItem.unitPrice);
+                                    updateItem(index, 'qty', 1);
+                                    updateItem(index, 'discount', 0);
+                                  }}
+                                  placeholder="Search products..."
+                                />
+                              ) : (
+                                <div className="font-medium mt-1">{item.name}</div>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Quantity</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                                    className="mt-1"
+                                    min="1"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.qty}</div>
+                                )}
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Unit Price</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.unitPrice}
+                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
+                                    className="mt-1"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Discount (%)</Label>
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.discount}
+                                    onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
+                                    className="mt-1"
+                                    min="0"
+                                    max="100"
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.discount}%</div>
+                                )}
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Subtotal</Label>
+                                <div className="mt-1 font-bold text-lg">₹{item.subtotal?.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {(isEditMode || !order) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItem(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs font-medium text-muted-foreground">Quantity</Label>
-                            {(isEditMode || !order) ? (
-                              <Input 
-                                type="number" 
-                                value={item.qty} 
-                                onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                                className="mt-1" 
-                                min="1"
-                              />
-                            ) : (
-                              <div className="mt-1 font-medium">{item.qty}</div>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <Label className="text-xs font-medium text-muted-foreground">Unit Price</Label>
-                            {(isEditMode || !order) ? (
-                              <Input 
-                                type="number" 
-                                value={item.unitPrice} 
-                                onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                                className="mt-1"
-                                min="0"
-                                step="0.01"
-                              />
-                            ) : (
-                              <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs font-medium text-muted-foreground">Discount (%)</Label>
-                            {(isEditMode || !order) ? (
-                              <Input 
-                                type="number" 
-                                value={item.discount} 
-                                onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
-                                className="mt-1"
-                                min="0"
-                                max="100"
-                              />
-                            ) : (
-                              <div className="mt-1 font-medium">{item.discount}%</div>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <Label className="text-xs font-medium text-muted-foreground">Subtotal</Label>
-                            <div className="mt-1 font-bold text-lg">₹{item.subtotal?.toFixed(2)}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {(isEditMode || !order) && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeItem(index)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {items.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
-                  No items added yet. Click "Add Item" to get started.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
 
-        {/* Additional Notes */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Additional Notes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
-              disabled={!isEditMode && !!order}
-              className="min-h-[100px] resize-none"
-            />
-          </CardContent>
-        </Card>
-        </div>
+                  {items.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      No items added yet. Click "Add Item" to get started.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Notes */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Additional Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
+                  disabled={!isEditMode && !!order}
+                  className="min-h-[100px] resize-none"
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </ModernInventoryOverlay>
