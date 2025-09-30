@@ -108,8 +108,10 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
             <div
               key={item.id}
               className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0 transition-colors"
-              onClick={() => handleSelect(item)}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(item);
+              }}
             >
               <div className="font-medium text-foreground">{item.name}</div>
               <div className="text-sm text-muted-foreground">{item.brand} • Stock: {item.stock} • ₹{item.unitPrice.toFixed(2)}</div>
