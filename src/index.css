@@ -410,3 +410,82 @@ input[type="date"]:focus::-webkit-datetime-edit {
 ::-webkit-calendar-picker-indicator:hover {
   filter: opacity(1);
 }
+
+/* Print Styles for Modal/Overlay Content */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the modal content */
+  [data-po-overlay-version] * {
+    visibility: visible;
+  }
+  
+  [data-po-overlay-version] {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    background: white;
+  }
+  
+  /* Hide interactive elements during print */
+  button, 
+  .no-print,
+  [data-radix-popper-content-wrapper],
+  [role="dialog"] > div:first-child {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure cards and content are visible */
+  .bg-background,
+  .bg-card,
+  .bg-muted {
+    background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Ensure text is black for print */
+  .text-foreground,
+  .text-muted-foreground {
+    color: black !important;
+  }
+  
+  /* Remove shadows and borders for clean print */
+  * {
+    box-shadow: none !important;
+  }
+  
+  /* Ensure full width for print */
+  .grid {
+    display: block !important;
+  }
+  
+  /* Format cards for print */
+  [class*="Card"] {
+    page-break-inside: avoid;
+    border: 1px solid #e5e7eb !important;
+    margin-bottom: 1rem;
+  }
+  
+  /* Ensure tables print correctly */
+  table {
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  /* Add page breaks where needed */
+  .print-page-break {
+    page-break-before: always;
+  }
+}

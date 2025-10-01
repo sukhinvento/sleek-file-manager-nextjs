@@ -619,7 +619,10 @@ export const ModernPOOverlay = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    // Small delay to ensure the print styles are applied
+    setTimeout(() => {
+      window.print();
+    }, 100);
     toast({
       title: "Print",
       description: "Opening print dialog...",
