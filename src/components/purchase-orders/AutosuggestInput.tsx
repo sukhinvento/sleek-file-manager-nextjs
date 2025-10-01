@@ -155,11 +155,15 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange }
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <div className="font-medium text-foreground">{item.name}</div>
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <span>{item.brand}</span> • <span>Stock: {item.stock}</span> • 
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+              <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>{item.brand}</span>
+                <span>•</span>
+                <span>Stock: {item.stock}</span>
+                <span>•</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap">
                   {item.saleUnit || 'Unit'}
-                </span> • 
+                </span>
+                <span>•</span>
                 <span>₹{item.unitPrice.toFixed(2)}</span>
               </div>
             </div>

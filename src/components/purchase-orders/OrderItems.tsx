@@ -94,8 +94,7 @@ export const OrderItems = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Qty</TableHead>
+                <TableHead>Quantity</TableHead>
                 {!isReadOnly && <TableHead>Unit Price</TableHead>}
                 {!isReadOnly && <TableHead>Discount</TableHead>}
                 <TableHead>Subtotal</TableHead>
@@ -125,21 +124,21 @@ export const OrderItems = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-                      {item.saleUnit || 'Unit'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {isReadOnly ? (
-                      <span>{item.qty}</span>
-                    ) : (
-                      <Input 
-                        type="number" 
-                        value={item.qty} 
-                        onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                        className="w-20" 
-                      />
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isReadOnly ? (
+                        <span>{item.qty}</span>
+                      ) : (
+                        <Input 
+                          type="number" 
+                          value={item.qty} 
+                          onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                          className="w-20" 
+                        />
+                      )}
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap">
+                        {item.saleUnit || 'Unit'}
+                      </span>
+                    </div>
                   </TableCell>
                   {!isReadOnly && (
                     <TableCell>

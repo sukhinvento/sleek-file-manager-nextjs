@@ -157,8 +157,12 @@ export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onCh
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <div className="font-medium text-foreground">{vendor.name}</div>
-              <div className="text-sm text-muted-foreground">
-                {vendor.category} • {vendor.contactPerson} • {vendor.status}
+              <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>{vendor.category}</span>
+                <span>•</span>
+                <span>{vendor.contactPerson}</span>
+                <span>•</span>
+                <span>{vendor.status}</span>
               </div>
             </div>
           ))}

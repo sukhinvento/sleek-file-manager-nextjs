@@ -434,8 +434,7 @@ export const ModernStockTransferOverlay = ({
                     <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                       <TableRow>
                         <TableHead>Item Name</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead>Quantity</TableHead>
+                        <TableHead>Transfer Quantity</TableHead>
                         <TableHead>Available Stock</TableHead>
                         {isEditMode && !isReadOnly && <TableHead className="w-12"></TableHead>}
                       </TableRow>
@@ -465,17 +464,22 @@ export const ModernStockTransferOverlay = ({
                             )}
                           </TableCell>
                           <TableCell>
-                            {isEditMode && !isReadOnly ? (
-                              <Input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                className="w-24"
-                                min={1}
-                              />
-                            ) : (
-                              <span>{item.quantity}</span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {isEditMode && !isReadOnly ? (
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                                  className="w-24"
+                                  min={1}
+                                />
+                              ) : (
+                                <span>{item.quantity}</span>
+                              )}
+                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap">
+                                {item.saleUnit || 'Unit'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-muted">

@@ -45,8 +45,7 @@ export const OrderItems = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Qty</TableHead>
+                <TableHead>Quantity</TableHead>
                 {(isEditMode || !isReadOnly) && <TableHead>Unit Price</TableHead>}
                 {(isEditMode || !isReadOnly) && <TableHead>Discount</TableHead>}
                 <TableHead>Subtotal</TableHead>
@@ -68,21 +67,21 @@ export const OrderItems = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                      {item.saleUnit || 'Unit'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {isEditMode && !isReadOnly ? (
-                      <Input 
-                        type="number" 
-                        value={item.qty} 
-                        onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
-                        className="w-20" 
-                      />
-                    ) : (
-                      <span>{item.qty}</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isEditMode && !isReadOnly ? (
+                        <Input 
+                          type="number" 
+                          value={item.qty} 
+                          onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                          className="w-20" 
+                        />
+                      ) : (
+                        <span>{item.qty}</span>
+                      )}
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 whitespace-nowrap">
+                        {item.saleUnit || 'Unit'}
+                      </span>
+                    </div>
                   </TableCell>
                   {(isEditMode || !isReadOnly) && (
                     <TableCell>
