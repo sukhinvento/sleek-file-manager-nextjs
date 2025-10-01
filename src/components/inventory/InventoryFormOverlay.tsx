@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ModernInventoryOverlay } from './ModernInventoryOverlay';
+import { VendorAutosuggestInput } from './VendorAutosuggestInput';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -160,11 +161,11 @@ export const InventoryFormOverlay = ({
 
               <div className="space-y-2">
                 <Label htmlFor="supplier">Supplier</Label>
-                <Input
-                  id="supplier"
+                <VendorAutosuggestInput
                   value={formData.supplier}
-                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                  placeholder="Enter supplier name"
+                  onChange={(value) => setFormData({ ...formData, supplier: value })}
+                  onSelect={(vendor) => setFormData({ ...formData, supplier: vendor.name })}
+                  placeholder="Search and select supplier..."
                 />
               </div>
             </div>
