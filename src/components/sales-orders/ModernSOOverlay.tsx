@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
-import { AutosuggestInput } from './AutosuggestInput';
-import { PurchaseOrder, PurchaseOrderItem, StockItem } from '../../types/purchaseOrder';
+import { AutosuggestInput } from '../purchase-orders/AutosuggestInput';
+import { SalesOrder, SalesOrderItem } from '../../types/inventory';
+import { StockItem } from '../../types/purchaseOrder';
 import { DatePicker } from "@/components/ui/date-picker";
 
-// Mock vendor data for autocomplete
-interface Vendor {
+// Mock customer data for autocomplete
+interface Customer {
   id: string;
   name: string;
   email: string;
@@ -24,27 +25,27 @@ interface Vendor {
   address: string;
 }
 
-const mockVendors: Vendor[] = [
+const mockCustomers: Customer[] = [
   {
-    id: 'v1',
-    name: 'MedSupply Inc.',
-    email: 'orders@medsupply.com',
+    id: 'c1',
+    name: 'John Smith',
+    email: 'john.smith@example.com',
     phone: '+1 (555) 123-4567',
-    address: '123 Medical Ave, Healthcare City, HC 12345'
+    address: '123 Main Street, Downtown, DC 12345'
   },
   {
-    id: 'v2',
-    name: 'PharmaCorp',
-    email: 'procurement@pharmacorp.com',
+    id: 'c2',
+    name: 'Emily Davis',
+    email: 'emily.davis@example.com',
     phone: '+1 (555) 987-6543',
-    address: '456 Pharmacy St, Wellness Town, WT 67890'
+    address: '456 Oak Avenue, Suburbs, SB 67890'
   },
   {
-    id: 'v3',
-    name: 'HealthTech Solutions',
-    email: 'sales@healthtech.com',
+    id: 'c3',
+    name: 'Robert Wilson',
+    email: 'robert.wilson@example.com',
     phone: '+1 (555) 555-0123',
-    address: '789 Innovation Blvd, Tech Valley, TV 54321'
+    address: '789 Pine Road, Uptown, UT 54321'
   }
 ];
 
@@ -83,52 +84,52 @@ const mockLocations: Location[] = [
   }
 ];
 
-// Custom Vendor Autosuggest Component
-interface VendorAutosuggestProps {
+// Custom Customer Autosuggest Component
+interface CustomerAutosuggestProps {
   value: string;
   onChange: (value: string) => void;
-  onSelect: (vendor: Vendor) => void;
-  vendors: Vendor[];
+  onSelect: (customer: Customer) => void;
+  customers: Customer[];
   disabled?: boolean;
   className?: string;
 }
 
-const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, className }: VendorAutosuggestProps) => {
+const CustomerAutosuggest = ({ value, onChange, onSelect, customers, disabled, className }: CustomerAutosuggestProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   useEffect(() => {
     if (value.trim() === '') {
-      setFilteredVendors([]);
+      setFilteredCustomers([]);
       setIsOpen(false);
       return;
     }
 
-    const filtered = vendors.filter(vendor =>
-      vendor.name.toLowerCase().includes(value.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(value.toLowerCase())
+    const filtered = customers.filter(customer =>
+      customer.name.toLowerCase().includes(value.toLowerCase()) ||
+      customer.email.toLowerCase().includes(value.toLowerCase())
     );
-    setFilteredVendors(filtered);
+    setFilteredCustomers(filtered);
     // Only auto-open if user has interacted
     if (userHasInteracted) {
       setIsOpen(filtered.length > 0);
     }
-  }, [value, vendors, userHasInteracted]);
+  }, [value, customers, userHasInteracted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserHasInteracted(true);
     onChange(e.target.value);
   };
 
-  const handleVendorSelect = (vendor: Vendor) => {
-    onSelect(vendor);
+  const handleCustomerSelect = (customer: Customer) => {
+    onSelect(customer);
     setIsOpen(false);
   };
 
   const handleInputFocus = () => {
     setUserHasInteracted(true);
-    if (value.trim() && filteredVendors.length > 0) {
+    if (value.trim() && filteredCustomers.length > 0) {
       setIsOpen(true);
     }
   };
@@ -145,32 +146,32 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
         onChange={handleInputChange}
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
-        placeholder="Search or enter vendor name"
+        placeholder="Search or enter customer name"
         disabled={disabled}
         className="w-full"
       />
-      {isOpen && filteredVendors.length > 0 && (
+      {isOpen && filteredCustomers.length > 0 && (
         <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {filteredVendors.map((vendor) => (
+          {filteredCustomers.map((customer) => (
             <div
-              key={vendor.id}
+              key={customer.id}
               className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0 transition-all duration-200"
               onMouseDown={(e) => {
                 e.preventDefault();
-                handleVendorSelect(vendor);
+                handleCustomerSelect(customer);
               }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground text-sm truncate">{vendor.name}</div>
+                  <div className="font-medium text-foreground text-sm truncate">{customer.name}</div>
                   <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                     <div className="flex items-center gap-1">
                       <Mail className="h-3 w-3" />
-                      <span className="truncate">{vendor.email}</span>
+                      <span className="truncate">{customer.email}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
-                      <span className="truncate">{vendor.phone}</span>
+                      <span className="truncate">{customer.phone}</span>
                     </div>
                   </div>
                 </div>
@@ -299,17 +300,17 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
   );
 };
 
-interface ModernPOOverlayProps {
-  order: PurchaseOrder | null;
+interface ModernSOOverlayProps {
+  order: SalesOrder | null;
   isOpen: boolean;
   onClose: () => void;
   isEdit?: boolean;
-  onSave?: (order: PurchaseOrder) => void;
-  onUpdate?: (order: PurchaseOrder) => void;
+  onSave?: (order: SalesOrder) => void;
+  onUpdate?: (order: SalesOrder) => void;
   onDelete?: (orderId: string) => void;
 }
 
-export const ModernPOOverlay = ({
+export const ModernSOOverlay = ({
   order,
   isOpen,
   onClose,
@@ -317,12 +318,12 @@ export const ModernPOOverlay = ({
   onSave,
   onUpdate,
   onDelete
-}: ModernPOOverlayProps) => {
-  const [items, setItems] = useState<PurchaseOrderItem[]>([]);
-  const [vendorName, setVendorName] = useState<string>('');
-  const [vendorEmail, setVendorEmail] = useState<string>('');
-  const [vendorPhone, setVendorPhone] = useState<string>('');
-  const [vendorAddress, setVendorAddress] = useState<string>('');
+}: ModernSOOverlayProps) => {
+  const [items, setItems] = useState<SalesOrderItem[]>([]);
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [customerAddress, setCustomerAddress] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState<string>('');
   const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
@@ -338,26 +339,26 @@ export const ModernPOOverlay = ({
   useEffect(() => {
     if (order) {
       setItems(order.items || []);
-      setVendorName(order.vendorName || '');
-      setVendorEmail(order.vendorEmail || '');
-      setVendorPhone(order.vendorPhone || '');
-      setVendorAddress(order.vendorAddress || '');
+      setCustomerName(order.customerName || '');
+      setCustomerEmail(order.customerEmail || '');
+      setCustomerPhone(order.customerPhone || '');
+      setCustomerAddress(order.customerAddress || '');
       setShippingAddress(order.shippingAddress || '');
       setOrderDate(order.orderDate ? new Date(order.orderDate) : undefined);
       setDeliveryDate(order.deliveryDate ? new Date(order.deliveryDate) : undefined);
-      setPaymentMethod(order.paymentMethod || 'net-30');
-      setRemarks(Array.isArray(order.remarks) ? order.remarks.map(r => r.message).join('\n') : order.remarks || '');
+      setPaymentMethod(order.paymentMethod || 'Credit Card');
+      setRemarks(order.notes || '');
     } else {
       // Reset for new order
       setItems([]);
-      setVendorName('');
-      setVendorEmail('');
-      setVendorPhone('');
-      setVendorAddress('');
+      setCustomerName('');
+      setCustomerEmail('');
+      setCustomerPhone('');
+      setCustomerAddress('');
       setShippingAddress('');
       setOrderDate(new Date());
       setDeliveryDate(undefined);
-      setPaymentMethod('net-30');
+      setPaymentMethod('Credit Card');
       setRemarks('');
     }
     setIsEditMode(isEdit);
@@ -413,15 +414,13 @@ export const ModernPOOverlay = ({
       qty: 1,
       unitPrice: stockItem.unitPrice,
       discount: 0,
-      subtotal: stockItem.unitPrice,
-      taxSlab: 18
+      subtotal: stockItem.unitPrice
     } : {
       name: '',
       qty: 1,
       unitPrice: 0,
       discount: 0,
-      subtotal: 0,
-      taxSlab: 18
+      subtotal: 0
     };
     
     // Add new item at the beginning of the array to push existing items down
@@ -469,10 +468,10 @@ export const ModernPOOverlay = ({
       return;
     }
 
-    if (!vendorName.trim()) {
+    if (!customerName.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please enter vendor name.",
+        description: "Please enter customer name.",
         variant: "destructive",
       });
       return;
@@ -481,41 +480,37 @@ export const ModernPOOverlay = ({
     setIsSaving(true);
 
     try {
-      const orderData: PurchaseOrder = {
-        id: order?.id || `po-${Date.now()}`,
-        poNumber: order?.poNumber || `PO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
-        vendorName,
-        vendorContact: order?.vendorContact || '',
-        vendorPhone,
-        vendorEmail,
-        vendorAddress,
+      const orderData: SalesOrder = {
+        id: order?.id || `so-${Date.now()}`,
+        orderNumber: order?.orderNumber || `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        customerName,
+        customerEmail,
+        customerPhone,
+        customerAddress,
         orderDate: orderDate ? orderDate.toISOString().split('T')[0] : '',
         deliveryDate: deliveryDate ? deliveryDate.toISOString().split('T')[0] : '',
-        fulfilmentDate: order?.fulfilmentDate || null,
-        status: order?.status || 'Pending',
+        dueDate: deliveryDate ? deliveryDate.toISOString().split('T')[0] : '',
+        status: order?.status || 'Processing',
         items,
         total: totals.total,
-        paidAmount: order?.paidAmount || 0,
-        createdBy: order?.createdBy || 'System',
-        approvedBy: order?.approvedBy || '',
-        notes: order?.notes || '',
-        attachments: order?.attachments || 0,
+        paymentStatus: order?.paymentStatus || 'Pending',
         paymentMethod,
         shippingAddress,
-        remarks: typeof remarks === 'string' ? [{ date: new Date().toISOString().split('T')[0], user: 'System', message: remarks }] : order?.remarks || [],
+        billingAddress: order?.billingAddress || customerAddress,
+        notes: remarks,
       };
 
       if (order && onUpdate) {
         await onUpdate(orderData);
         toast({
           title: "Order Updated",
-          description: `Purchase order ${orderData.poNumber} has been updated successfully.`,
+          description: `Sales order ${orderData.orderNumber} has been updated successfully.`,
         });
       } else if (onSave) {
         await onSave(orderData);
         toast({
           title: "Order Created",
-          description: `Purchase order ${orderData.poNumber} has been created successfully.`,
+          description: `Sales order ${orderData.orderNumber} has been created successfully.`,
         });
       }
 
@@ -534,12 +529,12 @@ export const ModernPOOverlay = ({
   const handleDeleteOrder = async () => {
     if (!order?.id || !onDelete) return;
 
-    if (window.confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete this sales order? This action cannot be undone.')) {
       try {
         await onDelete(order.id);
         toast({
           title: "Order Deleted",
-          description: "Purchase order has been deleted successfully.",
+          description: "Sales order has been deleted successfully.",
         });
         onClose();
       } catch (error) {
@@ -577,7 +572,7 @@ export const ModernPOOverlay = ({
         </Button>
       )}
 
-      {order && order.status === 'Pending' && !isEditMode && (
+      {order && order.status === 'Processing' && !isEditMode && (
         <Button variant="destructive" onClick={handleDeleteOrder}>
           <Trash2 className="h-4 w-4 mr-2" />
           Delete
@@ -589,31 +584,31 @@ export const ModernPOOverlay = ({
   const handleExportPDF = () => {
     toast({
       title: "Export PDF",
-      description: "Exporting purchase order to PDF...",
+      description: "Exporting sales order to PDF...",
     });
     // PDF export implementation would go here
   };
 
   const handleEmail = () => {
     if (!order) return;
-    const subject = `Purchase Order ${order.poNumber}`;
-    const body = `Purchase Order Details:\n\nPO Number: ${order.poNumber}\nVendor: ${order.vendorName}\nStatus: ${order.status}\nTotal: $${order.total.toFixed(2)}`;
+    const subject = `Sales Order ${order.orderNumber}`;
+    const body = `Sales Order Details:\n\nSO Number: ${order.orderNumber}\nCustomer: ${order.customerName}\nStatus: ${order.status}\nTotal: $${order.total.toFixed(2)}`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   const handleDuplicate = () => {
     if (!order || !onSave) return;
-    const duplicatedOrder: PurchaseOrder = {
+    const duplicatedOrder: SalesOrder = {
       ...order,
-      id: `PO-${Date.now()}`,
-      poNumber: `PO-${Date.now()}`,
-      status: 'Pending',
+      id: `SO-${Date.now()}`,
+      orderNumber: `SO-${Date.now()}`,
+      status: 'Processing',
       orderDate: new Date().toISOString().split('T')[0],
     };
     onSave(duplicatedOrder);
     toast({
       title: "Order Duplicated",
-      description: `Created duplicate order ${duplicatedOrder.poNumber}`,
+      description: `Created duplicate order ${duplicatedOrder.orderNumber}`,
     });
     onClose();
   };
@@ -652,8 +647,8 @@ export const ModernPOOverlay = ({
 
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'Pending': return 'pending';
-      case 'Approved': return 'approved';
+      case 'Processing': return 'pending';
+      case 'Shipped': return 'approved';
       case 'Delivered': return 'delivered';
       case 'Cancelled': return 'cancelled';
       default: return 'pending';
@@ -664,8 +659,8 @@ export const ModernPOOverlay = ({
     <ModernInventoryOverlay
       isOpen={isOpen}
       onClose={onClose}
-      title={order ? `Purchase Order ${order.poNumber}` : 'New Purchase Order'}
-      subtitle={order ? `Created on ${order.orderDate} • Total: ₹${totals.total.toFixed(2)}` : 'Create a new purchase order'}
+      title={order ? `Sales Order ${order.orderNumber}` : 'New Sales Order'}
+      subtitle={order ? `Created on ${order.orderDate} • Total: ₹${totals.total.toFixed(2)}` : 'Create a new sales order'}
       status={order?.status}
       statusColor={getStatusColor(order?.status)}
       headerActions={headerActions}
@@ -673,7 +668,7 @@ export const ModernPOOverlay = ({
       size="wide"
     >
       {/* Container for width monitoring */}
-      <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-2">
+      <div ref={containerRef} className="h-full" data-so-overlay-version="v2025-09-29-2">
 
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
@@ -711,39 +706,39 @@ export const ModernPOOverlay = ({
                 </CardContent>
               </Card>
 
-              {/* Vendor Information */}
+              {/* Customer Information */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    Vendor Information
+                    Customer Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
-                    <VendorAutosuggest
-                      value={vendorName}
-                      onChange={(value) => setVendorName(value)}
-                      onSelect={(vendor) => {
-                        setVendorName(vendor.name);
-                        setVendorEmail(vendor.email);
-                        setVendorPhone(vendor.phone);
-                        setVendorAddress(vendor.address);
+                    <Label htmlFor="customerSelect" className="text-xs font-medium text-muted-foreground">Select Customer</Label>
+                    <CustomerAutosuggest
+                      value={customerName}
+                      onChange={(value) => setCustomerName(value)}
+                      onSelect={(customer) => {
+                        setCustomerName(customer.name);
+                        setCustomerEmail(customer.email);
+                        setCustomerPhone(customer.phone);
+                        setCustomerAddress(customer.address);
                       }}
-                      vendors={mockVendors}
+                      customers={mockCustomers}
                       disabled={!isEditMode && !!order}
                       className="mt-1"
                     />
                   </div>
 
-                  {vendorName && (
+                  {customerName && (
                     <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
+                      <div className="text-xs font-medium text-muted-foreground">Customer Details</div>
                       <div className="grid grid-cols-1 gap-2 text-sm">
-                        <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
-                        <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
-                        <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                        <div><span className="text-muted-foreground">Email:</span> {customerEmail || 'Not provided'}</div>
+                        <div><span className="text-muted-foreground">Phone:</span> {customerPhone || 'Not provided'}</div>
+                        <div><span className="text-muted-foreground">Address:</span> {customerAddress || 'Not provided'}</div>
                       </div>
                     </div>
                   )}
@@ -811,12 +806,12 @@ export const ModernPOOverlay = ({
                         <SelectValue placeholder="Select payment method" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="net-30">Net 30 Days</SelectItem>
-                        <SelectItem value="net-15">Net 15 Days</SelectItem>
-                        <SelectItem value="net-7">Net 7 Days</SelectItem>
-                        <SelectItem value="cod">Cash on Delivery</SelectItem>
-                        <SelectItem value="advance">Advance Payment</SelectItem>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="Debit Card">Debit Card</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="PayPal">PayPal</SelectItem>
+                        <SelectItem value="Check">Check</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1007,39 +1002,39 @@ export const ModernPOOverlay = ({
               </CardContent>
             </Card>
 
-            {/* Vendor Information */}
+            {/* Customer Information */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center">
                   <User className="h-4 w-4 mr-2" />
-                  Vendor Information
+                  Customer Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
-                  <VendorAutosuggest
-                    value={vendorName}
-                    onChange={(value) => setVendorName(value)}
-                    onSelect={(vendor) => {
-                      setVendorName(vendor.name);
-                      setVendorEmail(vendor.email);
-                      setVendorPhone(vendor.phone);
-                      setVendorAddress(vendor.address);
+                  <Label htmlFor="customerSelect" className="text-xs font-medium text-muted-foreground">Select Customer</Label>
+                  <CustomerAutosuggest
+                    value={customerName}
+                    onChange={(value) => setCustomerName(value)}
+                    onSelect={(customer) => {
+                      setCustomerName(customer.name);
+                      setCustomerEmail(customer.email);
+                      setCustomerPhone(customer.phone);
+                      setCustomerAddress(customer.address);
                     }}
-                    vendors={mockVendors}
+                    customers={mockCustomers}
                     disabled={!isEditMode && !!order}
                     className="mt-1"
                   />
                 </div>
 
-                {vendorName && (
+                {customerName && (
                   <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
+                    <div className="text-xs font-medium text-muted-foreground">Customer Details</div>
                     <div className="grid grid-cols-1 gap-2 text-sm">
-                      <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
-                      <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
-                      <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                      <div><span className="text-muted-foreground">Email:</span> {customerEmail || 'Not provided'}</div>
+                      <div><span className="text-muted-foreground">Phone:</span> {customerPhone || 'Not provided'}</div>
+                      <div><span className="text-muted-foreground">Address:</span> {customerAddress || 'Not provided'}</div>
                     </div>
                   </div>
                 )}
@@ -1107,12 +1102,12 @@ export const ModernPOOverlay = ({
                       <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="net-30">Net 30 Days</SelectItem>
-                      <SelectItem value="net-15">Net 15 Days</SelectItem>
-                      <SelectItem value="net-7">Net 7 Days</SelectItem>
-                      <SelectItem value="cod">Cash on Delivery</SelectItem>
-                      <SelectItem value="advance">Advance Payment</SelectItem>
-                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                      <SelectItem value="Debit Card">Debit Card</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="PayPal">PayPal</SelectItem>
+                      <SelectItem value="Check">Check</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1260,7 +1255,7 @@ export const ModernPOOverlay = ({
                 <Textarea
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add any additional notes, special instructions, or comments for this purchase order..."
+                  placeholder="Add any additional notes, special instructions, or comments for this sales order..."
                   disabled={!isEditMode && !!order}
                   className="min-h-[100px] resize-none"
                 />
