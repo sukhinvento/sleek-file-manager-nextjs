@@ -94,6 +94,7 @@ export const OrderItems = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
+                <TableHead>Unit</TableHead>
                 <TableHead>Qty</TableHead>
                 {!isReadOnly && <TableHead>Unit Price</TableHead>}
                 {!isReadOnly && <TableHead>Discount</TableHead>}
@@ -113,6 +114,7 @@ export const OrderItems = ({
                           // Update all item fields when a stock item is selected
                           updateItem(index, 'name', stockItem.name);
                           updateItem(index, 'unitPrice', stockItem.unitPrice);
+                          updateItem(index, 'saleUnit', stockItem.saleUnit);
                           updateItem(index, 'qty', 1);
                           updateItem(index, 'discount', 0);
                         }}
@@ -121,6 +123,11 @@ export const OrderItems = ({
                     ) : (
                       <span className="font-medium">{item.name}</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                      {item.saleUnit || 'Unit'}
+                    </span>
                   </TableCell>
                   <TableCell>
                     {isReadOnly ? (

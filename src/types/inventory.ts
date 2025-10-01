@@ -6,6 +6,7 @@ export interface SalesOrderItem {
   discount: number;
   subtotal: number;
   taxSlab?: number;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 export interface SalesOrder {
@@ -33,6 +34,7 @@ export interface StockTransferItem {
   name: string;
   quantity: number;
   availableStock?: number;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 export interface StockTransfer {

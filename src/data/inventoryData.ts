@@ -13,8 +13,8 @@ export const salesOrdersData: SalesOrder[] = [
     deliveryDate: '2024-01-20',
     status: 'Shipped',
     items: [
-      { name: 'Surgical Masks', qty: 1000, unitPrice: 5.50, discount: 10, subtotal: 4950.00 },
-      { name: 'Hand Sanitizer', qty: 50, unitPrice: 75.00, discount: 5, subtotal: 3562.50 }
+      { name: 'Surgical Masks', qty: 1000, unitPrice: 5.50, discount: 10, subtotal: 4950.00, saleUnit: 'Box' },
+      { name: 'Hand Sanitizer', qty: 50, unitPrice: 75.00, discount: 5, subtotal: 3562.50, saleUnit: 'Bottle' }
     ],
     total: 8750.00,
     dueDate: '2024-01-20',
@@ -35,7 +35,7 @@ export const salesOrdersData: SalesOrder[] = [
     deliveryDate: '2024-01-21',
     status: 'Processing',
     items: [
-      { name: 'Disposable Gloves', qty: 500, unitPrice: 8.50, discount: 0, subtotal: 4250.50 }
+      { name: 'Disposable Gloves', qty: 500, unitPrice: 8.50, discount: 0, subtotal: 4250.50, saleUnit: 'Pack' }
     ],
     total: 4250.50,
     dueDate: '2024-01-21',
@@ -56,8 +56,8 @@ export const salesOrdersData: SalesOrder[] = [
     deliveryDate: '2024-01-22',
     status: 'Delivered',
     items: [
-      { name: 'Medical Equipment', qty: 2, unitPrice: 5000.00, discount: 5, subtotal: 9500.00 },
-      { name: 'Pharmaceuticals', qty: 100, unitPrice: 28.00, discount: 0, subtotal: 2800.75 }
+      { name: 'Medical Equipment', qty: 2, unitPrice: 5000.00, discount: 5, subtotal: 9500.00, saleUnit: 'Single Unit' },
+      { name: 'Pharmaceuticals', qty: 100, unitPrice: 28.00, discount: 0, subtotal: 2800.75, saleUnit: 'Strip' }
     ],
     total: 12300.75,
     dueDate: '2024-01-22',
@@ -77,8 +77,8 @@ export const stockTransfersData: StockTransfer[] = [
     fromLocation: 'Main Warehouse',
     toLocation: 'Emergency Room',
     items: [
-      { name: 'Bandages', quantity: 50 },
-      { name: 'Syringes', quantity: 100 }
+      { name: 'Bandages', quantity: 50, saleUnit: 'Box' },
+      { name: 'Syringes', quantity: 100, saleUnit: 'Pack' }
     ],
     status: 'Completed',
     requestDate: '2024-01-15',
@@ -93,8 +93,8 @@ export const stockTransfersData: StockTransfer[] = [
     fromLocation: 'Eastern Warehouse',
     toLocation: 'ICU',
     items: [
-      { name: 'IV Fluids', quantity: 25 },
-      { name: 'Oxygen Masks', quantity: 15 }
+      { name: 'IV Fluids', quantity: 25, saleUnit: 'Bottle' },
+      { name: 'Oxygen Masks', quantity: 15, saleUnit: 'Single Unit' }
     ],
     status: 'In Transit',
     requestDate: '2024-01-17',
@@ -108,8 +108,8 @@ export const stockTransfersData: StockTransfer[] = [
     fromLocation: 'Main Warehouse',
     toLocation: 'Pharmacy',
     items: [
-      { name: 'Antibiotics', quantity: 200 },
-      { name: 'Pain Relievers', quantity: 150 }
+      { name: 'Antibiotics', quantity: 200, saleUnit: 'Strip' },
+      { name: 'Pain Relievers', quantity: 150, saleUnit: 'Strip' }
     ],
     status: 'Pending',
     requestDate: '2024-01-18',
@@ -203,7 +203,8 @@ export const inventoryItemsData: InventoryItem[] = [
     expiryDate: '2025-08-15',
     batchNumber: 'PC2024001',
     location: 'Pharmacy - Shelf A1',
-    manufacturer: 'PharmaCorp'
+    manufacturer: 'PharmaCorp',
+    saleUnit: 'Strip'
   },
   {
     id: "inv-2",
@@ -217,7 +218,8 @@ export const inventoryItemsData: InventoryItem[] = [
     supplier: 'MedSupply Co',
     expiryDate: '2026-12-31',
     batchNumber: 'MS2024015',
-    location: 'Supply Room - Bin 15'
+    location: 'Supply Room - Bin 15',
+    saleUnit: 'Box'
   },
   {
     id: "inv-3",
@@ -230,7 +232,8 @@ export const inventoryItemsData: InventoryItem[] = [
     unitPrice: 45.00,
     supplier: 'MedTech Solutions',
     batchNumber: 'MT2024008',
-    location: 'Equipment Store - Rack C'
+    location: 'Equipment Store - Rack C',
+    saleUnit: 'Single Unit'
   }
 ];
 

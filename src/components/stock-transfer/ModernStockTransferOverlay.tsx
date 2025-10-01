@@ -15,6 +15,7 @@ interface StockTransferItem {
   name: string;
   quantity: number;
   availableStock?: number;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 interface StockTransfer {
@@ -60,12 +61,12 @@ const locations = [
 ];
 
 const sampleItems = [
-  { name: 'Bandages', availableStock: 500 },
-  { name: 'Syringes', availableStock: 1000 },
-  { name: 'IV Fluids', availableStock: 250 },
-  { name: 'Oxygen Masks', availableStock: 150 },
-  { name: 'Antibiotics', availableStock: 300 },
-  { name: 'Pain Relievers', availableStock: 200 }
+  { name: 'Bandages', availableStock: 500, saleUnit: 'Box' },
+  { name: 'Syringes', availableStock: 1000, saleUnit: 'Pack' },
+  { name: 'IV Fluids', availableStock: 250, saleUnit: 'Bottle' },
+  { name: 'Oxygen Masks', availableStock: 150, saleUnit: 'Single Unit' },
+  { name: 'Antibiotics', availableStock: 300, saleUnit: 'Strip' },
+  { name: 'Pain Relievers', availableStock: 200, saleUnit: 'Strip' }
 ];
 
 export const ModernStockTransferOverlay = ({ 
@@ -116,7 +117,8 @@ export const ModernStockTransferOverlay = ({
     setItems([...items, { 
       name: '', 
       quantity: 1,
-      availableStock: 0
+      availableStock: 0,
+      saleUnit: 'Single Unit'
     }]);
     
     toast({
@@ -141,11 +143,12 @@ export const ModernStockTransferOverlay = ({
     const updatedItems = [...items];
     (updatedItems[index] as any)[field] = value;
     
-    // If item name is selected, update available stock
+    // If item name is selected, update available stock and sale unit
     if (field === 'name') {
       const selectedItem = sampleItems.find(item => item.name === value);
       if (selectedItem) {
         updatedItems[index].availableStock = selectedItem.availableStock;
+        updatedItems[index].saleUnit = selectedItem.saleUnit as any;
       }
     }
     
@@ -431,6 +434,7 @@ export const ModernStockTransferOverlay = ({
                     <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                       <TableRow>
                         <TableHead>Item Name</TableHead>
+                        <TableHead>Unit</TableHead>
                         <TableHead>Quantity</TableHead>
                         <TableHead>Available Stock</TableHead>
                         {isEditMode && !isReadOnly && <TableHead className="w-12"></TableHead>}

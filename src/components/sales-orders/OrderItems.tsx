@@ -45,6 +45,7 @@ export const OrderItems = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
+                <TableHead>Unit</TableHead>
                 <TableHead>Qty</TableHead>
                 {(isEditMode || !isReadOnly) && <TableHead>Unit Price</TableHead>}
                 {(isEditMode || !isReadOnly) && <TableHead>Discount</TableHead>}
@@ -65,6 +66,11 @@ export const OrderItems = ({
                     ) : (
                       <span className="font-medium">{item.name}</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                      {item.saleUnit || 'Unit'}
+                    </span>
                   </TableCell>
                   <TableCell>
                     {isEditMode && !isReadOnly ? (

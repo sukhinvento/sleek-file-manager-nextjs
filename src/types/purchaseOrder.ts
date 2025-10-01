@@ -5,6 +5,7 @@ export interface PurchaseOrderItem {
   discount: number;
   subtotal: number;
   taxSlab?: number;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 export interface PurchaseOrderRemark {
@@ -43,6 +44,7 @@ export interface StockItem {
   brand: string;
   stock: number;
   unitPrice: number;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 export interface TaxSlab {
