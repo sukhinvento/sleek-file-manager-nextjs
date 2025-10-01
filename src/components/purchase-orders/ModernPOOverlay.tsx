@@ -586,21 +586,61 @@ export const ModernPOOverlay = ({
     </>
   );
 
+  const handleExportPDF = () => {
+    toast({
+      title: "Export PDF",
+      description: "Exporting purchase order to PDF...",
+    });
+    // PDF export implementation would go here
+  };
+
+  const handleEmail = () => {
+    if (!order) return;
+    const subject = `Purchase Order ${order.poNumber}`;
+    const body = `Purchase Order Details:\n\nPO Number: ${order.poNumber}\nVendor: ${order.vendorName}\nStatus: ${order.status}\nTotal: $${order.total.toFixed(2)}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handleDuplicate = () => {
+    if (!order || !onSave) return;
+    const duplicatedOrder: PurchaseOrder = {
+      ...order,
+      id: `PO-${Date.now()}`,
+      poNumber: `PO-${Date.now()}`,
+      status: 'Pending',
+      orderDate: new Date().toISOString().split('T')[0],
+    };
+    onSave(duplicatedOrder);
+    toast({
+      title: "Order Duplicated",
+      description: `Created duplicate order ${duplicatedOrder.poNumber}`,
+    });
+    onClose();
+  };
+
+  const handlePrint = () => {
+    window.print();
+    toast({
+      title: "Print",
+      description: "Opening print dialog...",
+    });
+  };
+
   const quickActions = (
     <>
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" onClick={handleExportPDF}>
         <FileText className="h-4 w-4 mr-2" />
         Export PDF
       </Button>
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" onClick={handleEmail}>
         <Mail className="h-4 w-4 mr-2" />
         Email
       </Button>
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" onClick={handleDuplicate} disabled={!order}>
         <Copy className="h-4 w-4 mr-2" />
         Duplicate
       </Button>
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" onClick={handlePrint}>
         <Printer className="h-4 w-4 mr-2" />
         Print
       </Button>
