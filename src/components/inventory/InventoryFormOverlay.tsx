@@ -36,7 +36,8 @@ export const InventoryFormOverlay = ({
     supplier: '',
     location: '',
     description: '',
-    batchNumber: ''
+    batchNumber: '',
+    saleUnit: 'Single Unit'
   });
 
   useEffect(() => {
@@ -54,7 +55,8 @@ export const InventoryFormOverlay = ({
         supplier: '',
         location: '',
         description: '',
-        batchNumber: ''
+        batchNumber: '',
+        saleUnit: 'Single Unit'
       });
     }
   }, [item, isEdit]);
@@ -74,7 +76,8 @@ export const InventoryFormOverlay = ({
       supplier: formData.supplier || '',
       location: formData.location || '',
       description: formData.description || '',
-      batchNumber: formData.batchNumber || ''
+      batchNumber: formData.batchNumber || '',
+      saleUnit: formData.saleUnit
     };
 
     if (isEdit && onUpdate) {
@@ -106,7 +109,7 @@ export const InventoryFormOverlay = ({
       title={isEdit ? 'Edit Inventory Item' : 'New Inventory Item'}
       subtitle={isEdit ? `Editing ${item?.name}` : 'Add a new item to inventory'}
       headerActions={headerActions}
-      size="large"
+      size="wide"
     >
       <div className="flex-1 overflow-y-auto p-6">
         <form id="inventory-form" onSubmit={handleSubmit} className="space-y-6">
@@ -232,7 +235,7 @@ export const InventoryFormOverlay = ({
           {/* Pricing Information */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Pricing Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unitPrice">Unit Price</Label>
                 <Input
@@ -243,6 +246,27 @@ export const InventoryFormOverlay = ({
                   onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="saleUnit">Minimum Sale Unit *</Label>
+                <Select 
+                  value={formData.saleUnit} 
+                  onValueChange={(value) => setFormData({ ...formData, saleUnit: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sale unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Single Unit">Single Unit</SelectItem>
+                    <SelectItem value="Strip">Strip (10 units)</SelectItem>
+                    <SelectItem value="Box">Box (Multiple strips)</SelectItem>
+                    <SelectItem value="Bottle">Bottle</SelectItem>
+                    <SelectItem value="Vial">Vial</SelectItem>
+                    <SelectItem value="Pack">Pack</SelectItem>
+                    <SelectItem value="Sachet">Sachet</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

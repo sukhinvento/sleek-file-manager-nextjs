@@ -91,6 +91,7 @@ export interface InventoryItem {
   location?: string;
   description?: string;
   manufacturer?: string;
+  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
 }
 
 // Common Types
