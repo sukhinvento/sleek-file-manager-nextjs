@@ -418,12 +418,14 @@ input[type="date"]:focus::-webkit-datetime-edit {
     visibility: hidden;
   }
   
-  /* Show only the modal content */
-  [data-po-overlay-version] * {
+  /* Show only the modal content for PO and SO overlays */
+  [data-po-overlay-version] *,
+  [data-so-overlay-version] * {
     visibility: visible;
   }
   
-  [data-po-overlay-version] {
+  [data-po-overlay-version],
+  [data-so-overlay-version] {
     position: fixed;
     left: 0;
     top: 0;

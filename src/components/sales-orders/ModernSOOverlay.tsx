@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Edit3, Truck, X, Clock, FileText, User, MapPin } from 'lucide-react';
+import { Save, Plus, Edit3, Truck, X, Clock, FileText, User, MapPin, Mail, Copy, Printer } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { SalesOrder, SalesOrderItem } from '../../types/inventory';
 import { OrderItems } from './OrderItems';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ModernSOOverlayProps {
   order: SalesOrder | null;
@@ -39,6 +41,7 @@ export const ModernSOOverlay = ({
   onUpdate, 
   onDelete 
 }: ModernSOOverlayProps) => {
+  const isMobile = useIsMobile();
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [customerName, setCustomerName] = useState<string>('');
   const [customerEmail, setCustomerEmail] = useState<string>('');
@@ -227,17 +230,66 @@ export const ModernSOOverlay = ({
     }
   };
 
+  const handleExportPDF = () => {
+    toast({
+      title: "Export PDF",
+      description: "Generating PDF document...",
+    });
+  };
+
+  const handleEmail = () => {
+    if (!order) return;
+    const subject = `Sales Order ${order.orderNumber}`;
+    const body = `Order Details:%0D%0A%0D%0AOrder Number: ${order.orderNumber}%0D%0ACustomer: ${order.customerName}%0D%0AStatus: ${order.status}%0D%0ATotal: ₹${order.total.toFixed(2)}`;
+    window.location.href = `mailto:${order.customerEmail}?subject=${subject}&body=${body}`;
+  };
+
+  const handleDuplicate = () => {
+    if (!order || !onSave) return;
+    const duplicatedOrder: SalesOrder = {
+      ...order,
+      id: `so-${Date.now()}`,
+      orderNumber: `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+      status: 'Processing',
+      orderDate: new Date().toISOString().split('T')[0],
+    };
+    onSave(duplicatedOrder);
+    toast({
+      title: "Order Duplicated",
+      description: `Created duplicate order ${duplicatedOrder.orderNumber}`,
+    });
+    onClose();
+  };
+
+  const handlePrint = () => {
+    setTimeout(() => {
+      window.print();
+    }, 100);
+    toast({
+      title: "Print",
+      description: "Opening print dialog...",
+    });
+  };
+
   const quickActions = (
-    <div className="flex items-center gap-2">
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-        <FileText className="h-4 w-4 mr-1" />
-        Export
+    <>
+      <Button variant="ghost" size="sm" onClick={handleExportPDF}>
+        <FileText className="h-4 w-4 mr-2" />
+        Export PDF
       </Button>
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-        <Clock className="h-4 w-4 mr-1" />
-        History
+      <Button variant="ghost" size="sm" onClick={handleEmail}>
+        <Mail className="h-4 w-4 mr-2" />
+        Email
       </Button>
-    </div>
+      <Button variant="ghost" size="sm" onClick={handleDuplicate} disabled={!order}>
+        <Copy className="h-4 w-4 mr-2" />
+        Duplicate
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handlePrint}>
+        <Printer className="h-4 w-4 mr-2" />
+        Print
+      </Button>
+    </>
   );
 
   const headerActions = (
@@ -304,21 +356,11 @@ export const ModernSOOverlay = ({
     </div>
   );
 
-  return (
-    <ModernInventoryOverlay
-      isOpen={isOpen}
-      onClose={onClose}
-      title={order ? `Sales Order ${order.orderNumber}` : 'New Sales Order'}
-      subtitle={order ? `Created on ${order.orderDate}` : 'Create a new sales order'}
-      status={order?.status}
-      statusColor={order?.status ? statusColors[order.status] : 'pending'}
-      size="medium"
-      headerActions={headerActions}
-      quickActions={quickActions}
-    >
-      <div className="flex h-full overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-muted/20">
-        {/* Left Panel - Order & Customer Information */}
-        <div className="w-80 border-r border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto">
+  // Mobile/Desktop Layout
+  const overlayContent = (
+    <div data-so-overlay-version="v2025-01-01" className={`flex ${isMobile ? 'flex-col' : 'flex-row'} h-full overflow-hidden bg-gradient-to-br from-background to-muted/20`}>
+      {/* Left Panel - Order & Customer Information */}
+      <div className={`${isMobile ? 'w-full' : 'w-80'} ${isMobile ? '' : 'border-r'} border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto`}>
           <div className="p-6 space-y-6">
             {/* Order Summary */}
             <Card className="border-border/50">
@@ -489,8 +531,8 @@ export const ModernSOOverlay = ({
           </div>
         </div>
 
-        {/* Right Panel - Order Items */}
-        <div className="flex-1 overflow-y-auto">
+      {/* Right Panel - Order Items */}
+      <div className="flex-1 overflow-y-auto">
           <div className="h-full p-6">
             <Card className="h-full border-border/50">
               <CardHeader className="pb-4 border-b border-border/50">
@@ -519,7 +561,69 @@ export const ModernSOOverlay = ({
             </Card>
           </div>
         </div>
-      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent 
+          className="w-full h-full max-w-full max-h-full p-0 m-0 rounded-none"
+          data-so-overlay-version="mobile"
+        >
+          <div className="h-full flex flex-col">
+            {/* Mobile Header */}
+            <div className="flex-shrink-0 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <h2 className="text-lg font-semibold truncate">
+                      {order ? `Sales Order ${order.orderNumber}` : 'New Sales Order'}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {order ? `Created on ${order.orderDate}` : 'Create a new sales order'}
+                    </p>
+                  </div>
+                  {order?.status && (
+                    <Badge variant={statusColors[order.status] as any}>
+                      {order.status}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {headerActions}
+                </div>
+              </div>
+              
+              {/* Quick Actions Bar */}
+              <div className="flex gap-1 px-4 pb-3 overflow-x-auto no-scrollbar">
+                {quickActions}
+              </div>
+            </div>
+
+            {/* Mobile Content */}
+            <div className="flex-1 overflow-y-auto">
+              {overlayContent}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <ModernInventoryOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      title={order ? `Sales Order ${order.orderNumber}` : 'New Sales Order'}
+      subtitle={order ? `Created on ${order.orderDate}` : 'Create a new sales order'}
+      status={order?.status}
+      statusColor={order?.status ? statusColors[order.status] : 'pending'}
+      size="medium"
+      headerActions={headerActions}
+      quickActions={quickActions}
+    >
+      {overlayContent}
     </ModernInventoryOverlay>
   );
 };
