@@ -9,36 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
-
-interface Vendor {
-  id?: number;
-  vendorId: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  email: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  category: string;
-  status: string;
-  totalOrders?: number;
-  lastOrderDate?: string;
-  totalValue?: number;
-  paymentTerms: string;
-  taxId: string;
-  gstNumber?: string;
-  website?: string;
-  bankName?: string;
-  accountNumber?: string;
-  ifscCode?: string;
-  creditLimit: number;
-  outstandingBalance?: number;
-  registrationDate?: string;
-  notes?: string;
-}
+import { Vendor } from '@/types/inventory';
 
 interface ModernVendorOverlayProps {
   vendor: Vendor | null;
@@ -296,7 +267,7 @@ export const ModernVendorOverlay = ({
     
     try {
       const vendorData: Vendor = {
-        id: vendor?.id,
+        id: vendor?.id || Date.now().toString(),
         vendorId: vendor?.vendorId || `V${String(Date.now()).slice(-6)}`,
         name,
         contactPerson,
@@ -308,9 +279,9 @@ export const ModernVendorOverlay = ({
         zipCode,
         country,
         category,
-        status,
+        status: status as 'Active' | 'Inactive' | 'Pending',
         website,
-        taxId,
+        taxId: taxId || '',
         gstNumber,
         paymentTerms,
         creditLimit,

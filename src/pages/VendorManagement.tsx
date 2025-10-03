@@ -51,6 +51,8 @@ const vendorsData: VendorWithRisk[] = [
     address: '123 Industrial Blvd',
     city: 'New York',
     state: 'NY',
+    zipCode: '10001',
+    country: 'USA',
     category: 'Pharmaceuticals',
     status: 'Active',
     totalOrders: 45,
@@ -59,7 +61,13 @@ const vendorsData: VendorWithRisk[] = [
     outstandingBalance: 12500.00,
     paymentTerms: 'Net 30',
     registrationDate: '2023-01-15',
-    riskLevel: 'Low'
+    riskLevel: 'Low',
+    taxId: 'TAX123456789',
+    gstNumber: 'GST123456789',
+    website: 'www.pharmacorp.com',
+    bankName: 'Chase Bank',
+    accountNumber: '1234567890',
+    ifscCode: 'CHAS0001234'
   },
   {
     id: '2',
@@ -71,6 +79,8 @@ const vendorsData: VendorWithRisk[] = [
     address: '456 Healthcare Ave',
     city: 'Chicago',
     state: 'IL',
+    zipCode: '60601',
+    country: 'USA',
     category: 'Medical Supplies',
     status: 'Active',
     totalOrders: 32,
@@ -79,7 +89,13 @@ const vendorsData: VendorWithRisk[] = [
     outstandingBalance: 8500.00,
     paymentTerms: 'Net 15',
     registrationDate: '2023-03-20',
-    riskLevel: 'Medium'
+    riskLevel: 'Medium',
+    taxId: 'TAX987654321',
+    gstNumber: 'GST987654321',
+    website: 'www.medsupply.com',
+    bankName: 'Bank of America',
+    accountNumber: '9876543210',
+    ifscCode: 'BOFA0009876'
   },
   {
     id: '3',
@@ -91,6 +107,8 @@ const vendorsData: VendorWithRisk[] = [
     address: '789 Medical Dr',
     city: 'Boston',
     state: 'MA',
+    zipCode: '02101',
+    country: 'USA',
     category: 'Medical Equipment',
     status: 'Inactive',
     totalOrders: 18,
@@ -99,7 +117,13 @@ const vendorsData: VendorWithRisk[] = [
     outstandingBalance: 25000.00,
     paymentTerms: 'Net 45',
     registrationDate: '2022-11-10',
-    riskLevel: 'High'
+    riskLevel: 'High',
+    taxId: 'TAX456789123',
+    gstNumber: 'GST456789123',
+    website: 'www.equipmentplus.com',
+    bankName: 'Wells Fargo',
+    accountNumber: '4567891230',
+    ifscCode: 'WELL0004567'
   }
 ];
 

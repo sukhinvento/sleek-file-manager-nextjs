@@ -62,6 +62,10 @@ export interface Vendor {
   phone: string;
   email: string;
   address: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   category: string;
   status: 'Active' | 'Inactive' | 'Pending';
   totalOrders: number;
@@ -69,8 +73,11 @@ export interface Vendor {
   totalValue: number;
   paymentTerms: string;
   taxId?: string;
+  gstNumber?: string;
   website?: string;
-  bankDetails?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
   creditLimit: number;
   outstandingBalance: number;
   registrationDate: string;
