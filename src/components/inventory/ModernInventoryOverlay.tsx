@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Minimize2, Maximize2 } from 'lucide-react';
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,11 +45,16 @@ export const ModernInventoryOverlay = ({
   size = 'medium'
 }: ModernInventoryOverlayProps) => {
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <SheetContent 
         className={`${sizeClasses[size]} p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20`}
         side="right"
       >
+        {/* Accessibility: Hidden title/description for Dialog compliance */}
+        <div className="sr-only">
+          <SheetTitle>{title}</SheetTitle>
+          {subtitle && <SheetDescription>{subtitle}</SheetDescription>}
+        </div>
         {/* Modern Header */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-3 sm:p-6">
           <div className="flex items-start justify-between mb-2 sm:mb-4">

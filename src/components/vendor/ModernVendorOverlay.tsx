@@ -222,7 +222,7 @@ export const ModernVendorOverlay = ({
       setIfscCode('');
       setNotes('');
     }
-    setIsEditMode(isEdit);
+    setIsEditMode(isEdit || !vendor);
   }, [vendor, isEdit]);
 
   const handleSaveVendor = async () => {
