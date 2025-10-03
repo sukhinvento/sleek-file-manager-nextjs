@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Minimize2, Maximize2 } from 'lucide-react';
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -29,7 +29,7 @@ const sizeClasses = {
   large: 'w-full sm:w-[95vw] sm:max-w-[1400px]',
   full: 'w-full sm:w-[98vw] sm:max-w-[1600px]',
   medium: 'w-full sm:w-[80vw] md:w-[70vw] lg:w-[60vw] sm:max-w-[60vw]',
-  wide: 'w-full sm:w-[70vw] sm:max-w-[70vw]'
+  wide: 'w-full sm:w-[80vw] sm:max-w-[80vw]'
 };
 
 export const ModernInventoryOverlay = ({ 
@@ -45,16 +45,11 @@ export const ModernInventoryOverlay = ({
   size = 'medium'
 }: ModernInventoryOverlayProps) => {
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         className={`${sizeClasses[size]} p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20`}
         side="right"
       >
-        {/* Accessibility: Hidden title/description for Dialog compliance */}
-        <div className="sr-only">
-          <SheetTitle>{title}</SheetTitle>
-          {subtitle && <SheetDescription>{subtitle}</SheetDescription>}
-        </div>
         {/* Modern Header */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-3 sm:p-6">
           <div className="flex items-start justify-between mb-2 sm:mb-4">
