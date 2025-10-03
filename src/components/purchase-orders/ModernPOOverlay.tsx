@@ -849,25 +849,22 @@ export const ModernPOOverlay = ({
                       No items added yet. Click "Add Item" to get started.
                     </div>
                   ) : (
-                    <div className="h-full">
+                    <div className="h-full overflow-auto" style={{ height: '60vh' }}>
                       <Table>
-                        <TableHeader className="sticky top-0 bg-background">
+                        <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
-                            <TableHead className="min-w-72">Product</TableHead>
-                            <TableHead className="min-w-20">Qty</TableHead>
-                            <TableHead className="min-w-24">Price</TableHead>
-                            <TableHead className="min-w-20">Disc%</TableHead>
-                            <TableHead className="min-w-24">Subtotal</TableHead>
-                            {(isEditMode || !order) && <TableHead className="w-12"></TableHead>}
+                            <TableHead className="w-[40%]">Product</TableHead>
+                            <TableHead className="w-[10%]">Qty</TableHead>
+                            <TableHead className="w-[15%]">Price</TableHead>
+                            <TableHead className="w-[10%]">Disc%</TableHead>
+                            <TableHead className="w-[15%]">Subtotal</TableHead>
+                            {(isEditMode || !order) && <TableHead className="w-[10%]"></TableHead>}
                           </TableRow>
                         </TableHeader>
-                      </Table>
-                      <div style={{ height: '60vh', overflow: 'auto' }}>
-                        <Table>
-                          <TableBody>
+                        <TableBody>
                           {items.map((item, index) => (
-                            <TableRow key={index} className='max-h-16'>
-                              <TableCell className="relative overflow-visible min-w-72">
+                            <TableRow key={index}>
+                              <TableCell className="relative overflow-visible p-2 break-words">
                                 {(isEditMode || !order) ? (
                                    <AutosuggestInput
                                      value={item.name}
@@ -877,7 +874,6 @@ export const ModernPOOverlay = ({
                                        updateItem(index, 'unitPrice', stockItem.unitPrice);
                                        updateItem(index, 'qty', 1);
                                        updateItem(index, 'discount', 0);
-                                       // Auto-add new empty row after selection
                                        if (index === items.length - 1) {
                                          addItem();
                                        }
@@ -885,10 +881,10 @@ export const ModernPOOverlay = ({
                                      placeholder="Search products..."
                                    />
                                 ) : (
-                                  <span className="font-medium">{item.name}</span>
+                                  <span className="font-medium whitespace-normal break-words leading-tight">{item.name}</span>
                                 )}
                               </TableCell>
-                              <TableCell className="min-w-20">
+                              <TableCell className="p-2">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
@@ -898,10 +894,10 @@ export const ModernPOOverlay = ({
                                     min="1"
                                   />
                                 ) : (
-                                  <span>{item.qty}</span>
+                                  <span className="whitespace-nowrap">{item.qty}</span>
                                 )}
                               </TableCell>
-                              <TableCell className="min-w-24">
+                              <TableCell className="p-2">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
@@ -912,10 +908,10 @@ export const ModernPOOverlay = ({
                                     step="0.01"
                                   />
                                 ) : (
-                                  <span>₹{item.unitPrice?.toFixed(2)}</span>
+                                  <span className="whitespace-nowrap">₹{item.unitPrice?.toFixed(2)}</span>
                                 )}
                               </TableCell>
-                              <TableCell className="min-w-20">
+                              <TableCell className="p-2">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
@@ -926,14 +922,14 @@ export const ModernPOOverlay = ({
                                     max="100"
                                   />
                                 ) : (
-                                  <span>{item.discount}%</span>
+                                  <span className="whitespace-nowrap">{item.discount}%</span>
                                 )}
                               </TableCell>
-                              <TableCell>
-                                <span className="font-medium">₹{item.subtotal?.toFixed(2)}</span>
+                              <TableCell className="p-2">
+                                <span className="font-medium whitespace-nowrap">₹{item.subtotal?.toFixed(2)}</span>
                               </TableCell>
                               {(isEditMode || !order) && (
-                                <TableCell>
+                                <TableCell className="p-2">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -946,9 +942,8 @@ export const ModernPOOverlay = ({
                               )}
                             </TableRow>
                           ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </CardContent>
