@@ -400,383 +400,371 @@ export const ModernVendorOverlay = ({
       headerActions={headerActions}
       quickActions={quickActions}
     >
-      <div className="flex h-full overflow-hidden bg-gradient-to-br from-background to-muted/20">
-        {/* Left Panel - Basic & Contact Information */}
-        <div className="w-96 border-r border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto">
-          <div className="p-6 space-y-6">
-            {/* Basic Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Basic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="vendor-name" className="text-xs font-medium">Vendor Name *</Label>
-                  <AutocompleteInput
-                    value={name}
-                    onChange={setName}
-                    suggestions={vendorSuggestions}
-                    placeholder="Enter or select vendor name"
-                    disabled={!isEditMode}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="category" className="text-xs font-medium">Category *</Label>
-                  <AutocompleteInput
-                    value={category}
-                    onChange={setCategory}
-                    suggestions={categorySuggestions}
-                    placeholder="Enter or select category"
-                    disabled={!isEditMode}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="status" className="text-xs font-medium">Status</Label>
-                    <Select value={status} onValueChange={setStatus} disabled={!isEditMode}>
-                      <SelectTrigger className="h-9 text-sm mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="website" className="text-xs font-medium">Website</Label>
-                    <Input
-                      id="website"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                      placeholder="www.example.com"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="contact-person" className="text-xs font-medium">Contact Person *</Label>
-                  <Input
-                    id="contact-person"
-                    value={contactPerson}
-                    onChange={(e) => setContactPerson(e.target.value)}
-                    disabled={!isEditMode}
-                    className="h-9 text-sm mt-1"
-                    placeholder="Enter contact person name"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="phone" className="text-xs font-medium">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                      placeholder="+91-XXXXXXXXXX"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="email" className="text-xs font-medium">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                      placeholder="contact@vendor.com"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Address Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Address Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="address" className="text-xs font-medium">Street Address</Label>
-                  <Textarea
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    disabled={!isEditMode}
-                    className="text-sm resize-none mt-1"
-                    placeholder="Enter complete street address"
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="city" className="text-xs font-medium">City</Label>
-                    <AutocompleteInput
-                      value={city}
-                      onChange={setCity}
-                      suggestions={citySuggestions}
-                      placeholder="Enter city"
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="state" className="text-xs font-medium">State</Label>
-                    <AutocompleteInput
-                      value={state}
-                      onChange={setState}
-                      suggestions={stateSuggestions}
-                      placeholder="Enter state"
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="zip-code" className="text-xs font-medium">ZIP Code</Label>
-                    <Input
-                      id="zip-code"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                      placeholder="Enter ZIP code"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="country" className="text-xs font-medium">Country</Label>
-                    <Input
-                      id="country"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      disabled={!isEditMode}
-                      className="h-9 text-sm mt-1"
-                      placeholder="Enter country"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Right Panel - Financial & Additional Information */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full p-6 space-y-6 overflow-y-auto">
-            {/* Tax & Legal Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-4 border-b border-border/50">
-                <CardTitle className="text-lg font-semibold flex items-center">
-                  <Receipt className="h-5 w-5 mr-2" />
-                  Tax & Legal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="tax-id" className="text-sm font-medium">Tax ID / PAN</Label>
-                    <Input
-                      id="tax-id"
-                      value={taxId}
-                      onChange={(e) => setTaxId(e.target.value)}
-                      disabled={!isEditMode}
-                      className="mt-1"
-                      placeholder="Enter PAN number"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="gst-number" className="text-sm font-medium">GST Number</Label>
-                    <Input
-                      id="gst-number"
-                      value={gstNumber}
-                      onChange={(e) => setGstNumber(e.target.value)}
-                      disabled={!isEditMode}
-                      className="mt-1"
-                      placeholder="Enter GST number"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Financial Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-4 border-b border-border/50">
-                <CardTitle className="text-lg font-semibold flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Financial Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="payment-terms" className="text-sm font-medium">Payment Terms</Label>
-                      <AutocompleteInput
-                        value={paymentTerms}
-                        onChange={setPaymentTerms}
-                        suggestions={paymentTermsSuggestions}
-                        placeholder="Enter payment terms"
-                        disabled={!isEditMode}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="credit-limit" className="text-sm font-medium">Credit Limit (₹)</Label>
-                      <Input
-                        id="credit-limit"
-                        type="number"
-                        value={creditLimit}
-                        onChange={(e) => setCreditLimit(parseFloat(e.target.value) || 0)}
-                        disabled={!isEditMode}
-                        className="mt-1"
-                        placeholder="Enter credit limit"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="bank-name" className="text-sm font-medium">Bank Name</Label>
-                    <AutocompleteInput
-                      value={bankName}
-                      onChange={setBankName}
-                      suggestions={bankSuggestions}
-                      placeholder="Enter or select bank name"
-                      disabled={!isEditMode}
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="account-number" className="text-sm font-medium">Account Number</Label>
-                      <Input
-                        id="account-number"
-                        value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        disabled={!isEditMode}
-                        className="mt-1"
-                        placeholder="Enter account number"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="ifsc-code" className="text-sm font-medium">IFSC Code</Label>
-                      <Input
-                        id="ifsc-code"
-                        value={ifscCode}
-                        onChange={(e) => setIfscCode(e.target.value)}
-                        disabled={!isEditMode}
-                        className="mt-1"
-                        placeholder="Enter IFSC code"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Order Statistics - Show only for existing vendors */}
-            {vendor && (
-              <Card className="border-border/50 shadow-sm">
-                <CardHeader className="pb-4 border-b border-border/50">
-                  <CardTitle className="text-lg font-semibold flex items-center">
-                    <Package className="h-5 w-5 mr-2" />
-                    Order Statistics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="border-border/30">
-                      <CardContent className="p-4">
-                        <div className="text-2xl font-bold text-slate-600">{vendor.totalOrders || 0}</div>
-                        <div className="text-sm text-muted-foreground">Total Orders</div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-border/30">
-                      <CardContent className="p-4">
-                        <div className="text-2xl font-bold text-green-600">
-                          ₹{(vendor.totalValue || 0).toLocaleString('en-IN')}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Total Value</div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-border/30">
-                      <CardContent className="p-4">
-                        <div className="text-2xl font-bold text-orange-600">
-                          ₹{(vendor.outstandingBalance || 0).toLocaleString('en-IN')}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Outstanding</div>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-border/30">
-                      <CardContent className="p-4">
-                        <div className="text-sm font-medium text-muted-foreground">Last Order</div>
-                        <div className="text-sm font-semibold">
-                          {vendor.lastOrderDate ? new Date(vendor.lastOrderDate).toLocaleDateString() : 'No orders'}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Additional Notes */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-4 border-b border-border/50">
-                <CardTitle className="text-lg font-semibold">Additional Notes</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+      <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
+        {/* Basic Information */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+              <Building2 className="h-4 w-4 mr-2" />
+              Basic Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="vendor-name" className="text-xs font-medium">Vendor Name *</Label>
+              <AutocompleteInput
+                value={name}
+                onChange={setName}
+                suggestions={vendorSuggestions}
+                placeholder="Enter or select vendor name"
+                disabled={!isEditMode}
+                className="h-9 text-sm mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="category" className="text-xs font-medium">Category *</Label>
+              <AutocompleteInput
+                value={category}
+                onChange={setCategory}
+                suggestions={categorySuggestions}
+                placeholder="Enter or select category"
+                disabled={!isEditMode}
+                className="h-9 text-sm mt-1"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="status" className="text-xs font-medium">Status</Label>
+                <Select value={status} onValueChange={setStatus} disabled={!isEditMode}>
+                  <SelectTrigger className="h-9 text-sm mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="website" className="text-xs font-medium">Website</Label>
+                <Input
+                  id="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
                   disabled={!isEditMode}
-                  className="text-sm resize-none"
-                  placeholder="Enter any additional notes about this vendor..."
-                  rows={4}
+                  className="h-9 text-sm mt-1"
+                  placeholder="www.example.com"
                 />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Information */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+              <User className="h-4 w-4 mr-2" />
+              Contact Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="contact-person" className="text-xs font-medium">Contact Person *</Label>
+              <Input
+                id="contact-person"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+                disabled={!isEditMode}
+                className="h-9 text-sm mt-1"
+                placeholder="Enter contact person name"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="phone" className="text-xs font-medium">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="+91-XXXXXXXXXX"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email" className="text-xs font-medium">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="contact@vendor.com"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Address Information */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+              <MapPin className="h-4 w-4 mr-2" />
+              Address Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="address" className="text-xs font-medium">Street Address</Label>
+              <Textarea
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                disabled={!isEditMode}
+                className="text-sm resize-none mt-1"
+                placeholder="Enter complete street address"
+                rows={2}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="city" className="text-xs font-medium">City</Label>
+                <AutocompleteInput
+                  value={city}
+                  onChange={setCity}
+                  suggestions={citySuggestions}
+                  placeholder="Enter city"
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="state" className="text-xs font-medium">State</Label>
+                <AutocompleteInput
+                  value={state}
+                  onChange={setState}
+                  suggestions={stateSuggestions}
+                  placeholder="Enter state"
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="zip-code" className="text-xs font-medium">ZIP Code</Label>
+                <Input
+                  id="zip-code"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter ZIP code"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="country" className="text-xs font-medium">Country</Label>
+                <Input
+                  id="country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter country"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tax & Legal Information */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+              <Receipt className="h-4 w-4 mr-2" />
+              Tax & Legal Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="tax-id" className="text-xs font-medium">Tax ID / PAN</Label>
+                <Input
+                  id="tax-id"
+                  value={taxId}
+                  onChange={(e) => setTaxId(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter PAN number"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="gst-number" className="text-xs font-medium">GST Number</Label>
+                <Input
+                  id="gst-number"
+                  value={gstNumber}
+                  onChange={(e) => setGstNumber(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter GST number"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Financial Information */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Financial Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="payment-terms" className="text-xs font-medium">Payment Terms</Label>
+                <AutocompleteInput
+                  value={paymentTerms}
+                  onChange={setPaymentTerms}
+                  suggestions={paymentTermsSuggestions}
+                  placeholder="Enter payment terms"
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="credit-limit" className="text-xs font-medium">Credit Limit (₹)</Label>
+                <Input
+                  id="credit-limit"
+                  type="number"
+                  value={creditLimit}
+                  onChange={(e) => setCreditLimit(parseFloat(e.target.value) || 0)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter credit limit"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="bank-name" className="text-xs font-medium">Bank Name</Label>
+              <AutocompleteInput
+                value={bankName}
+                onChange={setBankName}
+                suggestions={bankSuggestions}
+                placeholder="Enter or select bank name"
+                disabled={!isEditMode}
+                className="h-9 text-sm mt-1"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="account-number" className="text-xs font-medium">Account Number</Label>
+                <Input
+                  id="account-number"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter account number"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="ifsc-code" className="text-xs font-medium">IFSC Code</Label>
+                <Input
+                  id="ifsc-code"
+                  value={ifscCode}
+                  onChange={(e) => setIfscCode(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-9 text-sm mt-1"
+                  placeholder="Enter IFSC code"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Order Statistics - Show only for existing vendors */}
+        {vendor && (
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+                <Package className="h-4 w-4 mr-2" />
+                Order Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <Card className="border-border/30">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-slate-600">{vendor.totalOrders || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Total Orders</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
+                      ₹{(vendor.totalValue || 0).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Total Value</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                      ₹{(vendor.outstandingBalance || 0).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Outstanding</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30">
+                  <CardContent className="p-3">
+                    <div className="text-xs sm:text-sm font-medium text-muted-foreground">Last Order</div>
+                    <div className="text-xs sm:text-sm font-semibold">
+                      {vendor.lastOrderDate ? new Date(vendor.lastOrderDate).toLocaleDateString() : 'No orders'}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Additional Notes */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Additional Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={!isEditMode}
+              className="text-sm resize-none"
+              placeholder="Enter any additional notes about this vendor..."
+              rows={4}
+            />
+          </CardContent>
+        </Card>
       </div>
     </ModernInventoryOverlay>
   );
