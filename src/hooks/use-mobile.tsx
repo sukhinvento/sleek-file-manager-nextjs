@@ -6,7 +6,7 @@ export function useIsMobile(): boolean {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 640); // sm breakpoint for modals
     };
 
     // Initial check

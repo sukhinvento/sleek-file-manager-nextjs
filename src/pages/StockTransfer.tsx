@@ -21,60 +21,17 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { StockTransferFilterModal } from '@/components/stock-transfer/StockTransferFilterModal';
+import { StockTransferSortModal } from '@/components/stock-transfer/StockTransferSortModal';
 import { ModernStockTransferOverlay } from '@/components/stock-transfer/ModernStockTransferOverlay';
 import { StockTransfer as StockTransferType } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-
-// Sample stock transfer data  
-const stockTransfersData: StockTransferType[] = [
-  {
-    id: '1',
-    transferId: 'ST-2024-001',
-    fromLocation: 'Main Warehouse',
-    toLocation: 'Emergency Room',
-    status: 'Completed',
-    priority: 'Medium',
-    requestDate: '2024-01-15',
-    completedDate: '2024-01-16',
-    requestedBy: 'Dr. Sarah Johnson',
-    approvedBy: 'John Manager',
-    reason: 'Urgent request for emergency supplies',
-    items: []
-  },
-  {
-    id: '2',
-    transferId: 'ST-2024-002',
-    fromLocation: 'Eastern Warehouse',
-    toLocation: 'ICU',
-    status: 'In Transit',
-    priority: 'High',
-    requestDate: '2024-01-17',
-    completedDate: null,
-    requestedBy: 'Nurse Manager',
-    approvedBy: 'Jane Supervisor',
-    reason: 'Critical supplies for ICU',
-    items: []
-  },
-  {
-    id: '3',
-    transferId: 'ST-2024-003',
-    fromLocation: 'Central Storage',
-    toLocation: 'Pharmacy',
-    status: 'Pending',
-    priority: 'Low',
-    requestDate: '2024-01-18',
-    completedDate: null,
-    requestedBy: 'Pharmacist',
-    approvedBy: null,
-    reason: 'Regular stock replenishment',
-    items: []
-  }
-];
+import * as stockTransferService from '@/services/stockTransferService';
+import { countActiveFilters } from '@/lib/filterUtils';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -89,7 +46,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border`}>
+    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -108,7 +65,7 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
   };
 
   return (
-    <Badge variant="outline" className={`${getStatusColor(priority)} text-xs`}>
+    <Badge variant="outline" className={`${getStatusColor(priority)} text-xs pointer-events-none`}>
       {priority}
     </Badge>
   );
@@ -118,12 +75,26 @@ export const StockTransfer = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [stockTransfers, setStockTransfers] = useState<StockTransferType[]>(stockTransfersData);
+  const [stockTransfers, setStockTransfers] = useState<StockTransferType[]>([]);
+  const [stats, setStats] = useState({
+    totalTransfers: 0,
+    pendingTransfers: 0,
+    inTransitTransfers: 0,
+    completedTransfers: 0,
+    highPriorityTransfers: 0,
+    totalItems: 0,
+    averageItems: 0,
+    averageCompletionTime: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortConfig, setSortConfig] = useState({ field: 'requestDate', direction: 'desc' as 'asc' | 'desc' });
   
   // Modal states
   const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
@@ -135,6 +106,48 @@ export const StockTransfer = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Filter states
+  const [selectedFilters, setSelectedFilters] = useState<any>({});
+  
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'requestDate' || sortConfig.direction !== 'desc';
+
+  // Load stock transfers from service
+  const loadStockTransfers = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await stockTransferService.fetchStockTransfers();
+      setStockTransfers(data);
+    } catch (error) {
+      console.error('Error loading stock transfers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load stock transfers. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Load stats from service
+  const loadStats = async () => {
+    try {
+      const statsData = await stockTransferService.fetchStockTransferStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadStockTransfers();
+    loadStats();
+  }, []);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -151,6 +164,10 @@ export const StockTransfer = () => {
   // Get unique values for filters
   const statuses = ['All', ...Array.from(new Set(stockTransfers.map(transfer => transfer.status)))];
   const priorities = ['All', ...Array.from(new Set(stockTransfers.map(transfer => transfer.priority)))];
+  const allLocations = Array.from(new Set([
+    ...stockTransfers.map(transfer => transfer.fromLocation),
+    ...stockTransfers.map(transfer => transfer.toLocation)
+  ])).sort();
 
   // Filter logic
   const filteredTransfers = useMemo(() => {
@@ -164,37 +181,84 @@ export const StockTransfer = () => {
       const matchesStatus = selectedStatus === 'All' || transfer.status === selectedStatus;
       const matchesPriority = selectedPriority === 'All' || transfer.priority === selectedPriority;
       
-      return matchesSearch && matchesStatus && matchesPriority;
+      // Comprehensive filter matching
+      const matchesTransferId = !selectedFilters.transferId || 
+        transfer.transferId.toLowerCase().includes(selectedFilters.transferId.toLowerCase());
+      
+      const matchesFromLocation = !selectedFilters.fromLocation || 
+        transfer.fromLocation.toLowerCase().includes(selectedFilters.fromLocation.toLowerCase());
+      
+      const matchesToLocation = !selectedFilters.toLocation || 
+        transfer.toLocation.toLowerCase().includes(selectedFilters.toLocation.toLowerCase());
+      
+      const matchesRequestedBy = !selectedFilters.requestedBy || 
+        transfer.requestedBy.toLowerCase().includes(selectedFilters.requestedBy.toLowerCase());
+      
+      const matchesFilterStatus = !selectedFilters.status || 
+        selectedFilters.status === 'All' || 
+        transfer.status === selectedFilters.status;
+      
+      const matchesFilterPriority = !selectedFilters.priority || 
+        selectedFilters.priority === 'All' || 
+        transfer.priority === selectedFilters.priority;
+      
+      const matchesRequestDateRange = !selectedFilters.requestDateRange?.from || 
+        (new Date(transfer.requestDate) >= new Date(selectedFilters.requestDateRange.from) &&
+         (!selectedFilters.requestDateRange.to || new Date(transfer.requestDate) <= new Date(selectedFilters.requestDateRange.to)));
+      
+      const matchesExpectedDateRange = !selectedFilters.expectedDateRange?.from || 
+        (new Date(transfer.expectedDate) >= new Date(selectedFilters.expectedDateRange.from) &&
+         (!selectedFilters.expectedDateRange.to || new Date(transfer.expectedDate) <= new Date(selectedFilters.expectedDateRange.to)));
+      
+      return matchesSearch && matchesStatus && matchesPriority && matchesTransferId &&
+             matchesFromLocation && matchesToLocation && matchesRequestedBy &&
+             matchesFilterStatus && matchesFilterPriority && 
+             matchesRequestDateRange && matchesExpectedDateRange;
     });
-  }, [stockTransfers, searchTerm, selectedStatus, selectedPriority]);
+  }, [stockTransfers, searchTerm, selectedStatus, selectedPriority, selectedFilters]);
+
+  // Sort logic
+  const sortedTransfers = useMemo(() => {
+    return [...filteredTransfers].sort((a, b) => {
+      const field = sortConfig.field as keyof StockTransferType;
+      const aValue = a[field];
+      const bValue = b[field];
+      
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredTransfers, sortConfig]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
-    data: filteredTransfers,
+    data: sortedTransfers,
     itemsPerPage: 10,
     enabled: isMobile
   });
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedTransfers.length / itemsPerPage);
   const currentPageData = isMobile 
     ? mobileDisplayedItems
-    : filteredTransfers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    : sortedTransfers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedStatus, selectedPriority]);
-
-  // Calculate summary metrics
-  const totalTransfers = stockTransfers.length;
-  const pendingTransfers = stockTransfers.filter(transfer => transfer.status === 'Pending').length;
-  const inTransitTransfers = stockTransfers.filter(transfer => transfer.status === 'In Transit').length;
-  const completedTransfers = stockTransfers.filter(transfer => transfer.status === 'Completed').length;
-  const totalValue = stockTransfers.reduce((sum, transfer) => 
-    sum + transfer.items.reduce((itemSum, item) => itemSum + (item.quantity * 10), 0), 0);
+  }, [searchTerm, selectedStatus, selectedPriority, selectedFilters, sortConfig]);
 
   // Event handlers
+  const handleApplyFilters = (filters: any) => {
+    setSelectedFilters(filters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplySort = (sortConfig: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(sortConfig);
+    setIsSortModalOpen(false);
+  };
+
   const handleViewTransfer = (transfer: StockTransferType) => {
     setEditingTransfer(transfer);
     setIsEditMode(false);
@@ -205,12 +269,54 @@ export const StockTransfer = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteTransfer = (transferId: string) => {
-    setStockTransfers(stockTransfers.filter(transfer => transfer.transferId !== transferId));
-    toast({
-      title: "Transfer Deleted",
-      description: "Stock transfer has been successfully deleted.",
-    });
+  const handleDeleteTransfer = async (transferId: string) => {
+    try {
+      await stockTransferService.deleteStockTransfer(transferId);
+      await loadStockTransfers();
+      await loadStats();
+      toast({
+        title: "Success",
+        description: "Stock transfer deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting stock transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete stock transfer. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveTransfer = async (transferData: StockTransferType) => {
+    try {
+      if (transferData.id && (transferData.id.startsWith('st-') || transferData.id.match(/^\d+$/))) {
+        // Update existing transfer
+        await stockTransferService.updateStockTransfer(transferData.id, transferData);
+        toast({
+          title: "Success",
+          description: "Stock transfer updated successfully.",
+        });
+      } else {
+        // Create new transfer
+        await stockTransferService.createStockTransfer(transferData);
+        toast({
+          title: "Success",
+          description: "Stock transfer created successfully.",
+        });
+      }
+      await loadStockTransfers();
+      await loadStats();
+      setIsNewTransferOpen(false);
+      setEditingTransfer(null);
+    } catch (error) {
+      console.error('Error saving stock transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save stock transfer. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -225,7 +331,7 @@ export const StockTransfer = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalTransfers}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalTransfers}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -264,7 +370,7 @@ export const StockTransfer = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingTransfers}</div>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.pendingTransfers}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
@@ -293,13 +399,13 @@ export const StockTransfer = () => {
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        strokeDasharray={`${(pendingTransfers / totalTransfers) * 75.4} 75.4`}
+                        strokeDasharray={`${(stats.pendingTransfers / stats.totalTransfers) * 75.4} 75.4`}
                         className="text-amber-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-[10px] font-bold text-amber-700 leading-none">
-                        {Math.round((pendingTransfers / totalTransfers) * 100)}%
+                        {Math.round((stats.pendingTransfers / stats.totalTransfers) * 100)}%
                       </span>
                     </div>
                   </div>
@@ -319,7 +425,7 @@ export const StockTransfer = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">In Transit</p>
-                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{inTransitTransfers}</div>
+                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.inTransitTransfers}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center z-10">
@@ -334,10 +440,10 @@ export const StockTransfer = () => {
                     <div className="flex-1 bg-purple-200 rounded-full h-1.5">
                       <div 
                         className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(inTransitTransfers / totalTransfers) * 100}%` }}
+                        style={{ width: `${(stats.inTransitTransfers / stats.totalTransfers) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-purple-700">{Math.round((inTransitTransfers / totalTransfers) * 100)}%</span>
+                    <span className="text-xs font-medium text-purple-700">{Math.round((stats.inTransitTransfers / stats.totalTransfers) * 100)}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -352,7 +458,7 @@ export const StockTransfer = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Completed</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{completedTransfers}</div>
+                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.completedTransfers}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
@@ -383,19 +489,19 @@ export const StockTransfer = () => {
               <CheckCircle className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
             </Card>
             
-            {/* Total Value Card */}
+            {/* Total Items Card */}
             <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Est. Value</p>
+                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Items</p>
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(totalValue / 1000).toFixed(0)}K
+                      {formatIndianQuantity(stats.totalItems)}
                     </div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+                      <Package className="h-5 w-5 text-emerald-600" />
                     </div>
                   </div>
                 </div>
@@ -404,7 +510,7 @@ export const StockTransfer = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Transfers: {totalTransfers}</span>
+                    <span className="text-emerald-600">Transfers: {stats.totalTransfers}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
@@ -452,11 +558,26 @@ export const StockTransfer = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -493,11 +614,26 @@ export const StockTransfer = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsFilterModalOpen(true)}>
-              <Filter className="h-4 w-4 sm:mr-1" /> 
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`px-2 sm:px-3 ${hasFilters ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}`}
+              onClick={() => setIsFilterModalOpen(true)}
+            >
+              <Filter className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Filters</span>
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`px-2 sm:px-3 ${hasSort ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}`}
+              onClick={() => setIsSortModalOpen(true)}
+            >
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -510,16 +646,31 @@ export const StockTransfer = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block">
           <Card className="border-border/50 shadow-sm">
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading stock transfers...</p>
+                </div>
+              </div>
+            ) : currentPageData.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-2">
+                  <Truck className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No stock transfers found</p>
+                </div>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Transfer Details</TableHead>
-                    <TableHead className="font-semibold">Route</TableHead>
-                    <TableHead className="font-semibold">Status & Priority</TableHead>
-                    <TableHead className="font-semibold">Request Info</TableHead>
-                    <TableHead className="font-semibold">Est. Value</TableHead>
-                    <TableHead className="font-semibold w-12"></TableHead>
+                    <TableHead className="font-semibold w-[20%]">Transfer Details</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Route</TableHead>
+                    <TableHead className="font-semibold w-[20%]">Status & Priority</TableHead>
+                    <TableHead className="font-semibold w-[17%]">Request Info</TableHead>
+                    <TableHead className="font-semibold w-[20%]">Est. Value</TableHead>
+                    <TableHead className="font-semibold w-[5%]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -548,9 +699,9 @@ export const StockTransfer = () => {
                         </div>
                       </TableCell>
                        <TableCell>
-                         <div className="flex flex-wrap gap-1">
-                           <StatusBadge status={transfer.status} />
-                           <PriorityBadge priority={transfer.priority} />
+                         <div className="space-y-1">
+                           <div><StatusBadge status={transfer.status} /></div>
+                           <div><PriorityBadge priority={transfer.priority} /></div>
                          </div>
                        </TableCell>
                       <TableCell>
@@ -567,7 +718,7 @@ export const StockTransfer = () => {
                       </TableCell>
                       <TableCell>
                         <div className="font-semibold">
-                          ${transfer.items.reduce((sum, item) => sum + (item.quantity * 10), 0).toLocaleString()}
+                          {formatIndianCurrency(transfer.items.reduce((sum, item) => sum + (item.quantity * 10), 0))}
                         </div>
                         {transfer.completedDate && (
                           <div className="text-xs text-muted-foreground">
@@ -608,10 +759,11 @@ export const StockTransfer = () => {
                 </TableBody>
               </Table>
             </div>
+            )}
           </Card>
 
           {/* Desktop Pagination */}
-          {!isMobile && totalPages > 1 && (
+          {!isMobile && !isLoadingData && totalPages > 1 && (
             <div className="flex justify-center">
               <Pagination>
                 <PaginationContent>
@@ -650,7 +802,7 @@ export const StockTransfer = () => {
         {/* Mobile Cards View */}
         <div className="md:hidden">
           {mobileDisplayedItems.map((transfer: StockTransferType) => (
-              <Card key={transfer.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg">
+              <Card key={transfer.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewTransfer(transfer)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
@@ -661,7 +813,10 @@ export const StockTransfer = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleViewTransfer(transfer)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewTransfer(transfer);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-4 w-4" />
@@ -669,7 +824,10 @@ export const StockTransfer = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleEditTransfer(transfer)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTransfer(transfer);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
@@ -677,7 +835,10 @@ export const StockTransfer = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleDeleteTransfer(transfer.transferId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTransfer(transfer.transferId);
+                        }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -709,7 +870,7 @@ export const StockTransfer = () => {
                     <div>
                       <p className="text-muted-foreground">Est. Value</p>
                       <p className="font-bold text-green-600">
-                        ${transfer.items.reduce((sum, item) => sum + (item.quantity * 10), 0).toLocaleString()}
+                        {formatIndianCurrency(transfer.items.reduce((sum, item) => sum + (item.quantity * 10), 0))}
                       </p>
                     </div>
                   </div>
@@ -720,18 +881,18 @@ export const StockTransfer = () => {
       </div>
 
       {/* Filter and Sort Modals */}
-      <FilterModal
+      <StockTransferFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={() => {}}
-        vendors={[]}
+        onApplyFilters={handleApplyFilters}
+        locations={allLocations}
         statuses={statuses}
       />
       
-      <SortModal
+      <StockTransferSortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
-        onApplySort={() => {}}
+        onApplySort={handleApplySort}
       />
 
       {/* Stock Transfer Modal */}
@@ -744,19 +905,9 @@ export const StockTransfer = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newTransfer: any) => {
-          setStockTransfers([...stockTransfers, newTransfer]);
-          setIsNewTransferOpen(false);
-        }}
-        onUpdate={(updatedTransfer: any) => {
-          setStockTransfers(stockTransfers.map(t => t.id === updatedTransfer.id ? updatedTransfer : t));
-          setEditingTransfer(null);
-          setIsEditMode(false);
-        }}
-        onDelete={(transferId: string) => {
-          setStockTransfers(stockTransfers.filter(t => t.transferId !== transferId));
-          setEditingTransfer(null);
-        }}
+        onSave={handleSaveTransfer as any}
+        onUpdate={handleSaveTransfer as any}
+        onDelete={handleDeleteTransfer as any}
       />
     </div>
   );

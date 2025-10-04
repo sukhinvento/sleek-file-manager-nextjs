@@ -8,9 +8,10 @@ interface VendorAutosuggestInputProps {
   placeholder: string;
   value?: string;
   onChange?: (value: string) => void;
+  disabled?: boolean;
 }
 
-export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onChange }: VendorAutosuggestInputProps) => {
+export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onChange, disabled = false }: VendorAutosuggestInputProps) => {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<Vendor[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -136,6 +137,7 @@ export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onCh
         placeholder={placeholder}
         className="w-full z-50"
         autoComplete="off"
+        disabled={disabled}
       />
       {showSuggestions && suggestions.length > 0 && (
         <div className="fixed z-[9999] bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto mt-1"

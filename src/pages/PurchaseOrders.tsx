@@ -19,12 +19,15 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
 import { ModernPOOverlay } from '@/components/purchase-orders/ModernPOOverlay';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { PurchaseOrderFilterModal } from '@/components/purchase-orders/PurchaseOrderFilterModal';
+import { PurchaseOrderSortModal } from '@/components/purchase-orders/PurchaseOrderSortModal';
 import { PurchaseOrder } from '@/types/purchaseOrder';
-import { purchaseOrdersData } from '@/data/purchaseOrderData';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
+import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
+import { countActiveFilters } from '@/lib/filterUtils';
+import { toast } from '@/hooks/use-toast';
+import * as purchaseOrderService from '@/services/purchaseOrderService';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -38,7 +41,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border`}>
+    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -48,7 +51,17 @@ export const PurchaseOrders = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(purchaseOrdersData);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    approvedOrders: 0,
+    deliveredOrders: 0,
+    totalValue: 0,
+    pendingValue: 0,
+    averageOrderValue: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,12 +81,54 @@ export const PurchaseOrders = () => {
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState({
     vendor: '',
-    dateRange: { from: '', to: '' },
-    amountRange: { min: '', max: '' }
+    poNumber: '',
+    vendorContact: '',
+    status: '',
+    paymentMethod: '',
+    createdBy: '',
+    approvedBy: '',
+    orderDateRange: undefined,
+    deliveryDateRange: undefined,
+    amountRange: { min: '', max: '' },
+    paidAmountRange: { min: '', max: '' }
   });
   
   // Sort state
   const [sortConfig, setSortConfig] = useState({ field: 'orderDate', direction: 'desc' });
+
+  // Load purchase orders from service
+  const loadPurchaseOrders = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await purchaseOrderService.fetchPurchaseOrders();
+      setPurchaseOrders(data);
+    } catch (error) {
+      console.error('Error loading purchase orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load purchase orders. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Load stats from service
+  const loadStats = async () => {
+    try {
+      const statsData = await purchaseOrderService.fetchPurchaseOrderStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadPurchaseOrders();
+    loadStats();
+  }, []);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -91,6 +146,11 @@ export const PurchaseOrders = () => {
   const statuses = ['All', ...Array.from(new Set(purchaseOrders.map(order => order.status)))];
   const vendors = Array.from(new Set(purchaseOrders.map(order => order.vendorName)));
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'orderDate' || sortConfig.direction !== 'desc';
+
   // Filter and sort logic
   const filteredOrders = useMemo(() => {
     return purchaseOrders.filter(order => {
@@ -101,15 +161,33 @@ export const PurchaseOrders = () => {
       const matchesStatus = selectedStatus === 'All' || order.status === selectedStatus;
       
       const matchesVendor = !selectedFilters.vendor || order.vendorName === selectedFilters.vendor;
+      const matchesPONumber = !selectedFilters.poNumber || order.poNumber.toLowerCase().includes(selectedFilters.poNumber.toLowerCase());
+      const matchesVendorContact = !selectedFilters.vendorContact || 
+        order.vendorContact?.toLowerCase().includes(selectedFilters.vendorContact.toLowerCase()) ||
+        order.vendorPhone?.toLowerCase().includes(selectedFilters.vendorContact.toLowerCase()) ||
+        order.vendorEmail?.toLowerCase().includes(selectedFilters.vendorContact.toLowerCase());
+      const matchesFilterStatus = !selectedFilters.status || order.status === selectedFilters.status;
+      const matchesPaymentMethod = !selectedFilters.paymentMethod || order.paymentMethod === selectedFilters.paymentMethod;
+      const matchesCreatedBy = !selectedFilters.createdBy || order.createdBy?.toLowerCase().includes(selectedFilters.createdBy.toLowerCase());
+      const matchesApprovedBy = !selectedFilters.approvedBy || order.approvedBy?.toLowerCase().includes(selectedFilters.approvedBy.toLowerCase());
       
-      const matchesDateRange = !selectedFilters.dateRange.from || !selectedFilters.dateRange.to ||
-        (new Date(order.orderDate) >= new Date(selectedFilters.dateRange.from) &&
-         new Date(order.orderDate) <= new Date(selectedFilters.dateRange.to));
+      const matchesOrderDateRange = !selectedFilters.orderDateRange?.from || !selectedFilters.orderDateRange?.to ||
+        (new Date(order.orderDate) >= new Date(selectedFilters.orderDateRange.from) &&
+         new Date(order.orderDate) <= new Date(selectedFilters.orderDateRange.to));
+         
+      const matchesDeliveryDateRange = !selectedFilters.deliveryDateRange?.from || !selectedFilters.deliveryDateRange?.to ||
+        (new Date(order.deliveryDate) >= new Date(selectedFilters.deliveryDateRange.from) &&
+         new Date(order.deliveryDate) <= new Date(selectedFilters.deliveryDateRange.to));
       
-      const matchesAmountRange = (!selectedFilters.amountRange.min || order.total >= Number(selectedFilters.amountRange.min)) &&
-        (!selectedFilters.amountRange.max || order.total <= Number(selectedFilters.amountRange.max));
+      const matchesAmountRange = (!selectedFilters.amountRange?.min || order.total >= Number(selectedFilters.amountRange.min)) &&
+        (!selectedFilters.amountRange?.max || order.total <= Number(selectedFilters.amountRange.max));
+        
+      const matchesPaidAmountRange = (!selectedFilters.paidAmountRange?.min || order.paidAmount >= Number(selectedFilters.paidAmountRange.min)) &&
+        (!selectedFilters.paidAmountRange?.max || order.paidAmount <= Number(selectedFilters.paidAmountRange.max));
       
-      return matchesSearch && matchesStatus && matchesVendor && matchesDateRange && matchesAmountRange;
+      return matchesSearch && matchesStatus && matchesVendor && matchesPONumber && matchesVendorContact &&
+        matchesFilterStatus && matchesPaymentMethod && matchesCreatedBy && matchesApprovedBy &&
+        matchesOrderDateRange && matchesDeliveryDateRange && matchesAmountRange && matchesPaidAmountRange;
     });
   }, [purchaseOrders, searchTerm, selectedStatus, selectedFilters]);
 
@@ -143,16 +221,6 @@ export const PurchaseOrders = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedStatus, selectedFilters, sortConfig]);
 
-  // Calculate summary metrics
-  const totalOrders = purchaseOrders.length;
-  const pendingOrders = purchaseOrders.filter(order => order.status === 'Pending').length;
-  const approvedOrders = purchaseOrders.filter(order => order.status === 'Approved').length;
-  const deliveredOrders = purchaseOrders.filter(order => order.status === 'Delivered').length;
-  const totalValue = purchaseOrders.reduce((sum, order) => sum + order.total, 0);
-  const pendingValue = purchaseOrders
-    .filter(order => order.status === 'Pending')
-    .reduce((sum, order) => sum + order.total, 0);
-
   // Event handlers
   const handleViewOrder = (order: PurchaseOrder) => {
     setEditingOrder(order);
@@ -164,8 +232,54 @@ export const PurchaseOrders = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteOrder = (orderId: string) => {
-    setPurchaseOrders(purchaseOrders.filter(order => order.id !== orderId));
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await purchaseOrderService.deletePurchaseOrder(orderId);
+      await loadPurchaseOrders();
+      await loadStats();
+      toast({
+        title: "Success",
+        description: "Purchase order deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete purchase order. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveOrder = async (orderData: PurchaseOrder) => {
+    try {
+      if (orderData.id && orderData.id.startsWith('po-')) {
+        // Update existing order
+        await purchaseOrderService.updatePurchaseOrder(orderData.id, orderData);
+        toast({
+          title: "Success",
+          description: "Purchase order updated successfully.",
+        });
+      } else {
+        // Create new order
+        await purchaseOrderService.createPurchaseOrder(orderData);
+        toast({
+          title: "Success",
+          description: "Purchase order created successfully.",
+        });
+      }
+      await loadPurchaseOrders();
+      await loadStats();
+      setIsNewOrderOpen(false);
+      setEditingOrder(null);
+    } catch (error) {
+      console.error('Error saving purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save purchase order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleApplyFilters = (filters: any) => {
@@ -190,7 +304,7 @@ export const PurchaseOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -229,7 +343,7 @@ export const PurchaseOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingOrders}</div>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.pendingOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
@@ -258,18 +372,18 @@ export const PurchaseOrders = () => {
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        strokeDasharray={`${(pendingOrders / totalOrders) * 75.4} 75.4`}
+                        strokeDasharray={`${(stats.pendingOrders / stats.totalOrders) * 75.4} 75.4`}
                         className="text-amber-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-[10px] font-bold text-amber-700 leading-none">
-                        {Math.round((pendingOrders / totalOrders) * 100)}%
+                        {Math.round((stats.pendingOrders / stats.totalOrders) * 100)}%
                       </span>
                     </div>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-amber-800">${(pendingValue / 1000).toFixed(0)}K</p>
+                    <p className="text-xs font-medium text-amber-800">{formatIndianCurrency(stats.pendingValue)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -284,7 +398,7 @@ export const PurchaseOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Approved</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{approvedOrders}</div>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.approvedOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
@@ -317,7 +431,7 @@ export const PurchaseOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Delivered</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{deliveredOrders}</div>
+                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.deliveredOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
@@ -355,7 +469,7 @@ export const PurchaseOrders = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Value</p>
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(totalValue / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.totalValue)}
                     </div>
                   </div>
                   <div className="relative">
@@ -369,7 +483,7 @@ export const PurchaseOrders = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Paid: ${((totalValue - pendingValue) / 1000).toFixed(0)}K</span>
+                    <span className="text-emerald-600">Paid: {formatIndianCurrency(stats.totalValue - stats.pendingValue)}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
@@ -389,7 +503,7 @@ export const PurchaseOrders = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Avg Order</p>
                     <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                      ${totalOrders > 0 ? (totalValue / totalOrders / 1000).toFixed(0) : 0}K
+                      {stats.totalOrders > 0 ? formatIndianCurrency(stats.averageOrderValue) : formatIndianCurrency(0)}
                     </div>
                   </div>
                   <div className="relative">
@@ -452,11 +566,26 @@ export const PurchaseOrders = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -494,11 +623,26 @@ export const PurchaseOrders = () => {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsFilterModalOpen(true)}
+                className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+              >
                 <Filter className="mr-1 h-4 w-4" /> 
                 <span className="hidden sm:inline">Filters</span>
+                {hasFilters && (
+                  <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsSortModalOpen(true)}
+                className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+              >
                 <ArrowUpDown className="mr-1 h-4 w-4" /> 
                 <span className="hidden sm:inline">Sort</span>
               </Button>
@@ -508,12 +652,32 @@ export const PurchaseOrders = () => {
       </div>
 
       {/* Purchase Orders Table Section */}
+      {isLoadingData ? (
+        <Card className="border-border/50 shadow-sm">
+          <div className="flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">Loading purchase orders...</p>
+            </div>
+          </div>
+        </Card>
+      ) : currentPageData.length === 0 ? (
+        <Card className="border-border/50 shadow-sm">
+          <div className="flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-2">
+              <Package className="h-12 w-12 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">No purchase orders found</p>
+            </div>
+          </div>
+        </Card>
+      ) : (
       <MobileTableView
         data={currentPageData}
         columns={[
           {
             key: 'poNumber',
             label: 'PO Number',
+            width: 'w-[20%]',
             render: (value, order) => (
               <div>
                 <div className="font-medium">{value}</div>
@@ -529,6 +693,7 @@ export const PurchaseOrders = () => {
           {
             key: 'vendorName',
             label: 'Vendor',
+            width: 'w-[20%]',
             render: (value, order) => (
               <div>
                 <div className="font-medium">{value}</div>
@@ -540,9 +705,10 @@ export const PurchaseOrders = () => {
           {
             key: 'status',
             label: 'Status',
+            width: 'w-[15%]',
              render: (value, order) => (
-               <div className="flex flex-wrap gap-1">
-                 <StatusBadge status={value} />
+               <div className="space-y-1">
+                 <div><StatusBadge status={value} /></div>
                  {order.approvedBy && (
                    <div className="text-xs text-muted-foreground">
                      Approved by: {order.approvedBy}
@@ -554,6 +720,7 @@ export const PurchaseOrders = () => {
           {
             key: 'orderDate',
             label: 'Timeline',
+            width: 'w-[20%]',
             render: (value, order) => (
               <div className="space-y-1">
                 <div className="text-sm">
@@ -573,17 +740,18 @@ export const PurchaseOrders = () => {
           {
             key: 'total',
             label: 'Amount',
+            width: 'w-[20%]',
             render: (value, order) => (
               <div>
                 <div className="font-semibold text-lg">
-                  ${value.toLocaleString()}
+                  {formatIndianCurrency(value)}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {order.paymentMethod}
                 </div>
                 {order.paidAmount > 0 && (
                   <div className="text-xs text-green-600">
-                    Paid: ${order.paidAmount.toLocaleString()}
+                    Paid: {formatIndianCurrency(order.paidAmount)}
                   </div>
                 )}
               </div>
@@ -609,9 +777,10 @@ export const PurchaseOrders = () => {
         ]}
         onRowClick={(order) => handleViewOrder(order)}
       />
+      )}
 
       {/* Desktop Pagination */}
-      {!isMobile && totalPages > 1 && (
+      {!isMobile && !isLoadingData && totalPages > 1 && (
         <div>
           <Pagination>
             <PaginationContent>
@@ -696,32 +865,21 @@ export const PurchaseOrders = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newOrder) => {
-          setPurchaseOrders([...purchaseOrders, newOrder]);
-          setIsNewOrderOpen(false);
-        }}
-        onUpdate={(updatedOrder) => {
-          setPurchaseOrders(purchaseOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        onDelete={(orderId) => {
-          setPurchaseOrders(purchaseOrders.filter(o => o.id !== orderId));
-          setEditingOrder(null);
-        }}
+        onSave={handleSaveOrder}
+        onUpdate={handleSaveOrder}
+        onDelete={handleDeleteOrder}
       />
 
       {/* Filter Modal */}
-      <FilterModal
+      <PurchaseOrderFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         onApplyFilters={handleApplyFilters}
         vendors={vendors}
-        statuses={statuses}
       />
 
       {/* Sort Modal */}
-      <SortModal
+      <PurchaseOrderSortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
         onApplySort={handleApplySort}

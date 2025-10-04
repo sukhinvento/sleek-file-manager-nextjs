@@ -16,62 +16,21 @@ import {
   Edit,
   Trash2,
   AlertTriangle,
-  User
+  User,
+  Plus
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { BillingFilterModal } from '@/components/billing/BillingFilterModal';
+import { BillingSortModal } from '@/components/billing/BillingSortModal';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-
-// Sample billing data
-const billingRecords = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-2024-001',
-    patientName: 'John Smith',
-    patientId: 'P001',
-    department: 'Cardiology',
-    doctor: 'Dr. Sarah Johnson',
-    date: '2024-01-15',
-    dueDate: '2024-02-15',
-    amount: 2500.00,
-    paidAmount: 2500.00,
-    status: 'Paid',
-    services: ['Consultation', 'ECG', 'Blood Test']
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-2024-002',
-    patientName: 'Emily Davis',
-    patientId: 'P002',
-    department: 'Orthopedics',
-    doctor: 'Dr. Michael Brown',
-    date: '2024-01-16',
-    dueDate: '2024-02-16',
-    amount: 4200.00,
-    paidAmount: 1500.00,
-    status: 'Partial',
-    services: ['Surgery', 'X-Ray', 'Physical Therapy']
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-2024-003',
-    patientName: 'Robert Wilson',
-    patientId: 'P003',
-    department: 'Emergency',
-    doctor: 'Dr. Lisa Anderson',
-    date: '2024-01-17',
-    dueDate: '2024-02-17',
-    amount: 1800.00,
-    paidAmount: 0.00,
-    status: 'Pending',
-    services: ['Emergency Care', 'CT Scan', 'Medication']
-  }
-];
+import * as billingService from '@/services/billingService';
+import { BillingRecord } from '@/services/billingService';
+import { ModernBillingOverlay } from '@/components/billing/ModernBillingOverlay';
+import { countActiveFilters } from '@/lib/filterUtils';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -85,7 +44,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border`}>
+    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -95,11 +54,26 @@ export const Billing = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [invoices, setInvoices] = useState<any[]>(billingRecords);
+  const [invoices, setInvoices] = useState<BillingRecord[]>([]);
+  const [stats, setStats] = useState({
+    totalInvoices: 0,
+    totalRevenue: 0,
+    totalPaid: 0,
+    totalOutstanding: 0,
+    paidInvoices: 0,
+    pendingInvoices: 0,
+    partialInvoices: 0,
+    averageInvoiceAmount: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedFilters, setSelectedFilters] = useState<any>({});
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortConfig, setSortConfig] = useState({ field: 'invoiceDate', direction: 'desc' as 'asc' | 'desc' });
   
   // Modal states
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
@@ -112,10 +86,43 @@ export const Billing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Load billing data and stats
+  const loadBillingRecords = async () => {
+    setIsLoadingData(true);
+    try {
+      const records = await billingService.fetchBillingRecords();
+      setInvoices(records);
+    } catch (error) {
+      console.error('Failed to load billing records:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load billing records. Please try again.",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const billingStats = await billingService.fetchBillingStats();
+      setStats(billingStats);
+    } catch (error) {
+      console.error('Failed to load billing stats:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadBillingRecords();
+    loadStats();
+  }, []);
+
   // Listen for global create modal events
   useEffect(() => {
     const handleOpenCreateModal = (event: any) => {
-      if (event.detail?.type === 'billing') {
+      if (event.detail?.type === 'invoice' || event.detail?.type === 'billing') {
         setIsNewInvoiceOpen(true);
       }
     };
@@ -127,6 +134,11 @@ export const Billing = () => {
   // Get unique values for filters
   const statuses = ['All', ...Array.from(new Set(invoices.map(record => record.status)))];
 
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'invoiceDate' || sortConfig.direction !== 'desc';
+
   // Filter logic
   const filteredRecords = useMemo(() => {
     return invoices.filter(record => {
@@ -137,35 +149,86 @@ export const Billing = () => {
       
       const matchesStatus = selectedStatus === 'All' || record.status === selectedStatus;
       
-      return matchesSearch && matchesStatus;
+      // Comprehensive filter matching
+      const matchesInvoiceNumber = !selectedFilters.invoiceNumber || 
+        record.invoiceNumber.toLowerCase().includes(selectedFilters.invoiceNumber.toLowerCase());
+      
+      const matchesPatientId = !selectedFilters.patientId || 
+        record.patientId.toLowerCase().includes(selectedFilters.patientId.toLowerCase());
+      
+      const matchesPatientName = !selectedFilters.patientName || 
+        record.patientName.toLowerCase().includes(selectedFilters.patientName.toLowerCase());
+      
+      const matchesDepartment = !selectedFilters.department || 
+        record.department.toLowerCase().includes(selectedFilters.department.toLowerCase());
+      
+      const matchesDoctor = !selectedFilters.doctor || 
+        record.doctor.toLowerCase().includes(selectedFilters.doctor.toLowerCase());
+      
+      const matchesFilterStatus = !selectedFilters.status || 
+        selectedFilters.status === 'All' || 
+        record.status === selectedFilters.status;
+      
+      const matchesDateRange = !selectedFilters.dateRange?.from || 
+        (new Date(record.date) >= new Date(selectedFilters.dateRange.from) &&
+         (!selectedFilters.dateRange.to || new Date(record.date) <= new Date(selectedFilters.dateRange.to)));
+      
+      const matchesDueDateRange = !selectedFilters.dueDateRange?.from || 
+        (new Date(record.dueDate) >= new Date(selectedFilters.dueDateRange.from) &&
+         (!selectedFilters.dueDateRange.to || new Date(record.dueDate) <= new Date(selectedFilters.dueDateRange.to)));
+      
+      const matchesAmountRange = 
+        (!selectedFilters.amountRange?.min || record.amount >= Number(selectedFilters.amountRange.min)) &&
+        (!selectedFilters.amountRange?.max || record.amount <= Number(selectedFilters.amountRange.max));
+      
+      return matchesSearch && matchesStatus && matchesInvoiceNumber && matchesPatientId &&
+             matchesPatientName && matchesDepartment && matchesDoctor && matchesFilterStatus &&
+             matchesDateRange && matchesDueDateRange && matchesAmountRange;
     });
-  }, [invoices, searchTerm, selectedStatus]);
+  }, [invoices, searchTerm, selectedStatus, selectedFilters]);
+
+  // Sort logic
+  const sortedRecords = useMemo(() => {
+    return [...filteredRecords].sort((a, b) => {
+      const field = sortConfig.field;
+      let aValue: any = a[field as keyof typeof a];
+      let bValue: any = b[field as keyof typeof b];
+      
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredRecords, sortConfig]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
-    data: filteredRecords,
+    data: sortedRecords,
     itemsPerPage: 10,
     enabled: isMobile
   });
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedRecords.length / itemsPerPage);
   const currentPageData = isMobile 
     ? mobileDisplayedItems
-    : filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    : sortedRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedStatus]);
-
-  // Calculate summary metrics
-  const totalInvoices = invoices.length;
-  const totalAmount = invoices.reduce((sum, record) => sum + record.amount, 0);
-  const totalPaid = invoices.reduce((sum, record) => sum + record.paidAmount, 0);
-  const pendingPayments = invoices.filter(record => record.status !== 'Paid').length;
+  }, [searchTerm, selectedStatus, selectedFilters, sortConfig]);
 
   // Event handlers
+  const handleApplyFilters = (filters: any) => {
+    setSelectedFilters(filters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplySort = (sortConfig: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(sortConfig);
+    setIsSortModalOpen(false);
+  };
+
   const handleViewInvoice = (invoice: any) => {
     setEditingInvoice(invoice);
     setIsEditMode(false);
@@ -176,12 +239,46 @@ export const Billing = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteInvoice = (invoiceId: string) => {
-    setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
-    toast({
-      title: "Invoice Deleted",
-      description: "Invoice has been successfully deleted.",
-    });
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    try {
+      await billingService.deleteBillingRecord(invoiceId);
+      setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
+      await loadStats();
+      toast({
+        title: "Invoice Deleted",
+        description: "Invoice has been successfully deleted.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete invoice. Please try again.",
+      });
+    }
+  };
+
+  const handleSaveInvoice = async (billing: BillingRecord) => {
+    try {
+      if (isEditMode && editingInvoice) {
+        await billingService.updateBillingRecord(editingInvoice.id, billing);
+        setInvoices(invoices.map(inv => inv.id === editingInvoice.id ? billing : inv));
+      } else {
+        const newBilling = await billingService.createBillingRecord(billing);
+        setInvoices([newBilling, ...invoices]);
+      }
+      await loadStats();
+      setIsNewInvoiceOpen(false);
+      setEditingInvoice(null);
+      setIsEditMode(false);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleCloseOverlay = () => {
+    setIsNewInvoiceOpen(false);
+    setEditingInvoice(null);
+    setIsEditMode(false);
   };
 
   return (
@@ -196,7 +293,7 @@ export const Billing = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Invoices</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalInvoices}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalInvoices}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -223,7 +320,7 @@ export const Billing = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Amount</p>
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(totalAmount / 1000).toFixed(0)}K
+                      ${(stats.totalRevenue / 1000).toFixed(0)}K
                     </div>
                   </div>
                   <div className="relative">
@@ -236,7 +333,7 @@ export const Billing = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-emerald-600">Collection</span>
-                    <span className="text-xs font-bold text-emerald-700">{Math.round((totalPaid / totalAmount) * 100)}%</span>
+                    <span className="text-xs font-bold text-emerald-700">{stats.totalRevenue > 0 ? Math.round((stats.totalPaid / stats.totalRevenue) * 100) : 0}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -250,7 +347,7 @@ export const Billing = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingPayments}</div>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.pendingInvoices}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
@@ -277,7 +374,7 @@ export const Billing = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Collected</p>
                     <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                      ${(totalPaid / 1000).toFixed(0)}K
+                      ${(stats.totalPaid / 1000).toFixed(0)}K
                     </div>
                   </div>
                   <div className="relative">
@@ -333,11 +430,26 @@ export const Billing = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -374,11 +486,26 @@ export const Billing = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsFilterModalOpen(true)}>
-              <Filter className="h-4 w-4 sm:mr-1" /> 
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`px-2 sm:px-3 ${hasFilters ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}`}
+              onClick={() => setIsFilterModalOpen(true)}
+            >
+              <Filter className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Filters</span>
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`px-2 sm:px-3 ${hasSort ? 'bg-primary/10 border-primary/20 hover:bg-primary/20' : ''}`}
+              onClick={() => setIsSortModalOpen(true)}
+            >
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -387,74 +514,97 @@ export const Billing = () => {
       </div>
 
       {/* Billing Table Section */}
-      <MobileTableView
-        data={currentPageData}
-        columns={[
-          {
-            key: 'invoiceNumber',
-            label: 'Invoice',
-            render: (value, invoice) => (
-              <div>
-                <div className="font-medium">{value}</div>
-                <div className="text-sm text-muted-foreground">{invoice.date}</div>
-              </div>
-            )
-          },
-          {
-            key: 'patientName',
-            label: 'Patient',
-            render: (value, invoice) => (
-              <div>
-                <div className="font-medium">{value}</div>
-                <div className="text-sm text-muted-foreground">{invoice.patientId}</div>
-                <div className="text-sm text-muted-foreground">{invoice.department}</div>
-              </div>
-            )
-          },
-          {
-            key: 'status',
-            label: 'Status',
-            render: (value) => <StatusBadge status={value} />
-          },
-          {
-            key: 'amount',
-            label: 'Amount',
-            render: (value, invoice) => (
-              <div>
-                <div className="font-semibold text-lg">
-                  ${value.toLocaleString()}
+      {isLoadingData ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading billing records...</p>
+        </div>
+      ) : currentPageData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <FileText className="h-12 w-12 text-muted-foreground opacity-50" />
+          <div className="text-center space-y-2">
+            <h3 className="font-semibold text-lg">No invoices found</h3>
+            <p className="text-sm text-muted-foreground">
+              {searchTerm || selectedStatus !== 'All' 
+                ? 'Try adjusting your filters' 
+                : 'Get started by creating your first invoice'}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <MobileTableView
+          data={currentPageData}
+          columns={[
+            {
+              key: 'invoiceNumber',
+              label: 'Invoice',
+              width: 'w-[20%]',
+              render: (value, invoice) => (
+                <div>
+                  <div className="font-medium">{value}</div>
+                  <div className="text-sm text-muted-foreground">{invoice.date}</div>
                 </div>
-                {invoice.paidAmount > 0 && (
-                  <div className="text-xs text-green-600">
-                    Paid: ${invoice.paidAmount.toLocaleString()}
+              )
+            },
+            {
+              key: 'patientName',
+              label: 'Patient',
+              width: 'w-[25%]',
+              render: (value, invoice) => (
+                <div>
+                  <div className="font-medium">{value}</div>
+                  <div className="text-sm text-muted-foreground">{invoice.patientId}</div>
+                  <div className="text-sm text-muted-foreground">{invoice.department}</div>
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              width: 'w-[15%]',
+              render: (value) => <StatusBadge status={value} />
+            },
+            {
+              key: 'amount',
+              label: 'Amount',
+              width: 'w-[35%]',
+              render: (value, invoice) => (
+                <div>
+                  <div className="font-semibold text-lg">
+                    ${value.toLocaleString()}
                   </div>
-                )}
-              </div>
-            )
-          }
-        ]}
-        getTitle={(invoice) => invoice.invoiceNumber}
-        getSubtitle={(invoice) => `${invoice.patientName} • ${invoice.department}`}
-        getStatus={(invoice) => invoice.status}
-        getStatusColor={(invoice) => {
-          switch (invoice.status.toLowerCase()) {
-            case 'paid': return 'green';
-            case 'partial': return 'yellow';
-            case 'pending': return 'red';
-            case 'overdue': return 'red';
-            default: return 'gray';
-          }
-        }}
-        getActions={(invoice) => [
-          { label: 'View', onClick: () => handleViewInvoice(invoice), icon: Eye },
-          { label: 'Edit', onClick: () => handleEditInvoice(invoice), icon: Edit },
-          { label: 'Delete', onClick: () => handleDeleteInvoice(invoice.id), variant: 'destructive' as const, icon: Trash2 }
-        ]}
-        onRowClick={(invoice) => handleViewInvoice(invoice)}
-      />
+                  {invoice.paidAmount > 0 && (
+                    <div className="text-xs text-green-600">
+                      Paid: ${invoice.paidAmount.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          ]}
+          getTitle={(invoice) => invoice.invoiceNumber}
+          getSubtitle={(invoice) => `${invoice.patientName} • ${invoice.department}`}
+          getStatus={(invoice) => invoice.status}
+          getStatusColor={(invoice) => {
+            switch (invoice.status.toLowerCase()) {
+              case 'paid': return 'green';
+              case 'partial': return 'yellow';
+              case 'pending': return 'red';
+              case 'overdue': return 'red';
+              default: return 'gray';
+            }
+          }}
+          getActions={(invoice) => [
+            { label: 'View', onClick: () => handleViewInvoice(invoice), icon: Eye },
+            { label: 'Edit', onClick: () => handleEditInvoice(invoice), icon: Edit },
+            { label: 'Delete', onClick: () => handleDeleteInvoice(invoice.id), variant: 'destructive' as const, icon: Trash2 }
+          ]}
+          onRowClick={(invoice) => handleViewInvoice(invoice)}
+        />
+      )}
 
       {/* Desktop Pagination */}
-      {!isMobile && totalPages > 1 && (
+      {!isMobile && !isLoadingData && totalPages > 1 && (
         <div>
           <Pagination>
             <PaginationContent>
@@ -530,19 +680,30 @@ export const Billing = () => {
       )}
 
       {/* Filter Modal */}
-      <FilterModal
+      <BillingFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={() => {}}
-        vendors={[]}
+        onApplyFilters={(filters) => {
+          setSelectedFilters(filters);
+          setIsFilterModalOpen(false);
+        }}
         statuses={statuses}
       />
 
       {/* Sort Modal */}
-      <SortModal
+            <BillingSortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
-        onApplySort={() => {}}
+        onApplySort={handleApplySort}
+      />
+
+      {/* Billing Invoice Overlay */}
+      <ModernBillingOverlay
+        isOpen={isNewInvoiceOpen || !!editingInvoice}
+        onClose={handleCloseOverlay}
+        billing={editingInvoice || undefined}
+        isEditMode={isEditMode}
+        onSave={handleSaveInvoice}
       />
     </div>
   );

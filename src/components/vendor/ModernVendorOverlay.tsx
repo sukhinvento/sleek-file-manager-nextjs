@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Edit3, X, Building2, User, CreditCard, Package, Calendar, Phone, Mail, MapPin, Globe, Receipt } from 'lucide-react';
+import { Save, Edit3, X, Building2, User, CreditCard, Package, Calendar, Phone, Mail, MapPin, Globe, Receipt, Trash2, Tag, Hash, FileText, Briefcase, AlertCircle, Building } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { Vendor } from '@/types/inventory';
+import { formatIndianCurrency } from '@/lib/utils';
 
 interface ModernVendorOverlayProps {
   vendor: Vendor | null;
@@ -38,7 +39,7 @@ const vendorSuggestions = [
 const categorySuggestions = [
   'Food & Beverages',
   'Medical Equipment',
-  'Pharmaceuticals', 
+  'Pharmaceuticals',
   'Office Supplies',
   'Cleaning Supplies',
   'Electronics',
@@ -49,8 +50,8 @@ const categorySuggestions = [
 ];
 
 const citySuggestions = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad', 
-  'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 
+  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad',
+  'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal',
   'Visakhapatnam', 'Pimpri-Chinchwad', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana',
   'Agra', 'Nashik', 'Faridabad', 'Meerut', 'Rajkot', 'Kalyan-Dombivli', 'Vasai-Virar', 'Varanasi'
 ];
@@ -71,7 +72,7 @@ const bankSuggestions = [
 ];
 
 const paymentTermsSuggestions = [
-  'Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Advance Payment', 
+  'Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Advance Payment',
   '2/10 Net 30', '1/10 Net 30', 'Due on Receipt', 'End of Month'
 ];
 
@@ -145,14 +146,14 @@ const AutocompleteInput = ({ value, onChange, suggestions, placeholder, disabled
   );
 };
 
-export const ModernVendorOverlay = ({ 
-  vendor, 
-  isOpen, 
-  onClose, 
-  isEdit = false, 
-  onSave, 
-  onUpdate, 
-  onDelete 
+export const ModernVendorOverlay = ({
+  vendor,
+  isOpen,
+  onClose,
+  isEdit = false,
+  onSave,
+  onUpdate,
+  onDelete
 }: ModernVendorOverlayProps) => {
   const [name, setName] = useState<string>('');
   const [contactPerson, setContactPerson] = useState<string>('');
@@ -264,7 +265,7 @@ export const ModernVendorOverlay = ({
     }
 
     setIsSaving(true);
-    
+
     try {
       const vendorData: Vendor = {
         id: vendor?.id || Date.now().toString(),
@@ -309,7 +310,7 @@ export const ModernVendorOverlay = ({
           description: `Vendor ${vendorData.name} has been created successfully.`,
         });
       }
-      
+
       onClose();
     } catch (error) {
       toast({
@@ -319,6 +320,19 @@ export const ModernVendorOverlay = ({
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (vendor && onDelete) {
+      if (confirm(`Are you sure you want to delete vendor ${vendor.name}? This action cannot be undone.`)) {
+        onDelete(vendor.id);
+        toast({
+          title: "Vendor Deleted",
+          description: `${vendor.name} has been removed from the system.`,
+        });
+        onClose();
+      }
     }
   };
 
@@ -339,22 +353,7 @@ export const ModernVendorOverlay = ({
     <div className="flex items-center gap-2">
       {(isEditMode || !vendor) && (
         <>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              if (vendor) {
-                setIsEditMode(false);
-              } else {
-                onClose();
-              }
-            }}
-            disabled={isSaving}
-          >
-            <X className="h-4 w-4 mr-1" />
-            Cancel
-          </Button>
-          <Button 
+          <Button
             size="sm"
             onClick={handleSaveVendor}
             disabled={isSaving}
@@ -374,16 +373,29 @@ export const ModernVendorOverlay = ({
           </Button>
         </>
       )}
-      
+
       {!isEditMode && vendor && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsEditMode(true)}
-        >
-          <Edit3 className="h-4 w-4 mr-1" />
-          Edit
-        </Button>
+        <>
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditMode(true)}
+          >
+            <Edit3 className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+        </>
       )}
     </div>
   );
@@ -396,22 +408,71 @@ export const ModernVendorOverlay = ({
       subtitle={vendor ? vendor.name : 'Create a new vendor profile'}
       status={vendor?.status}
       statusColor={vendor?.status ? statusColors[vendor.status] : 'pending'}
-      size="large"
+      size="small"
       headerActions={headerActions}
       quickActions={quickActions}
     >
       <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
+        {/* Order Statistics - Show only for existing vendors */}
+        {vendor && (
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+                <Package className="h-4 w-4 mr-2" />
+                Order Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <Card className="border-border/30 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950/20 dark:to-blue-950/20">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-slate-600">{vendor.totalOrders || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Total Orders</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
+                      {formatIndianCurrency(vendor.totalValue || 0)}
+                    </div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Total Value</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                  <CardContent className="p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                      {formatIndianCurrency(vendor.outstandingBalance || 0)}
+                    </div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Outstanding</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-border/30 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <CardContent className="p-3">
+                    <div className="text-xs sm:text-sm font-medium text-muted-foreground">Last Order</div>
+                    <div className="text-xs sm:text-sm font-semibold text-purple-600">
+                      {vendor.lastOrderDate ? new Date(vendor.lastOrderDate).toLocaleDateString() : 'No orders'}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Basic Information */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <Building2 className="h-4 w-4 mr-2" />
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
               Basic Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="vendor-name" className="text-xs font-medium">Vendor Name *</Label>
+              <Label htmlFor="vendor-name" className="text-xs font-medium flex items-center gap-1">
+                <Building className="h-3 w-3 text-muted-foreground" />
+                Vendor Name <span className="text-destructive">*</span>
+              </Label>
               <AutocompleteInput
                 value={name}
                 onChange={setName}
@@ -421,9 +482,12 @@ export const ModernVendorOverlay = ({
                 className="h-9 text-sm mt-1"
               />
             </div>
-            
+
             <div>
-              <Label htmlFor="category" className="text-xs font-medium">Category *</Label>
+              <Label htmlFor="category" className="text-xs font-medium flex items-center gap-1">
+                <Tag className="h-3 w-3 text-muted-foreground" />
+                Category <span className="text-destructive">*</span>
+              </Label>
               <AutocompleteInput
                 value={category}
                 onChange={setCategory}
@@ -433,24 +497,45 @@ export const ModernVendorOverlay = ({
                 className="h-9 text-sm mt-1"
               />
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="status" className="text-xs font-medium">Status</Label>
+                <Label htmlFor="status" className="text-xs font-medium flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                  Status
+                </Label>
                 <Select value={status} onValueChange={setStatus} disabled={!isEditMode}>
                   <SelectTrigger className="h-9 text-sm mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Active">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Active
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Inactive">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                        Inactive
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Pending">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        Pending
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
-                <Label htmlFor="website" className="text-xs font-medium">Website</Label>
+                <Label htmlFor="website" className="text-xs font-medium flex items-center gap-1">
+                  <Globe className="h-3 w-3 text-muted-foreground" />
+                  Website
+                </Label>
                 <Input
                   id="website"
                   value={website}
@@ -467,14 +552,17 @@ export const ModernVendorOverlay = ({
         {/* Contact Information */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <User className="h-4 w-4 mr-2" />
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
               Contact Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="contact-person" className="text-xs font-medium">Contact Person *</Label>
+              <Label htmlFor="contact-person" className="text-xs font-medium flex items-center gap-1">
+                <User className="h-3 w-3 text-muted-foreground" />
+                Contact Person <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="contact-person"
                 value={contactPerson}
@@ -484,7 +572,6 @@ export const ModernVendorOverlay = ({
                 placeholder="Enter contact person name"
               />
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="phone" className="text-xs font-medium">Phone Number</Label>
@@ -497,7 +584,6 @@ export const ModernVendorOverlay = ({
                   placeholder="+91-XXXXXXXXXX"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="email" className="text-xs font-medium">Email Address *</Label>
                 <Input
@@ -535,7 +621,6 @@ export const ModernVendorOverlay = ({
                 rows={2}
               />
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="city" className="text-xs font-medium">City</Label>
@@ -548,7 +633,6 @@ export const ModernVendorOverlay = ({
                   className="h-9 text-sm mt-1"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="state" className="text-xs font-medium">State</Label>
                 <AutocompleteInput
@@ -561,7 +645,6 @@ export const ModernVendorOverlay = ({
                 />
               </div>
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="zip-code" className="text-xs font-medium">ZIP Code</Label>
@@ -574,7 +657,6 @@ export const ModernVendorOverlay = ({
                   placeholder="Enter ZIP code"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="country" className="text-xs font-medium">Country</Label>
                 <Input
@@ -611,7 +693,6 @@ export const ModernVendorOverlay = ({
                   placeholder="Enter PAN number"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="gst-number" className="text-xs font-medium">GST Number</Label>
                 <Input
@@ -648,7 +729,6 @@ export const ModernVendorOverlay = ({
                   className="h-9 text-sm mt-1"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="credit-limit" className="text-xs font-medium">Credit Limit (₹)</Label>
                 <Input
@@ -662,7 +742,6 @@ export const ModernVendorOverlay = ({
                 />
               </div>
             </div>
-            
             <div>
               <Label htmlFor="bank-name" className="text-xs font-medium">Bank Name</Label>
               <AutocompleteInput
@@ -674,7 +753,6 @@ export const ModernVendorOverlay = ({
                 className="h-9 text-sm mt-1"
               />
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="account-number" className="text-xs font-medium">Account Number</Label>
@@ -687,7 +765,6 @@ export const ModernVendorOverlay = ({
                   placeholder="Enter account number"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="ifsc-code" className="text-xs font-medium">IFSC Code</Label>
                 <Input
@@ -702,52 +779,6 @@ export const ModernVendorOverlay = ({
             </div>
           </CardContent>
         </Card>
-
-        {/* Order Statistics - Show only for existing vendors */}
-        {vendor && (
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <Package className="h-4 w-4 mr-2" />
-                Order Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card className="border-border/30">
-                  <CardContent className="p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-slate-600">{vendor.totalOrders || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Total Orders</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-border/30">
-                  <CardContent className="p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-green-600">
-                      ₹{(vendor.totalValue || 0).toLocaleString('en-IN')}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Total Value</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-border/30">
-                  <CardContent className="p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-orange-600">
-                      ₹{(vendor.outstandingBalance || 0).toLocaleString('en-IN')}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Outstanding</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-border/30">
-                  <CardContent className="p-3">
-                    <div className="text-xs sm:text-sm font-medium text-muted-foreground">Last Order</div>
-                    <div className="text-xs sm:text-sm font-semibold">
-                      {vendor.lastOrderDate ? new Date(vendor.lastOrderDate).toLocaleDateString() : 'No orders'}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Additional Notes */}
         <Card className="border-border/50 shadow-sm">

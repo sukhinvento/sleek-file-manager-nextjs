@@ -111,6 +111,16 @@ export const AppLayout = ({
           }));
         }
       },
+      '/diagnostics': {
+        text: 'Book Test',
+        action: () => {
+          window.dispatchEvent(new CustomEvent('openCreateModal', {
+            detail: {
+              type: 'diagnostic'
+            }
+          }));
+        }
+      },
       '/stock-transfer': {
         text: 'New Transfer',
         action: () => {

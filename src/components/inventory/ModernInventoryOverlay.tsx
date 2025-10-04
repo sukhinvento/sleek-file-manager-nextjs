@@ -14,7 +14,7 @@ interface ModernInventoryOverlayProps {
   children: React.ReactNode;
   headerActions?: React.ReactNode;
   quickActions?: React.ReactNode;
-  size?: 'default' | 'large' | 'full' | 'medium' | 'wide';
+  size?: 'default' | 'large' | 'full' | 'medium' | 'wide' | 'small';
 }
 
 const statusColors = {
@@ -29,6 +29,7 @@ const sizeClasses = {
   large: 'w-full sm:w-[95vw] sm:max-w-[1400px]',
   full: 'w-full sm:w-[98vw] sm:max-w-[1600px]',
   medium: 'w-full sm:w-[80vw] md:w-[70vw] lg:w-[60vw] sm:max-w-[60vw]',
+  small: 'w-full sm:w-[50vw] sm:max-w-[50vw]',
   wide: 'w-full sm:w-[80vw] sm:max-w-[80vw]'
 };
 

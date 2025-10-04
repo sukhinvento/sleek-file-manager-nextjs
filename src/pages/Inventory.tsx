@@ -19,66 +19,17 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { InventoryFilterModal } from '@/components/inventory/InventoryFilterModal';
+import { InventorySortModal } from '@/components/inventory/InventorySortModal';
 import { InventoryFormOverlay } from '@/components/inventory/InventoryFormOverlay';
 import { InventoryItem } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-
-// Sample inventory data
-const inventoryData: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'Paracetamol 500mg',
-    category: 'Medication',
-    sku: 'MED001',
-    currentStock: 150,
-    minStock: 50,
-    maxStock: 500,
-    unitPrice: 2.50,
-    supplier: 'PharmaCorp Ltd',
-    expiryDate: '2025-08-15',
-    location: 'Pharmacy-A1',
-    batchNumber: 'B001',
-    description: 'Pain relief medication',
-    manufacturer: 'PharmaCorp'
-  },
-  {
-    id: '2',
-    name: 'Surgical Gloves (Box)',
-    category: 'Medical Supplies',
-    sku: 'SUP001',
-    currentStock: 25,
-    minStock: 20,
-    maxStock: 100,
-    unitPrice: 15.00,
-    supplier: 'MedSupply Co',
-    expiryDate: '2026-12-31',
-    location: 'Storage-B2',
-    batchNumber: 'B002',
-    description: 'Sterile surgical gloves',
-    manufacturer: 'MedSupply Co'
-  },
-  {
-    id: '3',
-    name: 'Ultrasound Gel',
-    category: 'Medical Supplies',
-    sku: 'SUP002',
-    currentStock: 5,
-    minStock: 15,
-    maxStock: 50,
-    unitPrice: 8.50,
-    supplier: 'MedEquip Inc',
-    expiryDate: '2025-06-30',
-    location: 'Radiology',
-    batchNumber: 'B003',
-    description: 'Ultrasound gel for diagnostics',
-    manufacturer: 'MedEquip Inc'
-  }
-];
+import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
+import { countActiveFilters } from '@/lib/filterUtils';
+import * as inventoryService from '@/services/inventoryService';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -92,7 +43,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border`}>
+    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -102,7 +53,17 @@ export const Inventory = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(inventoryData);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    lowStockItems: 0,
+    criticalItems: 0,
+    outOfStockItems: 0,
+    totalValue: 0,
+    totalCategories: 0,
+    averageValue: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,6 +80,57 @@ export const Inventory = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Filter states
+  const [selectedFilters, setSelectedFilters] = useState({
+    sku: '',
+    supplier: '',
+    manufacturer: '',
+    location: '',
+    batchNumber: '',
+    category: '',
+    status: '',
+    expiryDateRange: undefined,
+    quantityRange: { min: '', max: '' },
+    priceRange: { min: '', max: '' }
+  });
+  
+  // Sort state
+  const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
+
+  // Load inventory items from service
+  const loadInventoryItems = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await inventoryService.fetchInventoryItems();
+      setInventoryItems(data);
+    } catch (error) {
+      console.error('Error loading inventory items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load inventory items. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Load stats from service
+  const loadStats = async () => {
+    try {
+      const statsData = await inventoryService.fetchInventoryStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadInventoryItems();
+    loadStats();
+  }, []);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -144,6 +156,11 @@ export const Inventory = () => {
 
   const statuses = ['All', 'Normal', 'Low', 'Critical', 'Out of Stock'];
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'name' || sortConfig.direction !== 'asc';
+
   // Filter logic
   const filteredItems = useMemo(() => {
     return inventoryItems.filter(item => {
@@ -153,11 +170,32 @@ export const Inventory = () => {
         item.supplier.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-      const matchesStatus = selectedStatus === 'All' || getItemStatus(item) === selectedStatus;
+      const itemStatus = getItemStatus(item);
+      const matchesStatus = selectedStatus === 'All' || itemStatus === selectedStatus;
       
-      return matchesSearch && matchesCategory && matchesStatus;
+      const matchesSKU = !selectedFilters.sku || item.sku.toLowerCase().includes(selectedFilters.sku.toLowerCase());
+      const matchesSupplier = !selectedFilters.supplier || item.supplier.toLowerCase().includes(selectedFilters.supplier.toLowerCase());
+      const matchesManufacturer = !selectedFilters.manufacturer || item.manufacturer?.toLowerCase().includes(selectedFilters.manufacturer.toLowerCase());
+      const matchesLocation = !selectedFilters.location || item.location?.toLowerCase().includes(selectedFilters.location.toLowerCase());
+      const matchesBatchNumber = !selectedFilters.batchNumber || item.batchNumber.toLowerCase().includes(selectedFilters.batchNumber.toLowerCase());
+      const matchesFilterCategory = !selectedFilters.category || item.category === selectedFilters.category;
+      const matchesFilterStatus = !selectedFilters.status || getItemStatus(item) === selectedFilters.status;
+      
+      const matchesExpiryDateRange = !selectedFilters.expiryDateRange?.from || !selectedFilters.expiryDateRange?.to || !item.expiryDate ||
+        (new Date(item.expiryDate) >= new Date(selectedFilters.expiryDateRange.from) &&
+         new Date(item.expiryDate) <= new Date(selectedFilters.expiryDateRange.to));
+      
+      const matchesQuantityRange = (!selectedFilters.quantityRange?.min || item.currentStock >= Number(selectedFilters.quantityRange.min)) &&
+        (!selectedFilters.quantityRange?.max || item.currentStock <= Number(selectedFilters.quantityRange.max));
+      
+      const matchesPriceRange = (!selectedFilters.priceRange?.min || item.unitPrice >= Number(selectedFilters.priceRange.min)) &&
+        (!selectedFilters.priceRange?.max || item.unitPrice <= Number(selectedFilters.priceRange.max));
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesSKU && matchesSupplier && 
+        matchesManufacturer && matchesLocation && matchesBatchNumber && matchesFilterCategory && 
+        matchesFilterStatus && matchesExpiryDateRange && matchesQuantityRange && matchesPriceRange;
     });
-  }, [inventoryItems, searchTerm, selectedCategory, selectedStatus]);
+  }, [inventoryItems, searchTerm, selectedCategory, selectedStatus, selectedFilters]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
@@ -175,16 +213,19 @@ export const Inventory = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedCategory, selectedStatus]);
-
-  // Calculate summary metrics
-  const totalItems = inventoryItems.length;
-  const lowStockItems = inventoryItems.filter(item => getItemStatus(item) !== 'Normal').length;
-  const criticalItems = inventoryItems.filter(item => getItemStatus(item) === 'Critical').length;
-  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.currentStock * item.unitPrice), 0);
-  const outOfStockItems = inventoryItems.filter(item => getItemStatus(item) === 'Out of Stock').length;
+  }, [searchTerm, selectedCategory, selectedStatus, selectedFilters]);
 
   // Event handlers
+  const handleApplyFilters = (filters: any) => {
+    setSelectedFilters(filters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplySort = (sortConfig: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(sortConfig);
+    setIsSortModalOpen(false);
+  };
+
   const handleViewItem = (item: InventoryItem) => {
     setEditingItem(item);
     setIsEditMode(false);
@@ -195,12 +236,54 @@ export const Inventory = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteItem = (itemId: string) => {
-    setInventoryItems(inventoryItems.filter(item => item.id !== itemId));
-    toast({
-      title: "Item Deleted",
-      description: "Inventory item has been successfully deleted.",
-    });
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      await inventoryService.deleteInventoryItem(itemId);
+      await loadInventoryItems();
+      await loadStats();
+      toast({
+        title: "Success",
+        description: "Inventory item deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting inventory item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete inventory item. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveItem = async (itemData: InventoryItem) => {
+    try {
+      if (itemData.id && (itemData.id.startsWith('inv-') || itemData.id.match(/^\d+$/))) {
+        // Update existing item
+        await inventoryService.updateInventoryItem(itemData.id, itemData);
+        toast({
+          title: "Success",
+          description: "Inventory item updated successfully.",
+        });
+      } else {
+        // Create new item
+        await inventoryService.createInventoryItem(itemData);
+        toast({
+          title: "Success",
+          description: "Inventory item created successfully.",
+        });
+      }
+      await loadInventoryItems();
+      await loadStats();
+      setIsNewItemOpen(false);
+      setEditingItem(null);
+    } catch (error) {
+      console.error('Error saving inventory item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save inventory item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -215,7 +298,7 @@ export const Inventory = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Items</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalItems}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalItems}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -254,7 +337,7 @@ export const Inventory = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Critical</p>
-                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{criticalItems}</div>
+                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{stats.criticalItems}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
@@ -283,13 +366,13 @@ export const Inventory = () => {
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        strokeDasharray={`${(criticalItems / totalItems) * 75.4} 75.4`}
+                        strokeDasharray={`${(stats.criticalItems / stats.totalItems) * 75.4} 75.4`}
                         className="text-red-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-[10px] font-bold text-red-700 leading-none">
-                        {Math.round((criticalItems / totalItems) * 100)}%
+                        {Math.round((stats.criticalItems / stats.totalItems) * 100)}%
                       </span>
                     </div>
                   </div>
@@ -309,7 +392,7 @@ export const Inventory = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Low Stock</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{lowStockItems}</div>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.lowStockItems}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
@@ -324,10 +407,10 @@ export const Inventory = () => {
                     <div className="flex-1 bg-amber-200 rounded-full h-1.5">
                       <div 
                         className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(lowStockItems / totalItems) * 100}%` }}
+                        style={{ width: `${(stats.lowStockItems / stats.totalItems) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-amber-700">{Math.round((lowStockItems / totalItems) * 100)}%</span>
+                    <span className="text-xs font-medium text-amber-700">{Math.round((stats.lowStockItems / stats.totalItems) * 100)}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -343,7 +426,7 @@ export const Inventory = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Value</p>
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(totalValue / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.totalValue)}
                     </div>
                   </div>
                   <div className="relative">
@@ -357,7 +440,7 @@ export const Inventory = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Items: {totalItems}</span>
+                    <span className="text-emerald-600">Items: {stats.totalItems}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
@@ -376,7 +459,7 @@ export const Inventory = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Out of Stock</p>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{outOfStockItems}</div>
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.outOfStockItems}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-slate-500/10 rounded-full flex items-center justify-center z-10">
@@ -389,7 +472,7 @@ export const Inventory = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600">Critical</span>
-                    <span className="text-xs font-bold text-slate-700">{outOfStockItems}</span>
+                    <span className="text-xs font-bold text-slate-700">{stats.outOfStockItems}</span>
                   </div>
                   <div className="grid grid-cols-6 gap-px">
                     {[2, 1, 3, 0, 1, 2].map((height, i) => (
@@ -442,11 +525,26 @@ export const Inventory = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -483,11 +581,28 @@ export const Inventory = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3"
+              onClick={() => setIsFilterModalOpen(true)}
+              {...(hasFilters && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <Filter className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Filters</span>
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3"
+              onClick={() => setIsSortModalOpen(true)}
+              {...(hasSort && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -500,16 +615,31 @@ export const Inventory = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block">
           <Card className="border-border/50 shadow-sm">
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading inventory items...</p>
+                </div>
+              </div>
+            ) : currentPageData.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-2">
+                  <Package className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No inventory items found</p>
+                </div>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Item Details</TableHead>
-                    <TableHead className="font-semibold">Category</TableHead>
-                    <TableHead className="font-semibold">Stock Status</TableHead>
-                    <TableHead className="font-semibold">Pricing</TableHead>
-                    <TableHead className="font-semibold">Location</TableHead>
-                    <TableHead className="font-semibold w-12"></TableHead>
+                    <TableHead className="font-semibold w-[22%]">Item Details</TableHead>
+                    <TableHead className="font-semibold w-[15%]">Category</TableHead>
+                    <TableHead className="font-semibold w-[20%]">Stock Status</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Pricing</TableHead>
+                    <TableHead className="font-semibold w-[20%]">Location</TableHead>
+                    <TableHead className="font-semibold w-[5%]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -535,9 +665,9 @@ export const Inventory = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">${item.unitPrice.toFixed(2)}</div>
+                        <div className="font-medium">{formatIndianCurrency(item.unitPrice)}</div>
                         <div className="text-sm text-muted-foreground">
-                          Total: ${(item.currentStock * item.unitPrice).toFixed(2)}
+                          Total: {formatIndianCurrency(item.currentStock * item.unitPrice)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -579,10 +709,11 @@ export const Inventory = () => {
                 </TableBody>
               </Table>
             </div>
+            )}
           </Card>
 
           {/* Desktop Pagination */}
-          {!isMobile && totalPages > 1 && (
+          {!isMobile && !isLoadingData && totalPages > 1 && (
             <div className="flex justify-center">
               <Pagination>
                 <PaginationContent>
@@ -621,7 +752,7 @@ export const Inventory = () => {
         {/* Mobile Cards View */}
         <div className="md:hidden">
           {mobileDisplayedItems.map((item: InventoryItem) => (
-              <Card key={item.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg">
+              <Card key={item.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewItem(item)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
@@ -632,7 +763,10 @@ export const Inventory = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleViewItem(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewItem(item);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-4 w-4" />
@@ -640,7 +774,10 @@ export const Inventory = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleEditItem(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditItem(item);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
@@ -648,7 +785,10 @@ export const Inventory = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleDeleteItem(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteItem(item.id);
+                        }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -673,7 +813,7 @@ export const Inventory = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Unit Price</p>
-                      <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
+                      <p className="font-medium">{formatIndianCurrency(item.unitPrice)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Location</p>
@@ -691,18 +831,20 @@ export const Inventory = () => {
       </div>
 
       {/* Filter and Sort Modals */}
-      <FilterModal
+      <InventoryFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={() => {}}
-        vendors={[]}
-        statuses={statuses}
+        onApplyFilters={(filters) => {
+          setSelectedFilters(filters);
+          setIsFilterModalOpen(false);
+        }}
+        categories={categories}
       />
       
-      <SortModal
+      <InventorySortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
-        onApplySort={() => {}}
+        onApplySort={handleApplySort}
       />
 
       {/* Inventory Item Modal */}
@@ -715,15 +857,9 @@ export const Inventory = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newItem) => {
-          setInventoryItems([...inventoryItems, newItem]);
-          setIsNewItemOpen(false);
-        }}
-        onUpdate={(updatedItem) => {
-          setInventoryItems(inventoryItems.map(i => i.id === updatedItem.id ? updatedItem : i));
-          setEditingItem(null);
-          setIsEditMode(false);
-        }}
+        onSave={handleSaveItem}
+        onUpdate={handleSaveItem}
+        onDelete={handleDeleteItem}
       />
     </div>
   );

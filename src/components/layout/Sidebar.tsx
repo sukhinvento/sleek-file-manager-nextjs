@@ -18,7 +18,8 @@ import {
   ShoppingCart,
   Package,
   Receipt,
-  Users
+  Users,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -191,6 +192,16 @@ export const Sidebar = ({
             >
               <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
+            </Link>
+            <Link 
+              to="/diagnostics" 
+              className={`nav-item ${isActive('/diagnostics') ? 'active' : ''} ${
+                isCollapsed ? 'justify-center px-2' : ''
+              }`}
+              title="Diagnostics"
+            >
+              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Diagnostics</span>
             </Link>
           </nav>
         </div>

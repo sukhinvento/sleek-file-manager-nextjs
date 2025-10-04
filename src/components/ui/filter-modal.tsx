@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -41,20 +41,26 @@ export const FilterModal = ({
   onClear,
   onApply 
 }: FilterModalProps) => {
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     onClear?.();
     filters.onCategoryChange?.('All');
     filters.onPriorityChange?.('All');
     filters.onVendorChange?.('All');
-  };
+  }, [onClear, filters]);
 
-  const handleApply = () => {
+  const handleApply = useCallback(() => {
     onApply?.();
     onOpenChange(false);
-  };
+  }, [onApply, onOpenChange]);
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      onOpenChange(open);
+    }
+  }, [onOpenChange]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
@@ -65,7 +71,33 @@ export const FilterModal = ({
           More Filters
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md mx-auto bg-background border-border sm:max-w-lg p-0 overflow-hidden">
+      <DialogContent 
+        className="max-w-md mx-auto bg-background border-border sm:max-w-lg p-0 overflow-hidden"
+        onPointerDownOutside={(e) => {
+          // Prevent accidental closure when interacting with inputs
+          const target = e.target as HTMLElement;
+          if (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.closest('input') ||
+            target.closest('textarea')
+          ) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // Allow normal interaction inside the dialog
+          const target = e.target as HTMLElement;
+          if (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.closest('input') ||
+            target.closest('textarea')
+          ) {
+            e.preventDefault();
+          }
+        }}
+      >
         {/* Header */}
         <div className="bg-slate-600 text-white px-6 py-4">
           <div className="flex items-center justify-between">

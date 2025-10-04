@@ -10,6 +10,7 @@ interface MobileTableViewProps<T> {
   columns: Array<{
     key: keyof T;
     label: string;
+    width?: string;
     render?: (value: any, item: T) => React.ReactNode;
   }>;
   getTitle: (item: T) => string;
@@ -95,9 +96,9 @@ export function MobileTableView<T>({
             <TableHeader>
               <TableRow>
                 {columns.map((column, index) => (
-                  <TableHead key={index}>{column.label}</TableHead>
+                  <TableHead key={index} className={column.width || ''}>{column.label}</TableHead>
                 ))}
-                {(getActions || onRowClick) && <TableHead>Actions</TableHead>}
+                {(getActions || onRowClick) && <TableHead className="w-[5%]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -147,9 +148,9 @@ export function MobileTableView<T>({
       <TableHeader>
         <TableRow>
           {columns.map((column, index) => (
-            <TableHead key={index}>{column.label}</TableHead>
+            <TableHead key={index} className={column.width || ''}>{column.label}</TableHead>
           ))}
-          {(getActions || onRowClick) && <TableHead>Actions</TableHead>}
+          {(getActions || onRowClick) && <TableHead className="w-[5%]">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight } from 'lucide-react';
+import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, Box, TrendingUp, FileText, Send, Smartphone, CheckCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,28 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
-
-interface StockTransferItem {
-  name: string;
-  quantity: number;
-  availableStock?: number;
-  saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
-}
-
-interface StockTransfer {
-  id?: number;
-  transferId: string;
-  fromLocation: string;
-  toLocation: string;
-  items: StockTransferItem[];
-  status: string;
-  requestDate: string;
-  completedDate?: string | null;
-  requestedBy: string;
-  priority?: string;
-  reason?: string;
-  expectedCompletionDate?: string;
-}
+import { ItemScanner } from '../scanner/ItemScanner';
+import { StockTransfer, StockTransferItem, InventoryItem } from '@/types/inventory';
+import { OrderStatusDialog, StatusUpdateData } from '../orders/OrderStatusDialog';
 
 interface ModernStockTransferOverlayProps {
   transfer: StockTransfer | null;
@@ -69,6 +50,70 @@ const sampleItems = [
   { name: 'Pain Relievers', availableStock: 200, saleUnit: 'Strip' }
 ];
 
+// Mock inventory database for scanner
+const mockInventory: InventoryItem[] = [
+  {
+    id: 'INV-001',
+    name: 'Paracetamol 500mg',
+    category: 'Medicines',
+    sku: 'MED-PAR-500',
+    currentStock: 150,
+    minStock: 50,
+    maxStock: 500,
+    unitPrice: 5.99,
+    supplier: 'PharmaCorp',
+    location: 'Shelf A-12',
+    description: 'Pain relief medication',
+    batchNumber: 'BATCH-2025-001',
+    saleUnit: 'Strip',
+    barcode: '1234567890128',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-001',
+    rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
+    trackingEnabled: true
+  },
+  {
+    id: 'INV-002',
+    name: 'Amoxicillin 250mg',
+    category: 'Antibiotics',
+    sku: 'MED-AMX-250',
+    currentStock: 200,
+    minStock: 75,
+    maxStock: 600,
+    unitPrice: 12.50,
+    supplier: 'MediSupply Co',
+    location: 'Shelf B-05',
+    description: 'Antibiotic medication',
+    batchNumber: 'BATCH-2025-002',
+    saleUnit: 'Strip',
+    barcode: '9876543210987',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-002',
+    rfidTag: 'B2C3D4E5F6G78901BCDEF123',
+    trackingEnabled: true
+  },
+  {
+    id: 'INV-003',
+    name: 'Ibuprofen 400mg',
+    category: 'Medicines',
+    sku: 'MED-IBU-400',
+    currentStock: 300,
+    minStock: 100,
+    maxStock: 800,
+    unitPrice: 8.75,
+    supplier: 'PharmaCorp',
+    location: 'Shelf A-15',
+    description: 'Anti-inflammatory medication',
+    batchNumber: 'BATCH-2025-003',
+    saleUnit: 'Strip',
+    barcode: '5555666677778',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-003',
+    rfidTag: 'C3D4E5F6G7H89012CDEF1234',
+    trackingEnabled: true
+  }
+];
+
 export const ModernStockTransferOverlay = ({ 
   transfer, 
   isOpen, 
@@ -87,6 +132,7 @@ export const ModernStockTransferOverlay = ({
   const [expectedDate, setExpectedDate] = useState<string>('');
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
 
   useEffect(() => {
     if (transfer) {
@@ -96,7 +142,7 @@ export const ModernStockTransferOverlay = ({
       setRequestedBy(transfer.requestedBy || '');
       setPriority(transfer.priority || 'Medium');
       setReason(transfer.reason || '');
-      setExpectedDate(transfer.expectedCompletionDate || '');
+      setExpectedDate(transfer.expectedDate || '');
     } else {
       setItems([]);
       setFromLocation('');
@@ -124,6 +170,24 @@ export const ModernStockTransferOverlay = ({
     toast({
       title: "Item Added",
       description: "New item has been added to the transfer.",
+    });
+  };
+
+  const handleItemScanned = (item: InventoryItem, quantity?: number) => {
+    if (isReadOnly) return;
+
+    const newItem: StockTransferItem = {
+      name: item.name,
+      quantity: quantity || 1,
+      availableStock: item.currentStock || 0,
+      saleUnit: item.saleUnit || 'Single Unit'
+    };
+    
+    setItems([...items, newItem]);
+    
+    toast({
+      title: "Item Added via Scanner",
+      description: `${item.name} - Qty: ${quantity || 1}`,
     });
   };
 
@@ -187,7 +251,7 @@ export const ModernStockTransferOverlay = ({
     
     try {
       const transferData: StockTransfer = {
-        id: transfer?.id,
+        id: transfer?.id || `st-${Date.now()}`,
         transferId: transfer?.transferId || `ST-${Date.now()}`,
         fromLocation,
         toLocation,
@@ -195,9 +259,9 @@ export const ModernStockTransferOverlay = ({
         status: transfer?.status || 'Pending',
         requestDate: transfer?.requestDate || new Date().toISOString().split('T')[0],
         requestedBy,
-        priority,
+        priority: priority as 'Low' | 'Medium' | 'High' | 'Urgent',
         reason,
-        expectedCompletionDate: expectedDate,
+        expectedDate: expectedDate,
       };
 
       if (transfer && onUpdate) {
@@ -239,25 +303,104 @@ export const ModernStockTransferOverlay = ({
     </div>
   );
 
+  const handleDeleteTransfer = () => {
+    if (transfer && onDelete) {
+      if (confirm(`Are you sure you want to delete stock transfer ${transfer.transferId}?\n\nThis action cannot be undone.`)) {
+        onDelete(transfer.transferId);
+        toast({
+          title: "Transfer Deleted",
+          description: `Stock transfer ${transfer.transferId} has been removed.`,
+        });
+        onClose();
+      }
+    }
+  };
+
+  const handleStatusUpdate = (statusData: StatusUpdateData) => {
+    if (!transfer || !onUpdate) return;
+
+    // Validate and map status to allowed values
+    const validStatuses = ['Pending', 'In Transit', 'Completed', 'Cancelled', 'Partially Received'] as const;
+    const mappedStatus = validStatuses.includes(statusData.status as any) 
+      ? statusData.status as typeof validStatuses[number]
+      : 'Pending';
+
+    // Update the transfer with new status and item fulfillment data
+    const updatedTransfer: StockTransfer = {
+      ...transfer,
+      status: mappedStatus,
+    };
+
+    // Update items with fulfillment data if provided
+    if (statusData.items) {
+      updatedTransfer.items = items.map((item, index) => {
+        const statusItem = statusData.items?.find(si => 
+          (item.id && si.id === item.id) || si.name === item.name
+        ) || statusData.items?.[index];
+        
+        if (statusItem) {
+          return {
+            ...item,
+            id: item.id || `item-${index}`,
+            fulfilledQty: statusItem.fulfilledQty,
+            returnedQty: statusItem.returnedQty,
+            damagedQty: statusItem.damagedQty,
+          };
+        }
+        return item;
+      });
+      setItems(updatedTransfer.items);
+    }
+
+    // Update the transfer (dialog already closed by this point)
+    try {
+      onUpdate(updatedTransfer);
+      
+      toast({
+        title: "Status Updated",
+        description: `Transfer ${transfer.transferId} status changed to ${statusData.status}`,
+      });
+
+      // If there are damaged or returned items, show additional info
+      if (statusData.items) {
+        const damagedTotal = statusData.items.reduce((sum, item) => sum + (item.damagedQty || 0), 0);
+        const returnedTotal = statusData.items.reduce((sum, item) => sum + (item.returnedQty || 0), 0);
+        
+        if (damagedTotal > 0 || returnedTotal > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Transfer Summary",
+              description: `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`,
+              variant: damagedTotal > 0 ? "destructive" : "default",
+            });
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const headerActions = (
     <div className="flex items-center gap-2">
+      {transfer && (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowStatusDialog(true)}
+          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        >
+          <CheckCircle className="h-4 w-4 mr-1" />
+          Update Status
+        </Button>
+      )}
+      
       {(isEditMode || !transfer) && (
         <>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              if (transfer) {
-                setIsEditMode(false);
-              } else {
-                onClose();
-              }
-            }}
-            disabled={isSaving}
-          >
-            <X className="h-4 w-4 mr-1" />
-            Cancel
-          </Button>
           <Button 
             size="sm"
             onClick={handleSaveTransfer}
@@ -280,19 +423,33 @@ export const ModernStockTransferOverlay = ({
       )}
       
       {!isEditMode && transfer && !isReadOnly && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsEditMode(true)}
-        >
-          <Edit3 className="h-4 w-4 mr-1" />
-          Edit
-        </Button>
+        <>
+          {onDelete && transfer.status !== 'Completed' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteTransfer}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditMode(true)}
+          >
+            <Edit3 className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+        </>
       )}
     </div>
   );
 
   return (
+    <>
     <ModernInventoryOverlay
       isOpen={isOpen}
       onClose={onClose}
@@ -307,20 +464,23 @@ export const ModernStockTransferOverlay = ({
       <div className="flex h-full overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-muted/20">
         {/* Left Panel - Transfer Information */}
         <div className="w-80 border-r border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto">
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-6">
             {/* Location Information */}
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
                   Transfer Locations
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="from-location" className="text-xs">From Location</Label>
+                  <Label htmlFor="from-location" className="text-xs font-medium flex items-center gap-1">
+                    <Send className="h-3 w-3 text-blue-600" />
+                    From Location
+                  </Label>
                   <Select value={fromLocation} onValueChange={setFromLocation} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-8 text-sm mt-1">
                       <SelectValue placeholder="Select source location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -332,13 +492,16 @@ export const ModernStockTransferOverlay = ({
                 </div>
                 
                 <div className="flex items-center justify-center py-2">
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  <ArrowRight className="h-5 w-5 text-green-600" />
                 </div>
                 
                 <div>
-                  <Label htmlFor="to-location" className="text-xs">To Location</Label>
+                  <Label htmlFor="to-location" className="text-xs font-medium flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-green-600" />
+                    To Location
+                  </Label>
                   <Select value={toLocation} onValueChange={setToLocation} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-8 text-sm mt-1">
                       <SelectValue placeholder="Select destination location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -352,58 +515,90 @@ export const ModernStockTransferOverlay = ({
             </Card>
 
             {/* Request Information */}
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                  <User className="h-4 w-4 mr-2" />
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
                   Request Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label htmlFor="requested-by" className="text-xs">Requested By</Label>
+                  <Label htmlFor="requested-by" className="text-xs font-medium flex items-center gap-1">
+                    <User className="h-3 w-3 text-muted-foreground" />
+                    Requested By
+                  </Label>
                   <Input
                     id="requested-by"
                     value={requestedBy}
                     onChange={(e) => setRequestedBy(e.target.value)}
                     disabled={!isEditMode}
-                    className="h-8 text-sm"
+                    className="h-8 text-sm mt-1"
                     placeholder="Enter requester name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="priority" className="text-xs">Priority</Label>
+                  <Label htmlFor="priority" className="text-xs font-medium flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                    Priority
+                  </Label>
                   <Select value={priority} onValueChange={setPriority} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-8 text-sm mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Urgent">Urgent</SelectItem>
+                      <SelectItem value="Low">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          Low
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Medium">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                          Medium
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="High">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          High
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Urgent">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500" />
+                          Urgent
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="expected-date" className="text-xs">Expected Completion</Label>
+                  <Label htmlFor="expected-date" className="text-xs font-medium flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                    Expected Completion
+                  </Label>
                   <Input
                     id="expected-date"
                     type="date"
                     value={expectedDate}
                     onChange={(e) => setExpectedDate(e.target.value)}
                     disabled={!isEditMode}
-                    className="h-8 text-sm"
+                    className="h-8 text-sm mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="reason" className="text-xs">Reason for Transfer</Label>
+                  <Label htmlFor="reason" className="text-xs font-medium flex items-center gap-1">
+                    <FileText className="h-3 w-3 text-muted-foreground" />
+                    Reason for Transfer
+                  </Label>
                   <Textarea
                     id="reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     disabled={!isEditMode}
-                    className="text-sm resize-none"
+                    className="text-sm resize-none mt-1"
                     placeholder="Enter reason for transfer..."
                     rows={4}
                   />
@@ -415,16 +610,26 @@ export const ModernStockTransferOverlay = ({
 
         {/* Right Panel - Transfer Items */}
         <div className="flex-1 overflow-y-auto">
-          <div className="h-full p-6">
-            <Card className="h-full border-border/50">
+          <div className="h-full p-4 sm:p-6">
+            <Card className="h-full border-border/50 shadow-sm">
               <CardHeader className="pb-4 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold">Transfer Items</CardTitle>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Transfer Items
+                  </CardTitle>
                   {isEditMode && !isReadOnly && (
-                    <Button onClick={addItem} size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Item
-                    </Button>
+                    <div className="flex gap-2">
+                      <ItemScanner 
+                        onItemScanned={handleItemScanned}
+                        existingItems={[]}
+                        disabled={isReadOnly}
+                      />
+                      <Button onClick={addItem} size="sm" variant="outline">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Item
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -516,5 +721,26 @@ export const ModernStockTransferOverlay = ({
         </div>
       </div>
     </ModernInventoryOverlay>
+
+    {/* Order Status Dialog */}
+    {transfer && (
+      <OrderStatusDialog
+        isOpen={showStatusDialog}
+        onClose={() => setShowStatusDialog(false)}
+        orderType="stock-transfer"
+        orderNumber={transfer.transferId}
+        currentStatus={transfer.status}
+        items={items.map((item, index) => ({
+          id: item.id || `item-${index}`,
+          name: item.name,
+          qty: item.quantity,
+          fulfilledQty: item.fulfilledQty,
+          returnedQty: item.returnedQty,
+          damagedQty: item.damagedQty,
+        }))}
+        onStatusUpdate={handleStatusUpdate}
+      />
+    )}
+    </>
   );
 };

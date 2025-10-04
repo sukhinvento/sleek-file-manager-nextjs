@@ -21,74 +21,16 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
 import { ModernSOOverlay } from '@/components/sales-orders/ModernSOOverlay';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { SalesOrderFilterModal } from '@/components/sales-orders/SalesOrderFilterModal';
+import { SalesOrderSortModal } from '@/components/sales-orders/SalesOrderSortModal';
 import { SalesOrder } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-
-// Sample sales orders data
-const salesOrdersData: SalesOrder[] = [
-  {
-    id: '1',
-    orderNumber: 'SO-2024-001',
-    customerName: 'John Smith',
-    customerEmail: 'john@example.com',
-    customerPhone: '+1-555-0123',
-    customerAddress: '123 Main St',
-    orderDate: '2024-01-15',
-    dueDate: '2024-01-22',
-    status: 'Processing',
-    paymentStatus: 'Paid',
-    total: 2500.00,
-    items: [],
-    deliveryDate: '2024-01-22',
-    paymentMethod: 'Credit Card',
-    shippingAddress: '123 Main St, City, State',
-    billingAddress: '123 Main St, City, State',
-    notes: ''
-  },
-  {
-    id: '2',
-    orderNumber: 'SO-2024-002',
-    customerName: 'Emily Davis',
-    customerEmail: 'emily@example.com',
-    customerPhone: '+1-555-0124',
-    customerAddress: '456 Oak Ave',
-    orderDate: '2024-01-16',
-    dueDate: '2024-01-23',
-    status: 'Shipped',
-    paymentStatus: 'Paid',
-    total: 4200.00,
-    items: [],
-    deliveryDate: '2024-01-23',
-    paymentMethod: 'Bank Transfer',
-    shippingAddress: '456 Oak Ave, City, State',
-    billingAddress: '456 Oak Ave, City, State',
-    notes: ''
-  },
-  {
-    id: '3',
-    orderNumber: 'SO-2024-003',
-    customerName: 'Robert Wilson',
-    customerEmail: 'robert@example.com',
-    customerPhone: '+1-555-0125',
-    customerAddress: '789 Pine Rd',
-    orderDate: '2024-01-17',
-    dueDate: '2024-01-24',
-    status: 'Delivered',
-    paymentStatus: 'Pending',
-    total: 1800.00,
-    items: [],
-    deliveryDate: '2024-01-24',
-    paymentMethod: 'Cash',
-    shippingAddress: '789 Pine Rd, City, State',
-    billingAddress: '789 Pine Rd, City, State',
-    notes: ''
-  }
-];
+import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
+import { countActiveFilters } from '@/lib/filterUtils';
+import * as salesOrderService from '@/services/salesOrderService';
 
 const StatusBadge = ({ status, type = 'order' }: { status: string; type?: 'order' | 'payment' }) => {
   const getStatusColor = (status: string, type: string) => {
@@ -111,7 +53,7 @@ const StatusBadge = ({ status, type = 'order' }: { status: string; type?: 'order
   };
 
   return (
-    <Badge className={`${getStatusColor(status, type)} border`}>
+    <Badge className={`${getStatusColor(status, type)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -121,7 +63,16 @@ export const SalesOrders = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(salesOrdersData);
+  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    processingOrders: 0,
+    deliveredOrders: 0,
+    pendingPayments: 0,
+    averageOrderValue: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,6 +89,55 @@ export const SalesOrders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Filter states
+  const [selectedFilters, setSelectedFilters] = useState({
+    orderNumber: '',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    status: '',
+    paymentStatus: '',
+    paymentMethod: '',
+    orderDateRange: undefined,
+    deliveryDateRange: undefined,
+    amountRange: { min: '', max: '' }
+  });
+  
+  // Sort state
+  const [sortConfig, setSortConfig] = useState({ field: 'orderDate', direction: 'desc' });
+
+  // Load initial data
+  useEffect(() => {
+    loadSalesOrders();
+    loadStats();
+  }, []);
+
+  const loadSalesOrders = async () => {
+    try {
+      setIsLoadingData(true);
+      const orders = await salesOrderService.fetchSalesOrders();
+      setSalesOrders(orders);
+    } catch (error) {
+      console.error('Failed to load sales orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sales orders. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const fetchedStats = await salesOrderService.fetchSalesOrderStats();
+      setStats(fetchedStats);
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
+  };
+
   // Listen for global create modal events
   useEffect(() => {
     const handleOpenCreateModal = (event: any) => {
@@ -153,6 +153,11 @@ export const SalesOrders = () => {
   // Get unique values for filters
   const statuses = ['All', ...Array.from(new Set(salesOrders.map(order => order.status)))];
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'orderDate' || sortConfig.direction !== 'desc';
+
   // Filter logic
   const filteredOrders = useMemo(() => {
     return salesOrders.filter(order => {
@@ -163,9 +168,30 @@ export const SalesOrders = () => {
       
       const matchesStatus = selectedStatus === 'All' || order.status === selectedStatus;
       
-      return matchesSearch && matchesStatus;
+      const matchesOrderNumber = !selectedFilters.orderNumber || order.orderNumber.toLowerCase().includes(selectedFilters.orderNumber.toLowerCase());
+      const matchesCustomerName = !selectedFilters.customerName || order.customerName.toLowerCase().includes(selectedFilters.customerName.toLowerCase());
+      const matchesCustomerEmail = !selectedFilters.customerEmail || order.customerEmail.toLowerCase().includes(selectedFilters.customerEmail.toLowerCase());
+      const matchesCustomerPhone = !selectedFilters.customerPhone || order.customerPhone?.toLowerCase().includes(selectedFilters.customerPhone.toLowerCase());
+      const matchesFilterStatus = !selectedFilters.status || order.status === selectedFilters.status;
+      const matchesPaymentStatus = !selectedFilters.paymentStatus || order.paymentStatus === selectedFilters.paymentStatus;
+      const matchesPaymentMethod = !selectedFilters.paymentMethod || order.paymentMethod === selectedFilters.paymentMethod;
+      
+      const matchesOrderDateRange = !selectedFilters.orderDateRange?.from || !selectedFilters.orderDateRange?.to ||
+        (new Date(order.orderDate) >= new Date(selectedFilters.orderDateRange.from) &&
+         new Date(order.orderDate) <= new Date(selectedFilters.orderDateRange.to));
+         
+      const matchesDeliveryDateRange = !selectedFilters.deliveryDateRange?.from || !selectedFilters.deliveryDateRange?.to ||
+        (new Date(order.deliveryDate) >= new Date(selectedFilters.deliveryDateRange.from) &&
+         new Date(order.deliveryDate) <= new Date(selectedFilters.deliveryDateRange.to));
+      
+      const matchesAmountRange = (!selectedFilters.amountRange?.min || order.total >= Number(selectedFilters.amountRange.min)) &&
+        (!selectedFilters.amountRange?.max || order.total <= Number(selectedFilters.amountRange.max));
+      
+      return matchesSearch && matchesStatus && matchesOrderNumber && matchesCustomerName && matchesCustomerEmail &&
+        matchesCustomerPhone && matchesFilterStatus && matchesPaymentStatus && matchesPaymentMethod &&
+        matchesOrderDateRange && matchesDeliveryDateRange && matchesAmountRange;
     });
-  }, [salesOrders, searchTerm, selectedStatus]);
+  }, [salesOrders, searchTerm, selectedStatus, selectedFilters]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
@@ -185,14 +211,17 @@ export const SalesOrders = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedStatus]);
 
-  // Calculate summary metrics
-  const totalOrders = salesOrders.length;
-  const totalRevenue = salesOrders.reduce((sum, order) => sum + order.total, 0);
-  const processingOrders = salesOrders.filter(order => order.status === 'Processing').length;
-  const pendingPayments = salesOrders.filter(order => order.paymentStatus === 'Pending').reduce((sum, order) => sum + order.total, 0);
-  const deliveredOrders = salesOrders.filter(order => order.status === 'Delivered').length;
-
   // Event handlers
+  const handleApplyFilters = (filters: any) => {
+    setSelectedFilters(filters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplySort = (sortConfig: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(sortConfig);
+    setIsSortModalOpen(false);
+  };
+
   const handleViewOrder = (order: SalesOrder) => {
     setEditingOrder(order);
     setIsEditMode(false);
@@ -203,12 +232,56 @@ export const SalesOrders = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteOrder = (orderId: string) => {
-    setSalesOrders(salesOrders.filter(order => order.id !== orderId));
-    toast({
-      title: "Sales Order Deleted",
-      description: "Sales order has been successfully deleted.",
-    });
+  const handleDeleteOrder = async (orderId: string) => {
+    if (window.confirm('Are you sure you want to delete this sales order?')) {
+      try {
+        await salesOrderService.deleteSalesOrder(orderId);
+        toast({
+          title: "Sales Order Deleted",
+          description: "Sales order has been successfully deleted.",
+        });
+        await loadSalesOrders();
+        await loadStats();
+      } catch (error) {
+        console.error('Failed to delete order:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete sales order. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveOrder = async (orderData: SalesOrder) => {
+    try {
+      if (orderData.id && editingOrder) {
+        // Update existing order
+        await salesOrderService.updateSalesOrder(orderData.id, orderData);
+        toast({
+          title: "Success",
+          description: "Sales order updated successfully.",
+        });
+      } else {
+        // Create new order
+        await salesOrderService.createSalesOrder(orderData);
+        toast({
+          title: "Success",
+          description: "Sales order created successfully.",
+        });
+      }
+      await loadSalesOrders();
+      await loadStats();
+      setEditingOrder(null);
+      setIsNewOrderOpen(false);
+    } catch (error) {
+      console.error('Failed to save order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save sales order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -223,7 +296,7 @@ export const SalesOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Orders</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -263,7 +336,7 @@ export const SalesOrders = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Revenue</p>
                     <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(totalRevenue / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.totalRevenue)}
                     </div>
                   </div>
                   <div className="relative">
@@ -277,7 +350,7 @@ export const SalesOrders = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Orders: {totalOrders}</span>
+                    <span className="text-emerald-600">Orders: {stats.totalOrders}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
@@ -296,7 +369,7 @@ export const SalesOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Processing</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{processingOrders}</div>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.processingOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
@@ -325,13 +398,13 @@ export const SalesOrders = () => {
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        strokeDasharray={`${(processingOrders / totalOrders) * 75.4} 75.4`}
+                        strokeDasharray={`${(stats.processingOrders / stats.totalOrders) * 75.4} 75.4`}
                         className="text-amber-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-[10px] font-bold text-amber-700 leading-none">
-                        {Math.round((processingOrders / totalOrders) * 100)}%
+                        {Math.round((stats.processingOrders / stats.totalOrders) * 100)}%
                       </span>
                     </div>
                   </div>
@@ -352,7 +425,7 @@ export const SalesOrders = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Pending</p>
                     <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-                      ${(pendingPayments / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.pendingPayments)}
                     </div>
                   </div>
                   <div className="relative">
@@ -368,10 +441,10 @@ export const SalesOrders = () => {
                     <div className="flex-1 bg-red-200 rounded-full h-1.5">
                       <div 
                         className="bg-red-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(pendingPayments / totalRevenue) * 100}%` }}
+                        style={{ width: `${(stats.pendingPayments / stats.totalRevenue) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-red-700">{Math.round((pendingPayments / totalRevenue) * 100)}%</span>
+                    <span className="text-xs font-medium text-red-700">{Math.round((stats.pendingPayments / stats.totalRevenue) * 100)}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -386,7 +459,7 @@ export const SalesOrders = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Delivered</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{deliveredOrders}</div>
+                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.deliveredOrders}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
@@ -452,11 +525,26 @@ export const SalesOrders = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -493,11 +581,28 @@ export const SalesOrders = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3"
+              onClick={() => setIsFilterModalOpen(true)}
+              {...(hasFilters && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <Filter className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Filters</span>
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3"
+              onClick={() => setIsSortModalOpen(true)}
+              {...(hasSort && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -510,45 +615,60 @@ export const SalesOrders = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block">
           <Card className="border-border/50 shadow-sm">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Order Details</TableHead>
-                    <TableHead className="font-semibold">Customer</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Timeline</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentPageData.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.orderNumber}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {order.items.length} items
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading sales orders...</p>
+                </div>
+              </div>
+            ) : currentPageData.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-2">
+                  <Package className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No sales orders found</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold w-[20%]">Order Details</TableHead>
+                      <TableHead className="font-semibold w-[20%]">Customer</TableHead>
+                      <TableHead className="font-semibold w-[15%]">Status</TableHead>
+                      <TableHead className="font-semibold w-[20%]">Timeline</TableHead>
+                      <TableHead className="font-semibold w-[20%]">Amount</TableHead>
+                      <TableHead className="font-semibold w-[5%]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentPageData.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{order.orderNumber}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {order.items.length} items
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.customerName}</div>
-                          <div className="text-sm text-muted-foreground">{order.customerEmail}</div>
-                        </div>
-                      </TableCell>
-                       <TableCell>
-                         <div className="flex flex-wrap gap-1">
-                           <StatusBadge status={order.status} />
-                           <StatusBadge status={order.paymentStatus} type="payment" />
-                         </div>
-                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="text-sm">
-                            <span className="font-medium">Ordered:</span> {order.orderDate}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{order.customerName}</div>
+                            <div className="text-sm text-muted-foreground">{order.customerEmail}</div>
+                          </div>
+                        </TableCell>
+                         <TableCell>
+                           <div className="space-y-1">
+                             <div><StatusBadge status={order.status} /></div>
+                             <div><StatusBadge status={order.paymentStatus} type="payment" /></div>
+                           </div>
+                         </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm">
+                              <span className="font-medium">Ordered:</span> {order.orderDate}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             <span className="font-medium">Due:</span> {order.dueDate}
@@ -556,8 +676,18 @@ export const SalesOrders = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-semibold text-lg">
-                          ${order.total.toLocaleString()}
+                        <div>
+                          <div className="font-semibold text-lg">
+                            {formatIndianCurrency(order.total)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {order.paymentMethod}
+                          </div>
+                          {order.paymentStatus === 'Paid' && (
+                            <div className="text-xs text-green-600">
+                              Paid
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -593,6 +723,7 @@ export const SalesOrders = () => {
                 </TableBody>
               </Table>
             </div>
+            )}
           </Card>
 
           {/* Desktop Pagination */}
@@ -635,7 +766,7 @@ export const SalesOrders = () => {
         {/* Mobile Cards View */}
         <div className="md:hidden">
           {mobileDisplayedItems.map((order: SalesOrder) => (
-              <Card key={order.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg">
+              <Card key={order.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewOrder(order)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
@@ -646,7 +777,10 @@ export const SalesOrders = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleViewOrder(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewOrder(order);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-4 w-4" />
@@ -654,7 +788,10 @@ export const SalesOrders = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleEditOrder(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditOrder(order);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
@@ -662,7 +799,10 @@ export const SalesOrders = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleDeleteOrder(order.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteOrder(order.id);
+                        }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -680,6 +820,10 @@ export const SalesOrders = () => {
                       <StatusBadge status={order.paymentStatus} type="payment" />
                     </div>
                     <div>
+                      <p className="text-muted-foreground">Payment Method</p>
+                      <p className="font-medium text-xs">{order.paymentMethod}</p>
+                    </div>
+                    <div>
                       <p className="text-muted-foreground">Order Date</p>
                       <p className="font-medium">{order.orderDate}</p>
                     </div>
@@ -693,7 +837,7 @@ export const SalesOrders = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Total Amount</p>
-                      <p className="font-bold text-lg">${order.total.toLocaleString()}</p>
+                      <p className="font-bold text-lg">{formatIndianCurrency(order.total)}</p>
                     </div>
                   </div>
                  </CardContent>
@@ -712,35 +856,26 @@ export const SalesOrders = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newOrder) => {
-          setSalesOrders([...salesOrders, newOrder]);
-          setIsNewOrderOpen(false);
-        }}
-        onUpdate={(updatedOrder) => {
-          setSalesOrders(salesOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        onDelete={(orderId) => {
-          setSalesOrders(salesOrders.filter(o => o.id !== orderId));
-          setEditingOrder(null);
-        }}
+        onSave={handleSaveOrder}
+        onUpdate={handleSaveOrder}
+        onDelete={handleDeleteOrder}
       />
 
       {/* Filter Modal */}
-      <FilterModal
+      <SalesOrderFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={() => {}}
-        vendors={[]}
-        statuses={statuses}
+        onApplyFilters={(filters) => {
+          setSelectedFilters(filters);
+          setIsFilterModalOpen(false);
+        }}
       />
 
       {/* Sort Modal */}
-      <SortModal
+      <SalesOrderSortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
-        onApplySort={() => {}}
+        onApplySort={handleApplySort}
       />
     </div>
   );

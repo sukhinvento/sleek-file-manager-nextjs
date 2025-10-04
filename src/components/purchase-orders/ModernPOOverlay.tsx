@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign } from 'lucide-react';
+import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign, Building2, Phone as PhoneIcon, Mail as MailIcon, MapPin, AlertCircle, Tag, Hash, Smartphone } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -12,8 +12,16 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { AutosuggestInput } from './AutosuggestInput';
+import { ItemScanner } from '../scanner/ItemScanner';
 import { PurchaseOrder, PurchaseOrderItem, StockItem } from '../../types/purchaseOrder';
 import { DatePicker } from "@/components/ui/date-picker";
+import { formatIndianCurrency, formatIndianCurrencyFull } from '@/lib/utils';
+import { InventoryItem } from '@/types/inventory';
+import { InvoiceOptionsDialog, InvoiceGenerationOptions } from '../invoice/InvoiceOptionsDialog';
+import { InvoiceTemplate, InvoiceData } from '../invoice/InvoiceTemplate';
+import { generatePDF } from '@/lib/pdfUtils';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { OrderStatusDialog, StatusUpdateData, OrderItem } from '../orders/OrderStatusDialog';
 
 // Mock vendor data for autocomplete
 interface Vendor {
@@ -299,6 +307,70 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
   );
 };
 
+// Mock inventory database for scanner
+const mockInventory: InventoryItem[] = [
+  {
+    id: 'INV-001',
+    name: 'Paracetamol 500mg',
+    category: 'Medicines',
+    sku: 'MED-PAR-500',
+    currentStock: 150,
+    minStock: 50,
+    maxStock: 500,
+    unitPrice: 5.99,
+    supplier: 'PharmaCorp',
+    location: 'Shelf A-12',
+    description: 'Pain relief medication',
+    batchNumber: 'BATCH-2025-001',
+    saleUnit: 'Strip',
+    barcode: '1234567890128',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-001',
+    rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
+    trackingEnabled: true
+  },
+  {
+    id: 'INV-002',
+    name: 'Amoxicillin 250mg',
+    category: 'Antibiotics',
+    sku: 'MED-AMX-250',
+    currentStock: 200,
+    minStock: 75,
+    maxStock: 600,
+    unitPrice: 12.50,
+    supplier: 'MediSupply Co',
+    location: 'Shelf B-05',
+    description: 'Antibiotic medication',
+    batchNumber: 'BATCH-2025-002',
+    saleUnit: 'Strip',
+    barcode: '9876543210987',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-002',
+    rfidTag: 'B2C3D4E5F6G78901BCDEF123',
+    trackingEnabled: true
+  },
+  {
+    id: 'INV-003',
+    name: 'Ibuprofen 400mg',
+    category: 'Medicines',
+    sku: 'MED-IBU-400',
+    currentStock: 300,
+    minStock: 100,
+    maxStock: 800,
+    unitPrice: 8.75,
+    supplier: 'PharmaCorp',
+    location: 'Shelf A-15',
+    description: 'Anti-inflammatory medication',
+    batchNumber: 'BATCH-2025-003',
+    saleUnit: 'Strip',
+    barcode: '5555666677778',
+    barcodeType: 'EAN-13',
+    qrCode: 'QR-INV-003',
+    rfidTag: 'C3D4E5F6G7H89012CDEF1234',
+    trackingEnabled: true
+  }
+];
+
 interface ModernPOOverlayProps {
   order: PurchaseOrder | null;
   isOpen: boolean;
@@ -331,8 +403,22 @@ export const ModernPOOverlay = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  
+  // Invoice generation states
+  const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
+  const [invoiceMode, setInvoiceMode] = useState<'print' | 'pdf' | null>(null);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [invoiceOptions, setInvoiceOptions] = useState<InvoiceGenerationOptions>({
+    includeQRCode: true,
+    qrCodeContent: 'basic',
+    showItemQRCodes: false,
+  });
+
+  // Order status management
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data
   useEffect(() => {
@@ -426,6 +512,26 @@ export const ModernPOOverlay = ({
     
     // Add new item at the beginning of the array to push existing items down
     setItems([newItem, ...items]);
+  };
+
+  const handleItemScanned = (item: InventoryItem, quantity?: number) => {
+    if (isReadOnly) return;
+
+    const newItem: PurchaseOrderItem = {
+      name: item.name,
+      qty: quantity || 1,
+      unitPrice: item.unitPrice || 0,
+      discount: 0,
+      subtotal: (quantity || 1) * (item.unitPrice || 0),
+      taxSlab: 18
+    };
+    
+    setItems([newItem, ...items]);
+    
+    toast({
+      title: "Item Added via Scanner",
+      description: `${item.name} - Qty: ${quantity || 1}`,
+    });
   };
 
   const removeItem = (index: number) => {
@@ -553,52 +659,75 @@ export const ModernPOOverlay = ({
   };
 
   const headerActions = (
-    <>
+    <div className="flex items-center gap-2">
+      {order && (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowStatusDialog(true)}
+          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        >
+          <CheckCircle className="h-4 w-4 mr-1" />
+          Update Status
+        </Button>
+      )}
+      
       {(isEditMode || !order) && (
-        <Button onClick={handleSaveOrder} disabled={isSaving} className="bg-slate-600 hover:bg-slate-700 text-white">
+        <Button onClick={handleSaveOrder} disabled={isSaving} size="sm" className="bg-slate-600 hover:bg-slate-700 text-white">
           {isSaving ? (
             <>
-              <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
+              <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
-              {order ? 'Update Order' : 'Save Order'}
+              <Save className="h-4 w-4 mr-1" />
+              {order ? 'Update' : 'Create'}
             </>
           )}
         </Button>
       )}
 
       {!isEditMode && order && !isReadOnly && (
-        <Button variant="outline" onClick={() => setIsEditMode(true)}>
-          <Edit3 className="h-4 w-4 mr-2" />
-          Edit Order
-        </Button>
+        <>
+          {onDelete && order.status !== 'Delivered' && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDeleteOrder}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)}>
+            <Edit3 className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+        </>
       )}
-
-      {order && order.status === 'Pending' && !isEditMode && (
-        <Button variant="destructive" onClick={handleDeleteOrder}>
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </Button>
-      )}
-    </>
+    </div>
   );
 
   const handleExportPDF = () => {
-    toast({
-      title: "Export PDF",
-      description: "Exporting purchase order to PDF...",
-    });
-    // PDF export implementation would go here
+    if (!order) {
+      toast({
+        title: "No Order Data",
+        description: "Please save the order before exporting to PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setInvoiceMode('pdf');
+    setShowInvoiceOptions(true);
   };
 
   const handleEmail = () => {
     if (!order) return;
     const subject = `Purchase Order ${order.poNumber}`;
-    const body = `Purchase Order Details:\n\nPO Number: ${order.poNumber}\nVendor: ${order.vendorName}\nStatus: ${order.status}\nTotal: $${order.total.toFixed(2)}`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    const body = `Purchase Order Details:\n\nPO Number: ${order.poNumber}\nVendor: ${order.vendorName}\nStatus: ${order.status}\nTotal: ₹${order.total.toFixed(2)}`;
+    window.open(`mailto:${order.vendorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   const handleDuplicate = () => {
@@ -618,15 +747,423 @@ export const ModernPOOverlay = ({
     onClose();
   };
 
+  const handleStatusUpdate = (statusData: StatusUpdateData) => {
+    if (!order || !onSave) {
+      console.error('Cannot update status: order or onSave is missing', { order, onSave });
+      return;
+    }
+
+    console.log('Updating order status:', statusData);
+
+    // Validate and map status to allowed values
+    const validStatuses = ['Pending', 'Approved', 'Delivered', 'Cancelled', 'Partial', 'Received', 'Partially Received'] as const;
+    const mappedStatus = validStatuses.includes(statusData.status as any) 
+      ? statusData.status as typeof validStatuses[number]
+      : 'Pending';
+
+    // Update the order with new status and item fulfillment data
+    const updatedOrder: PurchaseOrder = {
+      ...order,
+      status: mappedStatus,
+    };
+
+    // Update items with fulfillment data if provided
+    if (statusData.items) {
+      updatedOrder.items = items.map((item, index) => {
+        const statusItem = statusData.items?.find(si => 
+          (item.id && si.id === item.id) || si.name === item.name
+        ) || statusData.items?.[index];
+        
+        if (statusItem) {
+          return {
+            ...item,
+            id: item.id || `item-${index}`,
+            fulfilledQty: statusItem.fulfilledQty,
+            returnedQty: statusItem.returnedQty,
+            damagedQty: statusItem.damagedQty,
+          };
+        }
+        return item;
+      });
+      setItems(updatedOrder.items);
+    }
+
+    // Save the order (dialog already closed by this point)
+    try {
+      console.log('Saving updated order:', updatedOrder);
+      onSave(updatedOrder);
+      
+      toast({
+        title: "Status Updated",
+        description: `Order ${order.poNumber} status changed to ${statusData.status}`,
+      });
+
+      // If there are damaged or returned items, show additional info
+      if (statusData.items) {
+        const damagedTotal = statusData.items.reduce((sum, item) => sum + (item.damagedQty || 0), 0);
+        const returnedTotal = statusData.items.reduce((sum, item) => sum + (item.returnedQty || 0), 0);
+        
+        if (damagedTotal > 0 || returnedTotal > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Fulfillment Summary",
+              description: `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`,
+              variant: damagedTotal > 0 ? "destructive" : "default",
+            });
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePrint = () => {
-    // Small delay to ensure the print styles are applied
-    setTimeout(() => {
-      window.print();
-    }, 100);
-    toast({
-      title: "Print",
-      description: "Opening print dialog...",
-    });
+    if (!order) {
+      toast({
+        title: "No Order Data",
+        description: "Please save the order before printing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setInvoiceMode('print');
+    setShowInvoiceOptions(true);
+  };
+
+  const generateInvoiceData = (): InvoiceData => {
+    const qrCodeData = invoiceOptions.qrCodeContent === 'basic' 
+      ? JSON.stringify({
+          type: 'purchase',
+          number: order?.poNumber || '',
+          date: order?.orderDate || '',
+          total: totals.total,
+          vendor: vendorName,
+        })
+      : JSON.stringify({
+          type: 'purchase',
+          poNumber: order?.poNumber || '',
+          orderDate: order?.orderDate || '',
+          deliveryDate: order?.deliveryDate || '',
+          vendorName,
+          vendorPhone,
+          vendorEmail,
+          items: items.map(item => ({
+            name: item.name,
+            qty: item.qty,
+            rate: item.unitPrice,
+            amount: item.subtotal,
+          })),
+          subtotal: totals.subTotal,
+          tax: totals.tax,
+          total: totals.total,
+          paymentMethod,
+        });
+
+    return {
+      type: 'purchase',
+      invoiceNumber: order?.poNumber || `PO-DRAFT-${Date.now()}`,
+      invoiceDate: order?.orderDate || new Date().toISOString().split('T')[0],
+      dueDate: order?.deliveryDate,
+      
+      // Company Info (You can customize this)
+      companyName: 'Your Company Name',
+      companyAddress: '123 Business Street, City, State 12345',
+      companyPhone: '+91 1234567890',
+      companyEmail: 'info@yourcompany.com',
+      companyGST: 'GSTIN1234567890',
+      
+      // Vendor Info
+      partyName: vendorName,
+      partyAddress: vendorAddress,
+      partyPhone: vendorPhone,
+      partyEmail: vendorEmail,
+      
+      // Shipping Info
+      shippingAddress: shippingAddress || vendorAddress,
+      
+      // Items
+      items: items.map((item, index) => ({
+        ...item,
+        saleUnit: item.saleUnit || 'Unit',
+        qrCode: invoiceOptions.showItemQRCodes 
+          ? JSON.stringify({
+              name: item.name,
+              qty: item.qty,
+              price: item.unitPrice,
+              total: item.subtotal,
+              index: index + 1
+            })
+          : undefined,
+      })),
+      
+      // Financial
+      subtotal: totals.subTotal,
+      taxAmount: totals.tax,
+      discount: 0,
+      total: totals.total,
+      paidAmount: order?.paidAmount || 0,
+      
+      // Additional
+      notes: remarks,
+      paymentMethod,
+      terms: 'Payment terms as per agreement. Goods once sold will not be taken back.',
+      
+      // QR Code
+      includeQRCode: invoiceOptions.includeQRCode,
+      qrCodeData: invoiceOptions.includeQRCode ? qrCodeData : undefined,
+      showItemQRCodes: invoiceOptions.showItemQRCodes,
+    };
+  };
+
+  const handleInvoiceOptionsGenerate = async (options: InvoiceGenerationOptions) => {
+    setInvoiceOptions(options);
+    setShowInvoiceOptions(false);
+    
+    // Small delay to ensure state is updated
+    setTimeout(async () => {
+      if (invoiceMode === 'print') {
+        // Create a hidden container for rendering the invoice
+        const hiddenContainer = document.createElement('div');
+        hiddenContainer.style.position = 'absolute';
+        hiddenContainer.style.left = '-9999px';
+        hiddenContainer.style.top = '0';
+        document.body.appendChild(hiddenContainer);
+        
+        // Render invoice to hidden container
+        const { createRoot } = await import('react-dom/client');
+        const root = createRoot(hiddenContainer);
+        
+        const invoiceData = generateInvoiceData();
+        root.render(<InvoiceTemplate data={invoiceData} />);
+        
+        // Wait for render, then print
+        setTimeout(() => {
+          const printContent = hiddenContainer.querySelector('div');
+          if (printContent) {
+            // Create a hidden iframe for printing
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+            
+            const iframeDoc = iframe.contentWindow?.document;
+            if (iframeDoc) {
+              iframeDoc.open();
+              iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Print Invoice - ${order?.poNumber}</title>
+                    <meta charset="utf-8">
+                    <style>
+                      * { margin: 0; padding: 0; box-sizing: border-box; }
+                      body { 
+                        font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        background: white;
+                        padding: 20px;
+                      }
+                      @media print {
+                        body { padding: 0; }
+                        @page { 
+                          margin: 1cm;
+                          size: A4 portrait;
+                        }
+                      }
+                      /* Tailwind-like utilities */
+                      .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+                      .text-xs { font-size: 0.75rem; line-height: 1rem; }
+                      .text-base { font-size: 1rem; line-height: 1.5rem; }
+                      .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+                      .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+                      .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+                      .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+                      .text-\\[10px\\] { font-size: 10px; line-height: 14px; }
+                      .font-bold { font-weight: 700; }
+                      .font-semibold { font-weight: 600; }
+                      .font-medium { font-weight: 500; }
+                      .font-normal { font-weight: 400; }
+                      .text-gray-500 { color: #6b7280; }
+                      .text-gray-600 { color: #4b5563; }
+                      .text-gray-700 { color: #374151; }
+                      .text-gray-800 { color: #1f2937; }
+                      .text-gray-900 { color: #111827; }
+                      .text-black { color: #000; }
+                      .text-white { color: #fff; }
+                      .text-blue-600 { color: #2563eb; }
+                      .text-red-600 { color: #dc2626; }
+                      .text-green-600 { color: #16a34a; }
+                      .bg-black { background-color: #000; }
+                      .bg-white { background-color: #fff; }
+                      .bg-gray-50 { background-color: #f9fafb; }
+                      .bg-gray-800 { background-color: #1f2937; }
+                      .bg-gray-900 { background-color: #111827; }
+                      .border { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
+                      .border-2 { border-width: 2px; }
+                      .border-4 { border-width: 4px; }
+                      .border-t { border-top-width: 1px; border-top-style: solid; }
+                      .border-t-2 { border-top-width: 2px; border-top-style: solid; }
+                      .border-b-4 { border-bottom-width: 4px; border-bottom-style: solid; }
+                      .border-black { border-color: #000; }
+                      .border-gray-300 { border-color: #d1d5db; }
+                      .border-gray-800 { border-color: #1f2937; }
+                      .border-gray-900 { border-color: #111827; }
+                      .p-2 { padding: 0.5rem; }
+                      .p-3 { padding: 0.75rem; }
+                      .p-4 { padding: 1rem; }
+                      .p-6 { padding: 1.5rem; }
+                      .p-8 { padding: 2rem; }
+                      .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+                      .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+                      .px-4 { padding-left: 1rem; padding-right: 1rem; }
+                      .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+                      .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+                      .py-1\\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+                      .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+                      .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+                      .pb-4 { padding-bottom: 1rem; }
+                      .pb-6 { padding-bottom: 1.5rem; }
+                      .pt-2 { padding-top: 0.5rem; }
+                      .pt-3 { padding-top: 0.75rem; }
+                      .pt-4 { padding-top: 1rem; }
+                      .pt-6 { padding-top: 1.5rem; }
+                      .p-2\\.5 { padding: 0.625rem; }
+                      .px-2\\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+                      .py-1\\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+                      .mb-1 { margin-bottom: 0.25rem; }
+                      .mb-1\\.5 { margin-bottom: 0.375rem; }
+                      .mb-2 { margin-bottom: 0.5rem; }
+                      .mb-3 { margin-bottom: 0.75rem; }
+                      .mb-4 { margin-bottom: 1rem; }
+                      .mb-6 { margin-bottom: 1.5rem; }
+                      .mt-0\\.5 { margin-top: 0.125rem; }
+                      .mt-1 { margin-top: 0.25rem; }
+                      .mt-1\\.5 { margin-top: 0.375rem; }
+                      .mt-2 { margin-top: 0.5rem; }
+                      .mt-4 { margin-top: 1rem; }
+                      .mt-6 { margin-top: 1.5rem; }
+                      .mt-8 { margin-top: 2rem; }
+                      .ml-4 { margin-left: 1rem; }
+                      .ml-6 { margin-left: 1.5rem; }
+                      .gap-1\\.5 { gap: 0.375rem; }
+                      .gap-2 { gap: 0.5rem; }
+                      .gap-4 { gap: 1rem; }
+                      .gap-6 { gap: 1.5rem; }
+                      .space-y-0\\.5 > * + * { margin-top: 0.125rem; }
+                      .space-y-1 > * + * { margin-top: 0.25rem; }
+                      .space-y-1\\.5 > * + * { margin-top: 0.375rem; }
+                      .space-y-2 > * + * { margin-top: 0.5rem; }
+                      .w-72 { width: 18rem; }
+                      .w-80 { width: 20rem; }
+                      .h-2\\.5 { height: 0.625rem; }
+                      .h-3 { height: 0.75rem; }
+                      .h-4 { height: 1rem; }
+                      .h-6 { height: 1.5rem; }
+                      .h-8 { height: 2rem; }
+                      .h-12 { height: 3rem; }
+                      .h-16 { height: 4rem; }
+                      .w-2\\.5 { width: 0.625rem; }
+                      .w-3 { width: 0.75rem; }
+                      .w-4 { width: 1rem; }
+                      .w-6 { width: 1.5rem; }
+                      .w-8 { width: 2rem; }
+                      .print\\:p-3:is([data-print]) { padding: 0.75rem; }
+                      .flex { display: flex; }
+                      .inline-block { display: inline-block; }
+                      .flex-shrink-0 { flex-shrink: 0; }
+                      .items-center { align-items: center; }
+                      .items-start { align-items: flex-start; }
+                      .items-end { align-items: flex-end; }
+                      .justify-between { justify-content: space-between; }
+                      .justify-center { justify-content: center; }
+                      .justify-end { justify-content: flex-end; }
+                      .text-left { text-align: left; }
+                      .text-right { text-align: right; }
+                      .text-center { text-align: center; }
+                      .uppercase { text-transform: uppercase; }
+                      .tracking-wide { letter-spacing: 0.025em; }
+                      .whitespace-pre-line { white-space: pre-line; }
+                      .space-y-1 > * + * { margin-top: 0.25rem; }
+                      .space-y-2 > * + * { margin-top: 0.5rem; }
+                      table { width: 100%; border-collapse: collapse; }
+                      .w-full { width: 100%; }
+                      .w-80 { width: 20rem; }
+                      .flex-1 { flex: 1 1 0%; }
+                      .max-w-4xl { max-width: 56rem; margin: 0 auto; }
+                      .mx-auto { margin-left: auto; margin-right: auto; }
+                      .grid { display: grid; }
+                      .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                      svg { display: inline-block; vertical-align: middle; }
+                      .h-3 { height: 0.75rem; }
+                      .h-4 { height: 1rem; }
+                      .h-8 { height: 2rem; }
+                      .h-16 { height: 4rem; }
+                      .w-3 { width: 0.75rem; }
+                      .w-4 { width: 1rem; }
+                      .w-8 { width: 2rem; }
+                      .ml-6 { margin-left: 1.5rem; }
+                    </style>
+                  </head>
+                  <body>
+                    ${printContent.innerHTML}
+                  </body>
+                </html>
+              `);
+              iframeDoc.close();
+              
+              // Wait for content to load, then trigger print
+              iframe.onload = () => {
+                setTimeout(() => {
+                  iframe.contentWindow?.focus();
+                  iframe.contentWindow?.print();
+                  
+                  // Clean up after printing
+                  setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    root.unmount();
+                    document.body.removeChild(hiddenContainer);
+                  }, 100);
+                }, 100);
+              };
+            }
+          }
+        }, 300);
+      } else if (invoiceMode === 'pdf') {
+        setShowInvoicePreview(true);
+        // Small delay to ensure DOM is rendered
+        setTimeout(async () => {
+          if (invoiceRef.current && order) {
+            try {
+              const filename = `PO-${order?.poNumber}.pdf`;
+              await generatePDF(invoiceRef.current, {
+                filename,
+                orientation: 'portrait',
+                format: 'a4',
+                quality: 2,
+              });
+              toast({
+                title: 'PDF Generated',
+                description: `Invoice has been exported as ${filename}`,
+              });
+              setShowInvoicePreview(false);
+            } catch (error) {
+              toast({
+                title: 'Export Failed',
+                description: 'Failed to generate PDF. Please try again.',
+                variant: 'destructive',
+              });
+            }
+          }
+        }, 500);
+      }
+    }, 150);
   };
 
   const quickActions = (
@@ -661,6 +1198,7 @@ export const ModernPOOverlay = ({
   };
 
   return (
+    <>
     <ModernInventoryOverlay
       isOpen={isOpen}
       onClose={onClose}
@@ -683,10 +1221,10 @@ export const ModernPOOverlay = ({
             <div className="flex flex-col gap-4 p-6 overflow-y-auto">
 
               {/* Order Summary - Top */}
-              <Card>
+              <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
                     Order Summary
                   </CardTitle>
                 </CardHeader>
@@ -712,16 +1250,19 @@ export const ModernPOOverlay = ({
               </Card>
 
               {/* Vendor Information */}
-              <Card>
+              <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <User className="h-4 w-4 mr-2" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
                     Vendor Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="vendorSelect" className="text-xs font-medium text-muted-foreground">Select Vendor</Label>
+                    <Label htmlFor="vendorSelect" className="text-xs font-medium flex items-center gap-1">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      Select Vendor
+                    </Label>
                     <VendorAutosuggest
                       value={vendorName}
                       onChange={(value) => setVendorName(value)}
@@ -741,9 +1282,18 @@ export const ModernPOOverlay = ({
                     <div className="bg-muted/50 rounded-lg p-3 space-y-2">
                       <div className="text-xs font-medium text-muted-foreground">Vendor Details</div>
                       <div className="grid grid-cols-1 gap-2 text-sm">
-                        <div><span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}</div>
-                        <div><span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}</div>
-                        <div><span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}</div>
+                        <div className="flex items-center gap-1.5">
+                          <MailIcon className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-muted-foreground">Email:</span> {vendorEmail || 'Not provided'}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <PhoneIcon className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-muted-foreground">Phone:</span> {vendorPhone || 'Not provided'}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-muted-foreground">Address:</span> {vendorAddress || 'Not provided'}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -751,16 +1301,19 @@ export const ModernPOOverlay = ({
               </Card>
 
               {/* Shipping Address */}
-              <Card>
+              <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <Truck className="h-4 w-4 mr-2" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-primary" />
                     Shipping Address
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="shippingLocation" className="text-xs font-medium text-muted-foreground">Delivery Location</Label>
+                    <Label htmlFor="shippingLocation" className="text-xs font-medium flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                      Delivery Location
+                    </Label>
                     <LocationAutosuggest
                       value={shippingAddress}
                       onChange={(value) => setShippingAddress(value)}
@@ -774,16 +1327,19 @@ export const ModernPOOverlay = ({
               </Card>
 
               {/* Order Details */}
-              <Card>
+              <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
                     Order Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <Label htmlFor="orderDate" className="text-xs font-medium text-muted-foreground">Order Date</Label>
+                    <Label htmlFor="orderDate" className="text-xs font-medium flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      Order Date
+                    </Label>
                     <div className="mt-1">
                       <DatePicker
                         date={orderDate}
@@ -794,7 +1350,10 @@ export const ModernPOOverlay = ({
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="deliveryDate" className="text-xs font-medium text-muted-foreground">Expected Delivery</Label>
+                    <Label htmlFor="deliveryDate" className="text-xs font-medium flex items-center gap-1">
+                      <Truck className="h-3 w-3 text-green-600" />
+                      Expected Delivery
+                    </Label>
                     <div className="mt-1">
                       <DatePicker
                         date={deliveryDate}
@@ -805,7 +1364,10 @@ export const ModernPOOverlay = ({
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="paymentMethod" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+                    <Label htmlFor="paymentMethod" className="text-xs font-medium flex items-center gap-1">
+                      <CreditCard className="h-3 w-3 text-muted-foreground" />
+                      Payment Method
+                    </Label>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={!isEditMode && !!order}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select payment method" />
@@ -828,18 +1390,25 @@ export const ModernPOOverlay = ({
             <div className="flex flex-col gap-4 p-6 h-full">
 
               {/* Products Table - Top Section (75% of screen) */}
-              <Card className="flex flex-col" style={{ height: '75vh' }}>
+              <Card className="flex flex-col border-border/50 shadow-sm" style={{ height: '75vh' }}>
                 <CardHeader className="pb-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold flex items-center">
-                      <Package className="h-4 w-4 mr-2" />
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Package className="h-5 w-5 text-primary" />
                       Order Items ({items.length})
                     </CardTitle>
                     {(isEditMode || !order) && (
-                      <Button onClick={() => addItem()} size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Item
-                      </Button>
+                      <div className="flex gap-2">
+                        <ItemScanner 
+                          onItemScanned={handleItemScanned}
+                          existingItems={[]}
+                          disabled={isReadOnly}
+                        />
+                        <Button onClick={() => addItem()} size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Item
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardHeader>
@@ -950,10 +1519,10 @@ export const ModernPOOverlay = ({
               </Card>
 
               {/* Additional Notes - Bottom Section (25% of remaining space) */}
-              <Card className="flex-shrink-0">
+              <Card className="flex-shrink-0 border-border/50 shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center">
-                    <MessageSquare className="h-4 w-4 mr-2" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
                     Additional Notes
                   </CardTitle>
                 </CardHeader>
@@ -1123,10 +1692,17 @@ export const ModernPOOverlay = ({
                     Order Items ({items.length})
                   </CardTitle>
                   {(isEditMode || !order) && (
-                    <Button onClick={() => addItem()} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
+                    <div className="flex gap-2">
+                      <ItemScanner 
+                        onItemScanned={handleItemScanned}
+                        existingItems={[]}
+                        disabled={isReadOnly}
+                      />
+                      <Button onClick={() => addItem()} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -1265,5 +1841,46 @@ export const ModernPOOverlay = ({
         )}
       </div>
     </ModernInventoryOverlay>
+
+    {/* Invoice Options Dialog */}
+    <InvoiceOptionsDialog
+      isOpen={showInvoiceOptions}
+      onClose={() => {
+        setShowInvoiceOptions(false);
+        setInvoiceMode(null);
+      }}
+      onGenerate={handleInvoiceOptionsGenerate}
+      type={invoiceMode || 'print'}
+    />
+
+    {/* Invoice Preview Dialog */}
+    <Dialog open={showInvoicePreview} onOpenChange={setShowInvoicePreview}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <div className="print:p-0">
+          <InvoiceTemplate ref={invoiceRef} data={generateInvoiceData()} />
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Order Status Dialog */}
+    {order && (
+      <OrderStatusDialog
+        isOpen={showStatusDialog}
+        onClose={() => setShowStatusDialog(false)}
+        orderType="purchase"
+        orderNumber={order.poNumber}
+        currentStatus={order.status}
+        items={items.map((item, index) => ({
+          id: item.id || `item-${index}`,
+          name: item.name,
+          qty: item.qty,
+          fulfilledQty: item.fulfilledQty,
+          returnedQty: item.returnedQty,
+          damagedQty: item.damagedQty,
+        }))}
+        onStatusUpdate={handleStatusUpdate}
+      />
+    )}
+    </>
   );
 };

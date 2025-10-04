@@ -59,6 +59,30 @@ const SheetContent = React.forwardRef<
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
+      onPointerDownOutside={(e) => {
+        // Prevent accidental closure when interacting with inputs
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.closest('input') ||
+          target.closest('textarea')
+        ) {
+          e.preventDefault();
+        }
+      }}
+      onInteractOutside={(e) => {
+        // Allow normal interaction inside the sheet
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.closest('input') ||
+          target.closest('textarea')
+        ) {
+          e.preventDefault();
+        }
+      }}
       {...props}
     >
       {children}

@@ -117,3 +117,78 @@
 .btn-blue {
   @apply bg-blue-500 hover:bg-blue-600 text-white;
 }
+
+/* Print styles for invoices */
+@media print {
+  /* Hide everything except the invoice */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the invoice content */
+  .print\:block,
+  .print\:block * {
+    visibility: visible;
+  }
+  
+  /* Remove margins and padding from print */
+  @page {
+    margin: 0.5cm;
+    size: A4 portrait;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Hide dialog overlays and backgrounds */
+  [role="dialog"],
+  [data-radix-dialog-overlay],
+  .dialog-overlay {
+    display: none !important;
+  }
+  
+  /* Ensure invoice is visible */
+  .invoice-content {
+    display: block !important;
+    position: static !important;
+    visibility: visible !important;
+  }
+  
+  /* Prevent page breaks inside important elements */
+  .no-page-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Remove shadows and borders that don't print well */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+}
+
+/* Custom sleek scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 10px;
+  transition: background-color 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.8);
+}

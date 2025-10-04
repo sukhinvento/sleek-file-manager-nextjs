@@ -1,5 +1,6 @@
 // Sales Order Types
 export interface SalesOrderItem {
+  id?: string;
   name: string;
   qty: number;
   unitPrice: number;
@@ -7,6 +8,9 @@ export interface SalesOrderItem {
   subtotal: number;
   taxSlab?: number;
   saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
+  fulfilledQty?: number;
+  returnedQty?: number;
+  damagedQty?: number;
 }
 
 export interface SalesOrder {
@@ -18,7 +22,7 @@ export interface SalesOrder {
   customerAddress: string;
   orderDate: string;
   deliveryDate: string;
-  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Partially Shipped';
   items: SalesOrderItem[];
   total: number;
   dueDate: string;
@@ -31,10 +35,14 @@ export interface SalesOrder {
 
 // Stock Transfer Types
 export interface StockTransferItem {
+  id?: string;
   name: string;
   quantity: number;
   availableStock?: number;
   saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
+  fulfilledQty?: number;
+  returnedQty?: number;
+  damagedQty?: number;
 }
 
 export interface StockTransfer {
@@ -43,7 +51,7 @@ export interface StockTransfer {
   fromLocation: string;
   toLocation: string;
   items: StockTransferItem[];
-  status: 'Pending' | 'In Transit' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'In Transit' | 'Completed' | 'Cancelled' | 'Partially Received';
   requestDate: string;
   completedDate?: string;
   requestedBy: string;
@@ -101,6 +109,14 @@ export interface InventoryItem {
   description?: string;
   manufacturer?: string;
   saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
+  // Barcode & Tracking
+  barcode?: string;
+  barcodeType?: 'EAN-13' | 'UPC-A' | 'CODE-128' | 'CODE-39' | 'QR';
+  qrCode?: string;
+  rfidTag?: string;
+  rfidEnabled?: boolean;
+  serialNumbers?: string[];
+  trackingEnabled?: boolean;
 }
 
 // Common Types

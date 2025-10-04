@@ -1,4 +1,5 @@
 export interface PurchaseOrderItem {
+  id?: string;
   name: string;
   qty: number;
   unitPrice: number;
@@ -6,6 +7,9 @@ export interface PurchaseOrderItem {
   subtotal: number;
   taxSlab?: number;
   saleUnit?: 'Single Unit' | 'Strip' | 'Box' | 'Bottle' | 'Vial' | 'Pack' | 'Sachet';
+  fulfilledQty?: number;
+  returnedQty?: number;
+  damagedQty?: number;
 }
 
 export interface PurchaseOrderRemark {
@@ -26,7 +30,7 @@ export interface PurchaseOrder {
   orderDate: string;
   deliveryDate: string;
   fulfilmentDate: string | null;
-  status: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled' | 'Partial';
+  status: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled' | 'Partial' | 'Received' | 'Partially Received';
   items: PurchaseOrderItem[];
   total: number;
   paidAmount: number;

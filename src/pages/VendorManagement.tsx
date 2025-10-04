@@ -21,111 +21,18 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
-import { FilterModal } from '@/components/purchase-orders/FilterModal';
-import { SortModal } from '@/components/purchase-orders/SortModal';
+import { VendorFilterModal } from '@/components/vendor/VendorFilterModal';
+import { VendorSortModal } from '@/components/vendor/VendorSortModal';
 import { ModernVendorOverlay } from '@/components/vendor/ModernVendorOverlay';
 import { Vendor } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-
-// Extended vendor interface
-interface VendorWithRisk extends Vendor {
-  riskLevel: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-}
-
-// Sample vendor data
-const vendorsData: VendorWithRisk[] = [
-  {
-    id: '1',
-    vendorId: 'V001',
-    name: 'PharmaCorp Ltd',
-    contactPerson: 'John Anderson',
-    phone: '+1-555-0123',
-    email: 'john@pharmacorp.com',
-    address: '123 Industrial Blvd',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    country: 'USA',
-    category: 'Pharmaceuticals',
-    status: 'Active',
-    totalOrders: 45,
-    totalValue: 125000.50,
-    creditLimit: 50000.00,
-    outstandingBalance: 12500.00,
-    paymentTerms: 'Net 30',
-    registrationDate: '2023-01-15',
-    riskLevel: 'Low',
-    taxId: 'TAX123456789',
-    gstNumber: 'GST123456789',
-    website: 'www.pharmacorp.com',
-    bankName: 'Chase Bank',
-    accountNumber: '1234567890',
-    ifscCode: 'CHAS0001234'
-  },
-  {
-    id: '2',
-    vendorId: 'V002',
-    name: 'MedSupply Co',
-    contactPerson: 'Sarah Wilson',
-    phone: '+1-555-0124',
-    email: 'sarah@medsupply.com',
-    address: '456 Healthcare Ave',
-    city: 'Chicago',
-    state: 'IL',
-    zipCode: '60601',
-    country: 'USA',
-    category: 'Medical Supplies',
-    status: 'Active',
-    totalOrders: 32,
-    totalValue: 89000.25,
-    creditLimit: 30000.00,
-    outstandingBalance: 8500.00,
-    paymentTerms: 'Net 15',
-    registrationDate: '2023-03-20',
-    riskLevel: 'Medium',
-    taxId: 'TAX987654321',
-    gstNumber: 'GST987654321',
-    website: 'www.medsupply.com',
-    bankName: 'Bank of America',
-    accountNumber: '9876543210',
-    ifscCode: 'BOFA0009876'
-  },
-  {
-    id: '3',
-    vendorId: 'V003',
-    name: 'Equipment Plus',
-    contactPerson: 'Mike Johnson',
-    phone: '+1-555-0125',
-    email: 'mike@equipmentplus.com',
-    address: '789 Medical Dr',
-    city: 'Boston',
-    state: 'MA',
-    zipCode: '02101',
-    country: 'USA',
-    category: 'Medical Equipment',
-    status: 'Inactive',
-    totalOrders: 18,
-    totalValue: 245000.00,
-    creditLimit: 100000.00,
-    outstandingBalance: 25000.00,
-    paymentTerms: 'Net 45',
-    registrationDate: '2022-11-10',
-    riskLevel: 'High',
-    taxId: 'TAX456789123',
-    gstNumber: 'GST456789123',
-    website: 'www.equipmentplus.com',
-    bankName: 'Wells Fargo',
-    accountNumber: '4567891230',
-    ifscCode: 'WELL0004567'
-  }
-];
+import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
+import { countActiveFilters } from '@/lib/filterUtils';
+import * as vendorService from '@/services/vendorService';
+import { VendorWithRisk } from '@/services/vendorService';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -138,7 +45,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border`}>
+    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
   );
@@ -155,7 +62,7 @@ const RiskBadge = ({ level }: { level: string }) => {
   };
 
   return (
-    <Badge variant="outline" className={`${getStatusColor(level)} text-xs`}>
+    <Badge variant="outline" className={`${getStatusColor(level)} text-xs pointer-events-none`}>
       {level} Risk
     </Badge>
   );
@@ -165,7 +72,16 @@ export const VendorManagement = () => {
   const isMobile = useIsMobile();
   
   // Data state
-  const [vendors, setVendors] = useState<VendorWithRisk[]>(vendorsData);
+  const [vendors, setVendors] = useState<VendorWithRisk[]>([]);
+  const [stats, setStats] = useState({
+    totalVendors: 0,
+    activeVendors: 0,
+    totalValue: 0,
+    outstandingBalance: 0,
+    averageOrderValue: 0,
+    highRiskVendors: 0
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -182,6 +98,59 @@ export const VendorManagement = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  // Filter states
+  const [selectedFilters, setSelectedFilters] = useState({
+    vendorId: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    city: '',
+    state: '',
+    category: '',
+    status: '',
+    paymentTerms: '',
+    registrationDateRange: undefined,
+    creditLimitRange: { min: '', max: '' },
+    outstandingBalanceRange: { min: '', max: '' }
+  });
+  
+  // Sort state
+  const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
+
+  // Load vendors from service
+  const loadVendors = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await vendorService.fetchVendors();
+      setVendors(data);
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load vendors. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Load stats from service
+  const loadStats = async () => {
+    try {
+      const statsData = await vendorService.fetchVendorStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    loadVendors();
+    loadStats();
+  }, []);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -199,6 +168,11 @@ export const VendorManagement = () => {
   const statuses = ['All', ...Array.from(new Set(vendors.map(vendor => vendor.status)))];
   const categories = ['All', ...Array.from(new Set(vendors.map(vendor => vendor.category)))];
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
+  const hasFilters = activeFilterCount > 0;
+  const hasSort = sortConfig.field !== 'name' || sortConfig.direction !== 'asc';
+
   // Filter logic
   const filteredVendors = useMemo(() => {
     return vendors.filter(vendor => {
@@ -211,9 +185,31 @@ export const VendorManagement = () => {
       const matchesStatus = selectedStatus === 'All' || vendor.status === selectedStatus;
       const matchesCategory = selectedCategory === 'All' || vendor.category === selectedCategory;
       
-      return matchesSearch && matchesStatus && matchesCategory;
+      const matchesVendorId = !selectedFilters.vendorId || vendor.vendorId.toLowerCase().includes(selectedFilters.vendorId.toLowerCase());
+      const matchesContactPerson = !selectedFilters.contactPerson || vendor.contactPerson.toLowerCase().includes(selectedFilters.contactPerson.toLowerCase());
+      const matchesPhone = !selectedFilters.phone || vendor.phone.toLowerCase().includes(selectedFilters.phone.toLowerCase());
+      const matchesEmail = !selectedFilters.email || vendor.email.toLowerCase().includes(selectedFilters.email.toLowerCase());
+      const matchesCity = !selectedFilters.city || vendor.city?.toLowerCase().includes(selectedFilters.city.toLowerCase());
+      const matchesState = !selectedFilters.state || vendor.state?.toLowerCase().includes(selectedFilters.state.toLowerCase());
+      const matchesFilterCategory = !selectedFilters.category || selectedFilters.category === 'All' || vendor.category === selectedFilters.category;
+      const matchesFilterStatus = !selectedFilters.status || selectedFilters.status === 'All' || vendor.status === selectedFilters.status;
+      const matchesPaymentTerms = !selectedFilters.paymentTerms || vendor.paymentTerms.toLowerCase().includes(selectedFilters.paymentTerms.toLowerCase());
+      
+      const matchesRegDateRange = !selectedFilters.registrationDateRange?.from || 
+        (new Date(vendor.registrationDate) >= new Date(selectedFilters.registrationDateRange.from) &&
+         (!selectedFilters.registrationDateRange.to || new Date(vendor.registrationDate) <= new Date(selectedFilters.registrationDateRange.to)));
+      
+      const matchesCreditLimit = (!selectedFilters.creditLimitRange?.min || vendor.creditLimit >= Number(selectedFilters.creditLimitRange.min)) &&
+        (!selectedFilters.creditLimitRange?.max || vendor.creditLimit <= Number(selectedFilters.creditLimitRange.max));
+      
+      const matchesOutstanding = (!selectedFilters.outstandingBalanceRange?.min || vendor.outstandingBalance >= Number(selectedFilters.outstandingBalanceRange.min)) &&
+        (!selectedFilters.outstandingBalanceRange?.max || vendor.outstandingBalance <= Number(selectedFilters.outstandingBalanceRange.max));
+      
+      return matchesSearch && matchesStatus && matchesCategory && matchesVendorId && matchesContactPerson &&
+        matchesPhone && matchesEmail && matchesCity && matchesState && matchesFilterCategory && matchesFilterStatus &&
+        matchesPaymentTerms && matchesRegDateRange && matchesCreditLimit && matchesOutstanding;
     });
-  }, [vendors, searchTerm, selectedStatus, selectedCategory]);
+  }, [vendors, searchTerm, selectedStatus, selectedCategory, selectedFilters]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
@@ -231,16 +227,19 @@ export const VendorManagement = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedStatus, selectedCategory]);
-
-  // Calculate summary metrics
-  const totalVendors = vendors.length;
-  const activeVendors = vendors.filter(vendor => vendor.status === 'Active').length;
-  const totalValue = vendors.reduce((sum, vendor) => sum + vendor.totalValue, 0);
-  const totalOutstanding = vendors.reduce((sum, vendor) => sum + vendor.outstandingBalance, 0);
-  const highRiskVendors = vendors.filter(vendor => vendor.riskLevel === 'High').length;
+  }, [searchTerm, selectedStatus, selectedCategory, selectedFilters]);
 
   // Event handlers
+  const handleApplyFilters = (filters: any) => {
+    setSelectedFilters(filters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplySort = (sortConfig: { field: string; direction: 'asc' | 'desc' }) => {
+    setSortConfig(sortConfig);
+    setIsSortModalOpen(false);
+  };
+
   const handleViewVendor = (vendor: VendorWithRisk) => {
     setEditingVendor(vendor);
     setIsEditMode(false);
@@ -251,12 +250,54 @@ export const VendorManagement = () => {
     setIsEditMode(true);
   };
 
-  const handleDeleteVendor = (vendorId: string) => {
-    setVendors(vendors.filter(vendor => vendor.vendorId !== vendorId));
-    toast({
-      title: "Vendor Deleted",
-      description: "Vendor has been successfully deleted.",
-    });
+  const handleDeleteVendor = async (vendorId: string) => {
+    try {
+      await vendorService.deleteVendor(vendorId);
+      await loadVendors();
+      await loadStats();
+      toast({
+        title: "Success",
+        description: "Vendor deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete vendor. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveVendor = async (vendorData: VendorWithRisk) => {
+    try {
+      if (vendorData.id && (vendorData.id.startsWith('v-') || vendorData.id.match(/^\d+$/))) {
+        // Update existing vendor
+        await vendorService.updateVendor(vendorData.id, vendorData);
+        toast({
+          title: "Success",
+          description: "Vendor updated successfully.",
+        });
+      } else {
+        // Create new vendor
+        await vendorService.createVendor(vendorData);
+        toast({
+          title: "Success",
+          description: "Vendor created successfully.",
+        });
+      }
+      await loadVendors();
+      await loadStats();
+      setIsAddVendorOpen(false);
+      setEditingVendor(null);
+    } catch (error) {
+      console.error('Error saving vendor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save vendor. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -271,7 +312,7 @@ export const VendorManagement = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Vendors</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalVendors}</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalVendors}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
@@ -310,7 +351,7 @@ export const VendorManagement = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Active</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{activeVendors}</div>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.activeVendors}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
@@ -339,13 +380,13 @@ export const VendorManagement = () => {
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        strokeDasharray={`${(activeVendors / totalVendors) * 75.4} 75.4`}
+                        strokeDasharray={`${(stats.activeVendors / stats.totalVendors) * 75.4} 75.4`}
                         className="text-emerald-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-[10px] font-bold text-emerald-700 leading-none">
-                        {Math.round((activeVendors / totalVendors) * 100)}%
+                        {Math.round((stats.activeVendors / stats.totalVendors) * 100)}%
                       </span>
                     </div>
                   </div>
@@ -366,7 +407,7 @@ export const VendorManagement = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Total Value</p>
                     <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                      ${(totalValue / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.totalValue)}
                     </div>
                   </div>
                   <div className="relative">
@@ -380,7 +421,7 @@ export const VendorManagement = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
                     <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <span className="text-purple-600">Vendors: {totalVendors}</span>
+                    <span className="text-purple-600">Vendors: {stats.totalVendors}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-purple-700 font-medium">
                     <TrendingUp className="h-3 w-3" />
@@ -400,7 +441,7 @@ export const VendorManagement = () => {
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Outstanding</p>
                     <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                      ${(totalOutstanding / 1000).toFixed(0)}K
+                      {formatIndianCurrency(stats.outstandingBalance)}
                     </div>
                   </div>
                   <div className="relative">
@@ -416,10 +457,10 @@ export const VendorManagement = () => {
                     <div className="flex-1 bg-amber-200 rounded-full h-1.5">
                       <div 
                         className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(totalOutstanding / totalValue) * 100}%` }}
+                        style={{ width: `${stats.totalValue > 0 ? (stats.outstandingBalance / stats.totalValue) * 100 : 0}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-amber-700">{Math.round((totalOutstanding / totalValue) * 100)}%</span>
+                    <span className="text-xs font-medium text-amber-700">{stats.totalValue > 0 ? Math.round((stats.outstandingBalance / stats.totalValue) * 100) : 0}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -434,7 +475,7 @@ export const VendorManagement = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">High Risk</p>
-                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{highRiskVendors}</div>
+                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{stats.highRiskVendors}</div>
                   </div>
                   <div className="relative">
                     <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
@@ -447,7 +488,7 @@ export const VendorManagement = () => {
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-red-600">Risk Level</span>
-                    <span className="text-xs font-bold text-red-700">{Math.round((highRiskVendors / totalVendors) * 100)}%</span>
+                    <span className="text-xs font-bold text-red-700">{Math.round((stats.highRiskVendors / stats.totalVendors) * 100)}%</span>
                   </div>
                   <div className="grid grid-cols-6 gap-px">
                     {[2, 1, 3, 0, 1, 2].map((height, i) => (
@@ -500,11 +541,26 @@ export const VendorManagement = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <Filter className="mr-1 h-4 w-4" /> 
               Filters
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsSortModalOpen(true)}
+              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
+            >
               <ArrowUpDown className="mr-1 h-4 w-4" /> 
               Sort
             </Button>
@@ -541,11 +597,28 @@ export const VendorManagement = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsFilterModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3" 
+              onClick={() => setIsFilterModalOpen(true)}
+              {...(hasFilters && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <Filter className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Filters</span>
+              {hasFilters && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setIsSortModalOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="px-2 sm:px-3" 
+              onClick={() => setIsSortModalOpen(true)}
+              {...(hasSort && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
+            >
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -558,16 +631,31 @@ export const VendorManagement = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block">
           <Card className="border-border/50 shadow-sm">
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading vendors...</p>
+                </div>
+              </div>
+            ) : currentPageData.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-2">
+                  <Building2 className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No vendors found</p>
+                </div>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Vendor Details</TableHead>
-                    <TableHead className="font-semibold">Contact Info</TableHead>
-                    <TableHead className="font-semibold">Category & Status</TableHead>
-                    <TableHead className="font-semibold">Performance</TableHead>
-                    <TableHead className="font-semibold">Financial</TableHead>
-                    <TableHead className="font-semibold w-12"></TableHead>
+                    <TableHead className="font-semibold w-[20%]">Vendor Details</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Contact Info</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Category & Status</TableHead>
+                    <TableHead className="font-semibold w-[19%]">Performance</TableHead>
+                    <TableHead className="font-semibold w-[20%]">Financial</TableHead>
+                    <TableHead className="font-semibold w-[5%]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -597,12 +685,14 @@ export const VendorManagement = () => {
                         </div>
                       </TableCell>
                        <TableCell>
-                         <div className="flex flex-wrap gap-1">
-                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                             {vendor.category}
-                           </Badge>
-                           <StatusBadge status={vendor.status} />
-                           <RiskBadge level={vendor.riskLevel} />
+                         <div className="space-y-1">
+                           <div>
+                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 pointer-events-none">
+                               {vendor.category}
+                             </Badge>
+                           </div>
+                           <div><StatusBadge status={vendor.status} /></div>
+                           <div><RiskBadge level={vendor.riskLevel} /></div>
                          </div>
                        </TableCell>
                       <TableCell>
@@ -610,19 +700,19 @@ export const VendorManagement = () => {
                           <div className="text-lg font-bold">{vendor.totalOrders}</div>
                           <div className="text-xs text-muted-foreground">Orders</div>
                           <div className="text-sm font-semibold text-green-600">
-                            ${(vendor.totalValue / 1000).toFixed(0)}K
+                            {formatIndianCurrency(vendor.totalValue)}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="text-sm">
-                            Credit: ${(vendor.creditLimit / 1000).toFixed(0)}K
+                            Credit: {formatIndianCurrency(vendor.creditLimit)}
                           </div>
                           <div className={`text-sm font-semibold ${
                             vendor.outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            Outstanding: ${(vendor.outstandingBalance / 1000).toFixed(0)}K
+                            Outstanding: {formatIndianCurrency(vendor.outstandingBalance)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {vendor.paymentTerms}
@@ -662,10 +752,11 @@ export const VendorManagement = () => {
                 </TableBody>
               </Table>
             </div>
+            )}
           </Card>
 
           {/* Desktop Pagination */}
-          {!isMobile && totalPages > 1 && (
+          {!isMobile && !isLoadingData && totalPages > 1 && (
             <div className="flex justify-center">
               <Pagination>
                 <PaginationContent>
@@ -704,7 +795,7 @@ export const VendorManagement = () => {
         {/* Mobile Cards View */}
         <div className="md:hidden">
           {mobileDisplayedItems.map((vendor: VendorWithRisk) => (
-              <Card key={vendor.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg">
+              <Card key={vendor.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewVendor(vendor)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
@@ -715,7 +806,10 @@ export const VendorManagement = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleViewVendor(vendor)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewVendor(vendor);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-4 w-4" />
@@ -723,7 +817,10 @@ export const VendorManagement = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleEditVendor(vendor)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditVendor(vendor);
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
@@ -731,7 +828,10 @@ export const VendorManagement = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleDeleteVendor(vendor.vendorId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteVendor(vendor.vendorId);
+                        }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -764,7 +864,7 @@ export const VendorManagement = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Total Value</p>
-                      <p className="font-bold text-green-600">${(vendor.totalValue / 1000).toFixed(0)}K</p>
+                      <p className="font-bold text-green-600">{formatIndianCurrency(vendor.totalValue)}</p>
                     </div>
                   </div>
                  </CardContent>
@@ -774,18 +874,17 @@ export const VendorManagement = () => {
       </div>
 
       {/* Filter and Sort Modals */}
-      <FilterModal
+      <VendorFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApplyFilters={() => {}}
-        vendors={categories}
-        statuses={statuses}
+        onApplyFilters={handleApplyFilters}
+        categories={categories}
       />
       
-      <SortModal
+      <VendorSortModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
-        onApplySort={() => {}}
+        onApplySort={handleApplySort}
       />
 
       {/* Vendor Modal */}
@@ -798,19 +897,9 @@ export const VendorManagement = () => {
           setIsEditMode(false);
         }}
         isEdit={isEditMode}
-        onSave={(newVendor: any) => {
-          setVendors([...vendors, newVendor]);
-          setIsAddVendorOpen(false);
-        }}
-        onUpdate={(updatedVendor: any) => {
-          setVendors(vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v));
-          setEditingVendor(null);
-          setIsEditMode(false);
-        }}
-        onDelete={(vendorId: string) => {
-          setVendors(vendors.filter(v => v.vendorId !== vendorId));
-          setEditingVendor(null);
-        }}
+        onSave={handleSaveVendor}
+        onUpdate={handleSaveVendor}
+        onDelete={handleDeleteVendor}
       />
     </div>
   );
