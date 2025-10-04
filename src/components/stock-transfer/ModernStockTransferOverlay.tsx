@@ -152,7 +152,7 @@ export const ModernStockTransferOverlay = ({
       setReason('');
       setExpectedDate('');
     }
-    setIsEditMode(isEdit);
+    setIsEditMode(isEdit || !transfer);
   }, [transfer, isEdit]);
 
   const isReadOnly = transfer?.status === 'Completed' || transfer?.status === 'Cancelled';

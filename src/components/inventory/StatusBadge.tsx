@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, CheckCircle, XCircle, Truck, Package, DollarSign } from 'lucide-react';
 
-type OrderStatus = 'Pending' | 'Approved' | 'Delivered' | 'Cancelled' | 'Shipped' | 'Processing' | 'In Transit' | 'Completed';
+type OrderStatus = 'Pending' | 'Approved' | 'Delivered' | 'Cancelled' | 'Shipped' | 'Processing' | 'In Transit' | 'Completed' | 'Partially Shipped';
 type StockStatus = 'critical' | 'low' | 'normal';
 type PaymentStatus = 'Paid' | 'Pending' | 'Overdue' | 'Partial';
 
@@ -34,6 +34,11 @@ const getStatusConfig = (status: string, type: string) => {
         className: 'status-badge-approved', 
         icon: Truck,
         label: 'Shipped' 
+      },
+      'Partially Shipped': { 
+        className: 'status-badge-pending', 
+        icon: Truck,
+        label: 'Partially Shipped' 
       },
       'In Transit': { 
         className: 'status-badge-approved', 

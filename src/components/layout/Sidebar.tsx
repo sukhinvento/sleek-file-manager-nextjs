@@ -1,5 +1,6 @@
 import { useState, Dispatch, SetStateAction } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import medSystemLogo from '@/assets/medsystem-logo.svg';
 import {
   LayoutDashboard,
   LineChart,
@@ -58,8 +59,9 @@ export const Sidebar = ({
       } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
     >
       <div className="flex items-center h-16 px-4 border-b border-gray-800">
-        <div className="flex-1 overflow-hidden">
-          <div className={`text-lg sm:text-xl font-bold text-white whitespace-nowrap nav-text ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="flex-1 overflow-hidden flex items-center gap-3">
+          <img src={medSystemLogo} alt="MedSystem" className="h-10 w-10 flex-shrink-0" />
+          <div className={`text-lg sm:text-xl font-bold text-white whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
             MedSystem
           </div>
         </div>
@@ -91,6 +93,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Dashboard"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
@@ -102,6 +105,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Patients"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Patients</span>
@@ -118,6 +122,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Inventory Dashboard"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Dashboard</span>
@@ -129,6 +134,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Inventory Management"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Management</span>
@@ -140,6 +146,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Purchase Orders"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
@@ -151,6 +158,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Sales Orders"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
@@ -162,6 +170,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Vendor Management"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
@@ -173,6 +182,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Stock Transfer"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
@@ -189,6 +199,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Billing"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
@@ -199,6 +210,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Diagnostics"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Diagnostics</span>
@@ -215,6 +227,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Upload Files"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
@@ -225,6 +238,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="View Files"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
@@ -235,6 +249,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Edit Files"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
@@ -245,6 +260,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Consolidated Data View"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data</span>
@@ -261,6 +277,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Usage Stats"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
@@ -271,6 +288,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Trends"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
@@ -281,6 +299,7 @@ export const Sidebar = ({
                 isCollapsed ? 'justify-center px-2' : ''
               }`}
               title="Distribution"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
@@ -295,6 +314,7 @@ export const Sidebar = ({
               isCollapsed ? 'justify-center px-2' : ''
             }`}
             title="Settings"
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Settings</span>
