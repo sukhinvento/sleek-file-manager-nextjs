@@ -457,198 +457,211 @@ export const ModernStockTransferOverlay = ({
       subtitle={transfer ? `Requested on ${transfer.requestDate}` : 'Create a new stock transfer request'}
       status={transfer?.status}
       statusColor={transfer?.status ? statusColors[transfer.status] : 'pending'}
-      size="medium"
       headerActions={headerActions}
       quickActions={quickActions}
+      size="wide"
     >
-      <div className="flex h-full overflow-x-hidden overflow-y-auto bg-gradient-to-br from-background to-muted/20">
-        {/* Left Panel - Transfer Information */}
-        <div className="w-80 border-r border-border/50 bg-background/50 backdrop-blur-sm overflow-y-auto">
-          <div className="p-4 sm:p-6 space-y-6">
-            {/* Location Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Transfer Locations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="from-location" className="text-xs font-medium flex items-center gap-1">
-                    <Send className="h-3 w-3 text-blue-600" />
-                    From Location
-                  </Label>
-                  <Select value={fromLocation} onValueChange={setFromLocation} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select source location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map(location => (
-                        <SelectItem key={location} value={location}>{location}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center justify-center py-2">
-                  <ArrowRight className="h-5 w-5 text-green-600" />
-                </div>
-                
-                <div>
-                  <Label htmlFor="to-location" className="text-xs font-medium flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-green-600" />
-                    To Location
-                  </Label>
-                  <Select value={toLocation} onValueChange={setToLocation} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select destination location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map(location => (
-                        <SelectItem key={location} value={location}>{location}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Two Column Layout */}
+      <div className="grid h-full" style={{ gridTemplateColumns: '30% 70%' }}>
 
-            {/* Request Information */}
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  Request Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="requested-by" className="text-xs font-medium flex items-center gap-1">
-                    <User className="h-3 w-3 text-muted-foreground" />
-                    Requested By
-                  </Label>
-                  <Input
-                    id="requested-by"
-                    value={requestedBy}
-                    onChange={(e) => setRequestedBy(e.target.value)}
-                    disabled={!isEditMode}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter requester name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="priority" className="text-xs font-medium flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3 text-muted-foreground" />
-                    Priority
-                  </Label>
-                  <Select value={priority} onValueChange={setPriority} disabled={!isEditMode}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          Low
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Medium">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                          Medium
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="High">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          High
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Urgent">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500" />
-                          Urgent
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="expected-date" className="text-xs font-medium flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    Expected Completion
-                  </Label>
-                  <Input
-                    id="expected-date"
-                    type="date"
-                    value={expectedDate}
-                    onChange={(e) => setExpectedDate(e.target.value)}
-                    disabled={!isEditMode}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="reason" className="text-xs font-medium flex items-center gap-1">
-                    <FileText className="h-3 w-3 text-muted-foreground" />
-                    Reason for Transfer
-                  </Label>
-                  <Textarea
-                    id="reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    disabled={!isEditMode}
-                    className="text-sm resize-none mt-1"
-                    placeholder="Enter reason for transfer..."
-                    rows={4}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Left Column - Transfer Information */}
+        <div className="flex flex-col gap-4 p-6 overflow-y-auto">
+
+          {/* Location Information */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                Transfer Locations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="from-location" className="text-xs font-medium flex items-center gap-1">
+                  <Send className="h-3 w-3 text-blue-600" />
+                  From Location
+                </Label>
+                <Select value={fromLocation} onValueChange={setFromLocation} disabled={!isEditMode}>
+                  <SelectTrigger className="h-8 text-sm mt-1">
+                    <SelectValue placeholder="Select source location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>{location}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center justify-center py-2">
+                <ArrowRight className="h-5 w-5 text-green-600" />
+              </div>
+              
+              <div>
+                <Label htmlFor="to-location" className="text-xs font-medium flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-green-600" />
+                  To Location
+                </Label>
+                <Select value={toLocation} onValueChange={setToLocation} disabled={!isEditMode}>
+                  <SelectTrigger className="h-8 text-sm mt-1">
+                    <SelectValue placeholder="Select destination location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>{location}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Request Information */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Request Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="requested-by" className="text-xs font-medium flex items-center gap-1">
+                  <User className="h-3 w-3 text-muted-foreground" />
+                  Requested By
+                </Label>
+                <Input
+                  id="requested-by"
+                  value={requestedBy}
+                  onChange={(e) => setRequestedBy(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-8 text-sm mt-1"
+                  placeholder="Enter requester name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="priority" className="text-xs font-medium flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                  Priority
+                </Label>
+                <Select value={priority} onValueChange={setPriority} disabled={!isEditMode}>
+                  <SelectTrigger className="h-8 text-sm mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Low
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Medium">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        Medium
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="High">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        High
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Urgent">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                        Urgent
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="expected-date" className="text-xs font-medium flex items-center gap-1">
+                  <Calendar className="h-3 w-3 text-muted-foreground" />
+                  Expected Completion
+                </Label>
+                <Input
+                  id="expected-date"
+                  type="date"
+                  value={expectedDate}
+                  onChange={(e) => setExpectedDate(e.target.value)}
+                  disabled={!isEditMode}
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reason for Transfer */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Reason for Transfer
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                id="reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                disabled={!isEditMode}
+                className="text-sm resize-none"
+                placeholder="Enter reason for transfer..."
+                rows={4}
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Panel - Transfer Items */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="h-full p-4 sm:p-6">
-            <Card className="h-full border-border/50 shadow-sm">
-              <CardHeader className="pb-4 border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    Transfer Items
-                  </CardTitle>
-                  {isEditMode && !isReadOnly && (
-                    <div className="flex gap-2">
-                      <ItemScanner 
-                        onItemScanned={handleItemScanned}
-                        existingItems={[]}
-                        disabled={isReadOnly}
-                      />
-                      <Button onClick={addItem} size="sm" variant="outline">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Item
-                      </Button>
-                    </div>
-                  )}
+        {/* Right Column - Transfer Items Table */}
+        <div className="flex flex-col gap-4 p-6 h-full">
+
+          {/* Items Table - Takes 75% of screen */}
+          <Card className="flex flex-col border-border/50 shadow-sm" style={{ height: '75vh' }}>
+            <CardHeader className="pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  Transfer Items ({items.length})
+                </CardTitle>
+                {(isEditMode || !transfer) && (
+                  <div className="flex gap-2">
+                    <ItemScanner 
+                      onItemScanned={handleItemScanned}
+                      existingItems={[]}
+                      disabled={isReadOnly}
+                    />
+                    <Button onClick={addItem} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Item
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden">
+              {items.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                  No items added yet. Click "Add Item" to get started.
                 </div>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-0">
-                <div className="h-full overflow-y-auto">
+              ) : (
+                <div className="h-full overflow-auto" style={{ height: '60vh' }}>
                   <Table>
-                    <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Item Name</TableHead>
-                        <TableHead>Transfer Quantity</TableHead>
-                        <TableHead>Available Stock</TableHead>
-                        {isEditMode && !isReadOnly && <TableHead className="w-12"></TableHead>}
+                        <TableHead className="w-[45%]">Item Name</TableHead>
+                        <TableHead className="w-[20%]">Transfer Quantity</TableHead>
+                        <TableHead className="w-[20%]">Available Stock</TableHead>
+                        {(isEditMode || !transfer) && <TableHead className="w-[15%]"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {items.map((item, index) => (
                         <TableRow key={index}>
-                          <TableCell>
-                            {isEditMode && !isReadOnly ? (
+                          <TableCell className="p-2">
+                            {(isEditMode || !transfer) ? (
                               <Select
                                 value={item.name}
                                 onValueChange={(value) => updateItem(index, 'name', value)}
@@ -668,56 +681,49 @@ export const ModernStockTransferOverlay = ({
                               <span className="font-medium">{item.name}</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             <div className="flex items-center gap-2">
-                              {isEditMode && !isReadOnly ? (
+                              {(isEditMode || !transfer) ? (
                                 <Input
                                   type="number"
                                   value={item.quantity}
                                   onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                  className="w-24"
+                                  className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   min={1}
                                 />
                               ) : (
                                 <span>{item.quantity}</span>
                               )}
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap">
+                              <Badge variant="outline" className="text-xs whitespace-nowrap">
                                 {item.saleUnit || 'Unit'}
-                              </span>
+                              </Badge>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             <Badge variant="outline" className="bg-muted">
                               {item.availableStock || 0} units
                             </Badge>
                           </TableCell>
-                          {isEditMode && !isReadOnly && (
-                            <TableCell>
+                          {(isEditMode || !transfer) && (
+                            <TableCell className="p-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeItem(index)}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                               >
-                                <X className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           )}
                         </TableRow>
                       ))}
-                      {items.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                            No items added yet. Click "Add Item" to get started.
-                          </TableCell>
-                        </TableRow>
-                      )}
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </ModernInventoryOverlay>

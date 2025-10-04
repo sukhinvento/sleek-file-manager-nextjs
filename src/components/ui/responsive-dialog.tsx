@@ -64,7 +64,7 @@ export function ResponsiveDialogContent({
     return (
       <DrawerContent 
         className={cn(
-          "max-h-[96vh] flex flex-col p-0 rounded-t-[24px] bg-background border border-border",
+          "max-h-[70vh] flex flex-col p-0 rounded-t-[24px] bg-background border border-border",
           className
         )}
         {...props}
