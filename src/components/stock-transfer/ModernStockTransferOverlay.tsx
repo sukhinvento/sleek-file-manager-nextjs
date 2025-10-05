@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, Box, TrendingUp, FileText, Send, Smartphone, CheckCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,9 @@ export const ModernStockTransferOverlay = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (transfer) {
@@ -154,6 +157,37 @@ export const ModernStockTransferOverlay = ({
     }
     setIsEditMode(isEdit || !transfer);
   }, [transfer, isEdit]);
+
+  // Responsive layout detection
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const mq = window.matchMedia('(max-width: 1300px)');
+    const handleMQ = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsNarrowLayout(e.matches);
+    };
+    handleMQ(mq);
+    mq.addEventListener('change', handleMQ as any);
+
+    const el = containerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (el) {
+      const measureContainer = () => {
+        const cw = el.getBoundingClientRect().width;
+        if (cw < 600 && !mq.matches) {
+          setIsNarrowLayout(true);
+        }
+      };
+      measureContainer();
+      ro = new ResizeObserver(measureContainer);
+      ro.observe(el);
+    }
+
+    return () => {
+      mq.removeEventListener('change', handleMQ as any);
+      if (ro) ro.disconnect();
+    };
+  }, [isOpen]);
 
   const isReadOnly = transfer?.status === 'Completed' || transfer?.status === 'Cancelled';
 
@@ -461,11 +495,15 @@ export const ModernStockTransferOverlay = ({
       quickActions={quickActions}
       size="wide"
     >
-      {/* Two Column Layout */}
-      <div className="grid h-full" style={{ gridTemplateColumns: '30% 70%' }}>
+      {/* Responsive Layout */}
+      <div 
+        ref={containerRef}
+        className={isNarrowLayout ? "flex flex-col gap-4 overflow-y-auto" : "grid h-full"} 
+        style={isNarrowLayout ? {} : { gridTemplateColumns: '30% 70%' }}
+      >
 
-        {/* Left Column - Transfer Information */}
-        <div className="flex flex-col gap-4 p-6 overflow-y-auto">
+        {/* Left Column / Top Section - Transfer Information */}
+        <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 overflow-y-auto"}>
 
           {/* Location Information */}
           <Card className="border-border/50 shadow-sm">
@@ -615,11 +653,11 @@ export const ModernStockTransferOverlay = ({
           </Card>
         </div>
 
-        {/* Right Column - Transfer Items Table */}
-        <div className="flex flex-col gap-4 p-6 h-full">
+        {/* Right Column / Bottom Section - Transfer Items Table */}
+        <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 h-full"}>
 
-          {/* Items Table - Takes 75% of screen */}
-          <Card className="flex flex-col border-border/50 shadow-sm" style={{ height: '75vh' }}>
+          {/* Items Table */}
+          <Card className={isNarrowLayout ? "flex flex-col border-border/50 shadow-sm" : "flex flex-col border-border/50 shadow-sm"} style={isNarrowLayout ? {} : { height: '75vh' }}>
             <CardHeader className="pb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -641,13 +679,13 @@ export const ModernStockTransferOverlay = ({
                 )}
               </div>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden">
+            <CardContent className={isNarrowLayout ? "py-4" : "flex-1 overflow-hidden"}>
               {items.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                   No items added yet. Click "Add Item" to get started.
                 </div>
               ) : (
-                <div className="h-full overflow-auto" style={{ height: '60vh' }}>
+                <div className={isNarrowLayout ? "overflow-auto max-h-96" : "h-full overflow-auto"} style={isNarrowLayout ? {} : { height: '60vh' }}>
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
