@@ -231,7 +231,7 @@ export const ItemScanner = ({
       
       <ResponsiveDialog open={isOpen} onOpenChange={setIsOpen}>
         <ResponsiveDialogContent className="!max-w-[600px] max-w-[600px]">
-          <ResponsiveDialogHeader className="-mx-6 -mt-6 mb-4">
+          <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>
               <Camera className="h-5 w-5 text-white" />
               Item Scanner
