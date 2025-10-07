@@ -695,8 +695,92 @@ export const ModernStockTransferOverlay = ({
                 <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                   No items added yet. Click "Add Item" to get started.
                 </div>
+              ) : isNarrowLayout ? (
+                // Mobile/Narrow Layout: Card-based view
+                <div className="space-y-3 overflow-auto max-h-96">
+                  {items.map((item, index) => (
+                    <Card key={index} className="border">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Item Name</Label>
+                              {(isEditMode || !transfer) ? (
+                                <AutosuggestInput
+                                  value={item.name}
+                                  onChange={(value) => updateItem(index, 'name', value)}
+                                  onSelect={(stockItem) => {
+                                    updateItem(index, 'name', stockItem.name);
+                                    updateItem(index, 'availableStock', stockItem.stock || 0);
+                                    updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
+                                    updateItem(index, 'quantity', 1);
+                                    if (index === items.length - 1) {
+                                      addItem();
+                                    }
+                                  }}
+                                  placeholder="Search items..."
+                                />
+                              ) : (
+                                <div className="font-medium mt-1">{item.name}</div>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Transfer Quantity</Label>
+                                {(isEditMode || !transfer) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                                    className="mt-1 min-w-[60px]"
+                                    min={1}
+                                  />
+                                ) : (
+                                  <div className="mt-1 font-medium">{item.quantity}</div>
+                                )}
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-medium text-muted-foreground">Sale Unit</Label>
+                                <div className="mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.saleUnit || 'Unit'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Available Stock</Label>
+                              <div className="mt-1">
+                                <Badge variant="outline" className="bg-muted">
+                                  {item.availableStock || 0} units
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          {(isEditMode || !transfer) && (
+                            <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItem(index)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               ) : (
-                <div className={isNarrowLayout ? "overflow-auto max-h-96" : "h-full overflow-auto"} style={isNarrowLayout ? {} : { height: '60vh' }}>
+                // Desktop/Wide Layout: Table view
+                <div className="h-full overflow-auto" style={{ height: '60vh' }}>
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
