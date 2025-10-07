@@ -13,6 +13,9 @@ import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { ItemScanner } from '../scanner/ItemScanner';
 import { StockTransfer, StockTransferItem, InventoryItem } from '@/types/inventory';
 import { OrderStatusDialog, StatusUpdateData } from '../orders/OrderStatusDialog';
+import { AutosuggestInput } from '../purchase-orders/AutosuggestInput';
+import { DatePicker } from "@/components/ui/date-picker";
+import { StockItem } from '@/types/purchaseOrder';
 
 interface ModernStockTransferOverlayProps {
   transfer: StockTransfer | null;
@@ -191,15 +194,23 @@ export const ModernStockTransferOverlay = ({
 
   const isReadOnly = transfer?.status === 'Completed' || transfer?.status === 'Cancelled';
 
-  const addItem = () => {
+  const addItem = (stockItem?: StockItem) => {
     if (isReadOnly) return;
     
-    setItems([...items, { 
+    const newItem: StockTransferItem = stockItem ? {
+      name: stockItem.name,
+      quantity: 1,
+      availableStock: stockItem.stock || 0,
+      saleUnit: stockItem.saleUnit || 'Single Unit'
+    } : {
       name: '', 
       quantity: 1,
       availableStock: 0,
       saleUnit: 'Single Unit'
-    }]);
+    };
+    
+    // Add new item at the beginning to push existing items down
+    setItems([newItem, ...items]);
     
     toast({
       title: "Item Added",
@@ -619,14 +630,14 @@ export const ModernStockTransferOverlay = ({
                   <Calendar className="h-3 w-3 text-muted-foreground" />
                   Expected Completion
                 </Label>
-                <Input
-                  id="expected-date"
-                  type="date"
-                  value={expectedDate}
-                  onChange={(e) => setExpectedDate(e.target.value)}
-                  disabled={!isEditMode}
-                  className="h-8 text-sm mt-1"
-                />
+                <div className="mt-1">
+                  <DatePicker
+                    date={expectedDate ? new Date(expectedDate) : undefined}
+                    onDateChange={(date) => setExpectedDate(date ? date.toISOString().split('T')[0] : '')}
+                    placeholder="Select expected date"
+                    disabled={!isEditMode}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -671,7 +682,7 @@ export const ModernStockTransferOverlay = ({
                       existingItems={[]}
                       disabled={isReadOnly}
                     />
-                    <Button onClick={addItem} size="sm">
+                    <Button onClick={() => addItem()} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Item
                     </Button>
@@ -698,25 +709,24 @@ export const ModernStockTransferOverlay = ({
                     <TableBody>
                       {items.map((item, index) => (
                         <TableRow key={index}>
-                          <TableCell className="p-2">
+                          <TableCell className="relative overflow-visible p-2 break-words">
                             {(isEditMode || !transfer) ? (
-                              <Select
+                              <AutosuggestInput
                                 value={item.name}
-                                onValueChange={(value) => updateItem(index, 'name', value)}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select item" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {sampleItems.map(sampleItem => (
-                                    <SelectItem key={sampleItem.name} value={sampleItem.name}>
-                                      {sampleItem.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                onChange={(value) => updateItem(index, 'name', value)}
+                                onSelect={(stockItem) => {
+                                  updateItem(index, 'name', stockItem.name);
+                                  updateItem(index, 'availableStock', stockItem.stock || 0);
+                                  updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
+                                  updateItem(index, 'quantity', 1);
+                                  if (index === items.length - 1) {
+                                    addItem();
+                                  }
+                                }}
+                                placeholder="Search items..."
+                              />
                             ) : (
-                              <span className="font-medium">{item.name}</span>
+                              <span className="font-medium whitespace-normal break-words leading-tight">{item.name}</span>
                             )}
                           </TableCell>
                           <TableCell className="p-2">
@@ -726,7 +736,7 @@ export const ModernStockTransferOverlay = ({
                                   type="number"
                                   value={item.quantity}
                                   onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                  className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-20 min-w-[5rem] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   min={1}
                                 />
                               ) : (
