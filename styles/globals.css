@@ -92,25 +92,36 @@
   }
 }
 
-/* Nav styles for sidebar */
+/* Nav styles now managed via src/index.css enterprise-sidebar */
 .enterprise-sidebar {
-  @apply bg-[#1a202c] text-white;
+  background: hsl(var(--sidebar-bg, 220 26% 14%));
 }
 
 .nav-item {
-  @apply flex items-center px-4 py-2 text-gray-300 hover:bg-[#2d3748] rounded-md transition-colors;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
 }
 
 .nav-item.active {
-  @apply bg-[#2d3748] text-white;
+  background: hsl(199 89% 38% / 0.12);
+  color: hsl(199 89% 38%);
 }
 
 .nav-section {
-  @apply pt-6 pb-2;
+  padding-top: 1.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .nav-section-title {
-  @apply px-4 text-xs uppercase tracking-wider text-gray-500 font-semibold;
+  padding: 0 1.25rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
 /* Button styles */
