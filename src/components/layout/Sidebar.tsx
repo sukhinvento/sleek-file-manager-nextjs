@@ -58,25 +58,29 @@ export const Sidebar = ({
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
     >
-      <div className="flex items-center h-16 px-4 border-b border-gray-800">
+      <div className="flex items-center h-16 px-4" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
         <div className="flex-1 overflow-hidden flex items-center gap-3">
-          <img src={medSystemLogo} alt="MedSystem" className="h-10 w-10 flex-shrink-0" />
-          <div className={`text-lg sm:text-xl font-bold text-white whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+          <img src={medSystemLogo} alt="MedSystem" className="h-9 w-9 flex-shrink-0 rounded-lg" />
+          <div className={`text-lg font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
             MedSystem
           </div>
         </div>
         <div className="flex items-center flex-shrink-0">
           <button 
             onClick={toggleSidebar}
-            className="hidden lg:flex text-white p-1 rounded-md hover:bg-gray-700 transition-colors"
+            className="hidden lg:flex p-1.5 rounded-lg transition-colors"
+            style={{ color: 'hsl(var(--sidebar-text))' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--sidebar-hover))'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           
           <button 
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white ml-2"
+            className="lg:hidden ml-2"
+            style={{ color: 'hsl(var(--sidebar-text))' }}
           >
             &times;
           </button>

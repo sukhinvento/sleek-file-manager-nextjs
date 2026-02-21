@@ -137,22 +137,22 @@ export const AppLayout = ({
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
-  return <div className="flex h-screen w-full bg-[#f7fafc]">
+  return <div className="flex h-screen w-full bg-background">
       {/* Overlay for mobile when sidebar is open */}
-      {isMobileMenuOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+      {isMobileMenuOpen && <div className="fixed inset-0 z-40 lg:hidden overlay-backdrop" onClick={() => setIsMobileMenuOpen(false)} />}
       
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-[#1a202c] z-30 flex items-center justify-between px-4 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-4 lg:hidden border-b border-border bg-card">
         {/* Left - Hamburger Menu */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-          className="p-2 rounded-lg text-white hover:bg-gray-700 transition-colors flex-shrink-0"
+          className="p-2 rounded-lg text-foreground hover:bg-muted transition-colors flex-shrink-0"
         >
           <Menu size={20} />
         </button>
         
         {/* Center - Page Title */}
-        <span className="text-white text-lg font-semibold truncate flex-1 text-center">
+        <span className="text-foreground text-lg font-semibold truncate flex-1 text-center tracking-tight">
           {getPageTitle(location.pathname)}
         </span>
         
@@ -174,7 +174,7 @@ export const AppLayout = ({
             <Button
               variant="ghost"
               size="sm"
-              className="relative text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+              className="relative text-muted-foreground hover:text-foreground hover:bg-muted h-8 w-8 p-0"
             >
               <Bell className="h-4 w-4" />
               <Badge 
@@ -189,7 +189,7 @@ export const AppLayout = ({
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-gray-700 p-0">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-muted p-0">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="" alt="John Smith" />
                   <AvatarFallback className="bg-muted text-muted-foreground text-xs">
@@ -230,8 +230,8 @@ export const AppLayout = ({
       </div>
       
       <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen pt-14 lg:pt-16 bg-[#f7fafc] flex flex-col min-w-0">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 sm:py-6 min-w-0 bg-white">
+        <main className="h-screen pt-14 lg:pt-16 bg-background flex flex-col min-w-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 min-w-0">
             {children}
           </div>
         </main>
