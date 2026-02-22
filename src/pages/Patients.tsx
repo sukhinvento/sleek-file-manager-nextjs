@@ -431,115 +431,210 @@ export const Patients = () => {
       </div>
 
       {/* Patients Table Section */}
-      <Card className="border-border/50 shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="space-y-4">
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <Card className="border-border/50 shadow-sm">
+            <div className="overflow-x-auto">
+              {isLoadingData ? (
+                <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading patients...</p>
+                </div>
+              ) : filteredPatients.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                  <User className="h-12 w-12 text-muted-foreground opacity-50" />
+                  <div className="text-center space-y-2">
+                    <h3 className="font-semibold text-lg">No patients found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {searchTerm || selectedStatus !== 'All' 
+                        ? 'Try adjusting your filters' 
+                        : 'Get started by adding your first patient'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+              <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold w-[20%]">Patient Details</TableHead>
+                  <TableHead className="font-semibold w-[20%]">Contact Info</TableHead>
+                  <TableHead className="font-semibold w-[20%]">Medical Info</TableHead>
+                  <TableHead className="font-semibold w-[15%]">Status</TableHead>
+                  <TableHead className="font-semibold w-[15%]">Last Visit</TableHead>
+                  <TableHead className="font-semibold text-right w-[10%]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentPageData.map((patient) => (
+                  <TableRow key={patient.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{patient.name}</div>
+                        <div className="text-sm text-muted-foreground">ID: {patient.patientId}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {patient.age} years, {patient.gender}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center text-sm">
+                          <Phone className="w-3 h-3 mr-1" />
+                          {patient.phone}
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Mail className="w-3 h-3 mr-1" />
+                          {patient.email}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="text-sm">Blood: {patient.bloodGroup}</div>
+                        <div className="text-sm text-muted-foreground">{patient.doctor}</div>
+                        <Badge variant="outline" className="text-xs">{patient.department}</Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={patient.status} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-sm">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {patient.lastVisit}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewPatient(patient)}
+                          className="h-8 w-8 p-0"
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditPatient(patient)}
+                          className="h-8 w-8 p-0"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeletePatient(patient.id)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              </Table>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden">
           {isLoadingData ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
               <p className="text-sm text-muted-foreground">Loading patients...</p>
             </div>
-          ) : filteredPatients.length === 0 ? (
+          ) : currentPageData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <User className="h-12 w-12 text-muted-foreground opacity-50" />
-              <div className="text-center space-y-2">
-                <h3 className="font-semibold text-lg">No patients found</h3>
-                <p className="text-sm text-muted-foreground">
-                  {searchTerm || selectedStatus !== 'All' 
-                    ? 'Try adjusting your filters' 
-                    : 'Get started by adding your first patient'}
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">No patients found</p>
             </div>
           ) : (
-          <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold w-[20%]">Patient Details</TableHead>
-              <TableHead className="font-semibold w-[20%]">Contact Info</TableHead>
-              <TableHead className="font-semibold w-[20%]">Medical Info</TableHead>
-              <TableHead className="font-semibold w-[15%]">Status</TableHead>
-              <TableHead className="font-semibold w-[15%]">Last Visit</TableHead>
-              <TableHead className="font-semibold text-right w-[10%]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentPageData.map((patient) => (
-              <TableRow key={patient.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{patient.name}</div>
-                    <div className="text-sm text-muted-foreground">ID: {patient.patientId}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {patient.age} years, {patient.gender}
+            currentPageData.map((patient) => (
+              <Card key={patient.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewPatient(patient)}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base">{patient.name}</h3>
+                      <p className="text-sm text-muted-foreground">ID: {patient.patientId}</p>
+                    </div>
+                    <div className="flex gap-1 ml-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewPatient(patient);
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPatient(patient);
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePatient(patient.id);
+                        }}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="flex items-center text-sm">
-                      <Phone className="w-3 h-3 mr-1" />
-                      {patient.phone}
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Age / Gender</p>
+                      <p className="font-medium">{patient.age} yrs, {patient.gender}</p>
                     </div>
-                    <div className="flex items-center text-sm">
-                      <Mail className="w-3 h-3 mr-1" />
-                      {patient.email}
+                    <div>
+                      <p className="text-muted-foreground">Status</p>
+                      <StatusBadge status={patient.status} />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Phone</p>
+                      <p className="font-medium text-xs">{patient.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Blood Group</p>
+                      <p className="font-medium">{patient.bloodGroup}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Department</p>
+                      <Badge variant="outline" className="text-xs">{patient.department}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Last Visit</p>
+                      <p className="font-medium">{patient.lastVisit}</p>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="text-sm">Blood: {patient.bloodGroup}</div>
-                    <div className="text-sm text-muted-foreground">{patient.doctor}</div>
-                    <Badge variant="outline" className="text-xs">{patient.department}</Badge>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={patient.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center text-sm">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {patient.lastVisit}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewPatient(patient)}
-                      className="h-8 w-8 p-0"
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEditPatient(patient)}
-                      className="h-8 w-8 p-0"
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDeletePatient(patient.id)}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          </Table>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
-      </Card>
+      </div>
 
       {/* Desktop Pagination */}
       {!isMobile && !isLoadingData && totalPages > 1 && (
