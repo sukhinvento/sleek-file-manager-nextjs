@@ -515,40 +515,44 @@ export const Diagnostics = () => {
         </div>
       </div>
 
-      {/* Desktop Table */}
-      {!isMobile && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test ID</TableHead>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Test Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Scheduled</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingData ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      Loading diagnostics...
-                    </TableCell>
+      {/* Data Table Section */}
+      <div className="space-y-4">
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <Card className="border-border/50 shadow-sm">
+            {isLoadingData ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading diagnostics...</p>
+                </div>
+              </div>
+            ) : paginatedDiagnostics.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-2">
+                  <FileText className="h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">No diagnostics found</p>
+                </div>
+              </div>
+            ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold w-[15%]">Test ID</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Patient</TableHead>
+                    <TableHead className="font-semibold w-[18%]">Test Name</TableHead>
+                    <TableHead className="font-semibold w-[12%]">Category</TableHead>
+                    <TableHead className="font-semibold w-[12%]">Scheduled</TableHead>
+                    <TableHead className="font-semibold w-[10%]">Priority</TableHead>
+                    <TableHead className="font-semibold w-[10%]">Status</TableHead>
+                    <TableHead className="font-semibold w-[10%]">Price</TableHead>
+                    <TableHead className="font-semibold w-[5%]"></TableHead>
                   </TableRow>
-                ) : paginatedDiagnostics.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      No diagnostics found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedDiagnostics.map((diagnostic) => (
-                    <TableRow key={diagnostic.id}>
+                </TableHeader>
+                <TableBody>
+                  {paginatedDiagnostics.map((diagnostic) => (
+                    <TableRow key={diagnostic.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium">{diagnostic.id}</TableCell>
                       <TableCell>{diagnostic.patientName}</TableCell>
                       <TableCell>{diagnostic.testName}</TableCell>
@@ -557,124 +561,170 @@ export const Diagnostics = () => {
                       <TableCell><PriorityBadge priority={diagnostic.priority} /></TableCell>
                       <TableCell><StatusBadge status={diagnostic.status} /></TableCell>
                       <TableCell>${diagnostic.price}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDiagnostic(diagnostic)}>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDiagnostic(diagnostic)} className="h-8 w-8 p-0">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditDiagnostic(diagnostic)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditDiagnostic(diagnostic)} className="h-8 w-8 p-0">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteDiagnostic(diagnostic)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteDiagnostic(diagnostic)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          <Pagination className="mt-4 pb-4">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                if (totalPages > 7 && (page > 3 && page < totalPages - 2) && Math.abs(currentPage - page) > 1) {
-                  if (page === 4 && currentPage > 4) return <PaginationItem key={page}>...</PaginationItem>;
-                  return null;
-                }
-                
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(page)}
-                      isActive={currentPage === page}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            )}
+          </Card>
+
+          {/* Desktop Pagination */}
+          {!isLoadingData && totalPages > 1 && (
+            <div className="flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
                   </PaginationItem>
-                );
-              })}
+                  {Array.from({length: Math.min(5, totalPages)}, (_, i) => {
+                    const page = i + Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink 
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </div>
 
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </Card>
-      )}
-
-      {/* Mobile: Show loading indicator and load more button */}
-      {isMobile && (
-        <div className="space-y-3">
+        {/* Mobile Cards View */}
+        <div className="md:hidden">
           {isLoadingData ? (
-            <div className="text-center py-8">Loading diagnostics...</div>
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">Loading diagnostics...</p>
+            </div>
           ) : mobileDisplayedItems.length === 0 ? (
-            <div className="text-center py-8">No diagnostics found</div>
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <FileText className="h-12 w-12 text-muted-foreground opacity-50" />
+              <p className="text-sm text-muted-foreground">No diagnostics found</p>
+            </div>
           ) : (
-            <>
-              {mobileDisplayedItems.map((diagnostic) => (
-                <Card key={diagnostic.id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold">{diagnostic.patientName}</div>
-                        <div className="text-sm text-muted-foreground">{diagnostic.id}</div>
-                      </div>
-                      <StatusBadge status={diagnostic.status} />
+            mobileDisplayedItems.map((diagnostic) => (
+              <Card key={diagnostic.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewDiagnostic(diagnostic)}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-base">{diagnostic.patientName}</h3>
+                      <p className="text-sm text-muted-foreground">ID: {diagnostic.id}</p>
                     </div>
-                    <div className="text-sm">
-                      <div><strong>Test:</strong> {diagnostic.testName}</div>
-                      <div><strong>Category:</strong> {diagnostic.category}</div>
-                      <div><strong>Scheduled:</strong> {diagnostic.scheduledDate || '-'}</div>
-                      <div><strong>Priority:</strong> <PriorityBadge priority={diagnostic.priority} /></div>
-                      <div><strong>Price:</strong> ${diagnostic.price}</div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDiagnostic(diagnostic)}>
-                        <Eye className="h-4 w-4 mr-1" /> View
+                    <div className="flex gap-1 ml-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDiagnostic(diagnostic);
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditDiagnostic(diagnostic)}>
-                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditDiagnostic(diagnostic);
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDeleteDiagnostic(diagnostic)}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDiagnostic(diagnostic);
+                        }}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                </Card>
-              ))}
-              
-              {hasMoreItems && (
-                <div className="text-center space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {mobileDisplayedItems.length} of {filteredDiagnostics.length} tests
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Test Name</p>
+                      <p className="font-medium">{diagnostic.testName}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Status</p>
+                      <StatusBadge status={diagnostic.status} />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Category</p>
+                      <p className="font-medium">{diagnostic.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Priority</p>
+                      <PriorityBadge priority={diagnostic.priority} />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Scheduled</p>
+                      <p className="font-medium">{diagnostic.scheduledDate || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Price</p>
+                      <p className="font-medium">${diagnostic.price}</p>
+                    </div>
                   </div>
-                  {isLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading...</div>
-                  ) : (
-                    <Button variant="outline" onClick={loadMoreItems} className="w-full">
-                      Load More
-                    </Button>
-                  )}
-                </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+
+          {/* Mobile: Load more */}
+          {hasMoreItems && (
+            <div className="text-center space-y-2">
+              <div className="text-sm text-muted-foreground">
+                Showing {mobileDisplayedItems.length} of {filteredDiagnostics.length} tests
+              </div>
+              {isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : (
+                <Button variant="outline" onClick={loadMoreItems} className="w-full">
+                  Load More
+                </Button>
               )}
-            </>
+            </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* Diagnostic Booking Overlay */}
       <ModernDiagnosticOverlay

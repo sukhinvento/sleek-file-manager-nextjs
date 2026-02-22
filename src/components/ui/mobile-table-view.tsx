@@ -42,7 +42,7 @@ export function MobileTableView<T>({
     return (
       <>
         {/* Mobile Cards View */}
-        <div className="block lg:hidden space-y-3">
+        <div className="block md:hidden space-y-3">
           {data.map((item, index) => (
             <MobileResponsiveCard
               key={index}
@@ -90,7 +90,7 @@ export function MobileTableView<T>({
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           <div className="overflow-x-auto max-w-full rounded-xl border">
             <Table className="rounded-xl overflow-hidden">
             <TableHeader>
