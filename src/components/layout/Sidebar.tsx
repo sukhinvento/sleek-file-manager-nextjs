@@ -56,25 +56,25 @@ export const Sidebar = ({
     <div 
       className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-all duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
+      } ${isCollapsed ? 'lg:w-14' : 'w-56'} z-50`}
     >
-      <div className="flex items-center h-16 px-4" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
-        <div className="flex-1 overflow-hidden flex items-center gap-3">
-          <img src={medSystemLogo} alt="MedSystem" className="h-9 w-9 flex-shrink-0 rounded-lg" />
-          <div className={`text-lg font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
+      <div className="flex items-center h-12 px-3" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
+        <div className="flex-1 overflow-hidden flex items-center gap-2">
+          <img src={medSystemLogo} alt="MedSystem" className="h-7 w-7 flex-shrink-0 rounded-md" />
+          <div className={`text-sm font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
             MedSystem
           </div>
         </div>
         <div className="flex items-center flex-shrink-0">
           <button 
             onClick={toggleSidebar}
-            className="hidden lg:flex p-1.5 rounded-lg transition-colors"
+            className="hidden lg:flex p-1 rounded-md transition-colors"
             style={{ color: 'hsl(var(--sidebar-text))' }}
             onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--sidebar-hover))'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
           
           <button 
@@ -87,7 +87,7 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <div className="px-3 py-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-4rem)]">
+      <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3rem)]">
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Main</p>}
           <nav className="mt-2 space-y-1">
