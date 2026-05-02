@@ -37,11 +37,11 @@ export const PageHeader = ({
   children 
 }: PageHeaderProps) => {
   return (
-    <div className="bg-card border-b border-border px-4 py-3 sm:px-6 sm:py-4">
+    <div className="bg-card border-b border-border px-4 py-2">
       <div className="flex items-center justify-between gap-2">
         {/* Left side - Title */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold text-foreground truncate tracking-tight">{title}</h1>
+          <h1 className="text-base font-semibold text-foreground truncate tracking-tight">{title}</h1>
         </div>
 
         {/* Right side - Actions, Notifications and Profile */}
