@@ -90,7 +90,7 @@ export const Sidebar = ({
       <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3rem)]">
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Main</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/dashboard" 
               className={`nav-item ${isActive('/dashboard') ? 'active' : ''} ${
@@ -119,7 +119,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/inventory-dashboard" 
               className={`nav-item ${isActive('/inventory-dashboard') ? 'active' : ''} ${
@@ -196,7 +196,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Billing & Finance</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/billing" 
               className={`nav-item ${isActive('/billing') ? 'active' : ''} ${
@@ -224,7 +224,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">File Management</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/upload" 
               className={`nav-item ${isActive('/upload') ? 'active' : ''} ${
@@ -274,7 +274,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Analytics</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/analytics/usage" 
               className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''} ${
@@ -311,7 +311,7 @@ export const Sidebar = ({
           </nav>
         </div>
 
-        <div className="mt-auto pt-8">
+        <div className="mt-4 pt-4 border-t border-sidebar-border/50">
           <Link 
             to="/settings" 
             className={`nav-item ${isActive('/settings') ? 'active' : ''} ${
