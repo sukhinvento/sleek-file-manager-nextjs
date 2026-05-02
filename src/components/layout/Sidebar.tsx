@@ -99,7 +99,7 @@ export const Sidebar = ({
               title="Dashboard"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
             </Link>
             
@@ -111,7 +111,7 @@ export const Sidebar = ({
               title="Patients"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Patients</span>
             </Link>
           </nav>
@@ -128,7 +128,7 @@ export const Sidebar = ({
               title="Inventory Dashboard"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Dashboard</span>
             </Link>
             
@@ -140,7 +140,7 @@ export const Sidebar = ({
               title="Inventory Management"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Management</span>
             </Link>
             
@@ -152,7 +152,7 @@ export const Sidebar = ({
               title="Purchase Orders"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
             </Link>
 
@@ -164,7 +164,7 @@ export const Sidebar = ({
               title="Sales Orders"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
             </Link>
 
@@ -176,7 +176,7 @@ export const Sidebar = ({
               title="Vendor Management"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
             </Link>
 
@@ -188,7 +188,7 @@ export const Sidebar = ({
               title="Stock Transfer"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
             </Link>
           </nav>
@@ -205,7 +205,7 @@ export const Sidebar = ({
               title="Billing"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
             </Link>
             <Link 
@@ -216,7 +216,7 @@ export const Sidebar = ({
               title="Diagnostics"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Diagnostics</span>
             </Link>
           </nav>
@@ -233,7 +233,7 @@ export const Sidebar = ({
               title="Upload Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
             </Link>
             <Link 
@@ -244,7 +244,7 @@ export const Sidebar = ({
               title="View Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
             </Link>
             <Link 
@@ -255,7 +255,7 @@ export const Sidebar = ({
               title="Edit Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
             </Link>
             <Link 
@@ -266,7 +266,7 @@ export const Sidebar = ({
               title="Consolidated Data View"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data</span>
             </Link>
           </nav>
@@ -283,7 +283,7 @@ export const Sidebar = ({
               title="Usage Stats"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
             </Link>
             <Link 
@@ -294,7 +294,7 @@ export const Sidebar = ({
               title="Trends"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
             </Link>
             <Link 
@@ -305,7 +305,7 @@ export const Sidebar = ({
               title="Distribution"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
             </Link>
           </nav>
@@ -320,7 +320,7 @@ export const Sidebar = ({
             title="Settings"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+            <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Settings</span>
           </Link>
           
@@ -333,7 +333,7 @@ export const Sidebar = ({
               navigate('/login');
             }}
           >
-            <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+            <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
           </Link>
         </div>
