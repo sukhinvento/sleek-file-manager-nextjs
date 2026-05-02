@@ -311,7 +311,7 @@ export const Sidebar = ({
           </nav>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-sidebar-border/50">
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
           <Link 
             to="/settings" 
             className={`nav-item ${isActive('/settings') ? 'active' : ''} ${
