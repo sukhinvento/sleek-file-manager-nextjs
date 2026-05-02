@@ -142,7 +142,7 @@ export const AppLayout = ({
       {isMobileMenuOpen && <div className="fixed inset-0 z-40 lg:hidden overlay-backdrop" onClick={() => setIsMobileMenuOpen(false)} />}
       
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-4 lg:hidden border-b border-border bg-card">
+      <div className="fixed top-0 left-0 right-0 h-12 z-30 flex items-center justify-between px-3 lg:hidden border-b border-border bg-card">
         {/* Left - Hamburger Menu */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -225,13 +225,13 @@ export const AppLayout = ({
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       
       {/* Desktop Header - Only show on desktop */}
-      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-64'} left-0 hidden lg:block`}>
+      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-14' : 'lg:left-56'} left-0 hidden lg:block`}>
         <PageHeader title={getPageTitle(location.pathname)} notificationCount={3} userName="John Smith" userEmail="john.smith@company.com" onCreateClick={getCreateButtonConfig(location.pathname)?.action} createButtonText={getCreateButtonConfig(location.pathname)?.text} />
       </div>
       
-      <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="h-screen pt-14 lg:pt-16 bg-background flex flex-col min-w-0">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 min-w-0">
+      <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-14' : 'lg:ml-56'}`}>
+        <main className="h-screen pt-12 lg:pt-12 bg-background flex flex-col min-w-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 min-w-0">
             {children}
           </div>
         </main>

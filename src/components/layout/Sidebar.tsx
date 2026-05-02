@@ -56,25 +56,25 @@ export const Sidebar = ({
     <div 
       className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-all duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } ${isCollapsed ? 'lg:w-16' : 'w-64'} z-50`}
+      } ${isCollapsed ? 'lg:w-14' : 'w-56'} z-50`}
     >
-      <div className="flex items-center h-16 px-4" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
-        <div className="flex-1 overflow-hidden flex items-center gap-3">
-          <img src={medSystemLogo} alt="MedSystem" className="h-9 w-9 flex-shrink-0 rounded-lg" />
-          <div className={`text-lg font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
+      <div className="flex items-center h-12 px-3" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
+        <div className="flex-1 overflow-hidden flex items-center gap-2">
+          <img src={medSystemLogo} alt="MedSystem" className="h-7 w-7 flex-shrink-0 rounded-md" />
+          <div className={`text-sm font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
             MedSystem
           </div>
         </div>
         <div className="flex items-center flex-shrink-0">
           <button 
             onClick={toggleSidebar}
-            className="hidden lg:flex p-1.5 rounded-lg transition-colors"
+            className="hidden lg:flex p-1 rounded-md transition-colors"
             style={{ color: 'hsl(var(--sidebar-text))' }}
             onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--sidebar-hover))'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
           
           <button 
@@ -87,10 +87,10 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <div className="px-3 py-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-4rem)]">
+      <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3rem)]">
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Main</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/dashboard" 
               className={`nav-item ${isActive('/dashboard') ? 'active' : ''} ${
@@ -99,7 +99,7 @@ export const Sidebar = ({
               title="Dashboard"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
             </Link>
             
@@ -111,7 +111,7 @@ export const Sidebar = ({
               title="Patients"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Patients</span>
             </Link>
           </nav>
@@ -119,7 +119,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/inventory-dashboard" 
               className={`nav-item ${isActive('/inventory-dashboard') ? 'active' : ''} ${
@@ -128,7 +128,7 @@ export const Sidebar = ({
               title="Inventory Dashboard"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Dashboard</span>
             </Link>
             
@@ -140,7 +140,7 @@ export const Sidebar = ({
               title="Inventory Management"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Management</span>
             </Link>
             
@@ -152,7 +152,7 @@ export const Sidebar = ({
               title="Purchase Orders"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
             </Link>
 
@@ -164,7 +164,7 @@ export const Sidebar = ({
               title="Sales Orders"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
             </Link>
 
@@ -176,7 +176,7 @@ export const Sidebar = ({
               title="Vendor Management"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
             </Link>
 
@@ -188,7 +188,7 @@ export const Sidebar = ({
               title="Stock Transfer"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
             </Link>
           </nav>
@@ -196,7 +196,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Billing & Finance</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/billing" 
               className={`nav-item ${isActive('/billing') ? 'active' : ''} ${
@@ -205,7 +205,7 @@ export const Sidebar = ({
               title="Billing"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
             </Link>
             <Link 
@@ -216,7 +216,7 @@ export const Sidebar = ({
               title="Diagnostics"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Diagnostics</span>
             </Link>
           </nav>
@@ -224,7 +224,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">File Management</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/upload" 
               className={`nav-item ${isActive('/upload') ? 'active' : ''} ${
@@ -233,7 +233,7 @@ export const Sidebar = ({
               title="Upload Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
             </Link>
             <Link 
@@ -244,7 +244,7 @@ export const Sidebar = ({
               title="View Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
             </Link>
             <Link 
@@ -255,7 +255,7 @@ export const Sidebar = ({
               title="Edit Files"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
             </Link>
             <Link 
@@ -266,7 +266,7 @@ export const Sidebar = ({
               title="Consolidated Data View"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data</span>
             </Link>
           </nav>
@@ -274,7 +274,7 @@ export const Sidebar = ({
 
         <div className="nav-section">
           {!isCollapsed && <p className="nav-section-title">Analytics</p>}
-          <nav className="mt-2 space-y-1">
+          <nav className="mt-1 space-y-0.5">
             <Link 
               to="/analytics/usage" 
               className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''} ${
@@ -283,7 +283,7 @@ export const Sidebar = ({
               title="Usage Stats"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
             </Link>
             <Link 
@@ -294,7 +294,7 @@ export const Sidebar = ({
               title="Trends"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
             </Link>
             <Link 
@@ -305,13 +305,13 @@ export const Sidebar = ({
               title="Distribution"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
               <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
             </Link>
           </nav>
         </div>
 
-        <div className="mt-auto pt-8">
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
           <Link 
             to="/settings" 
             className={`nav-item ${isActive('/settings') ? 'active' : ''} ${
@@ -320,7 +320,7 @@ export const Sidebar = ({
             title="Settings"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+            <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Settings</span>
           </Link>
           
@@ -333,7 +333,7 @@ export const Sidebar = ({
               navigate('/login');
             }}
           >
-            <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+            <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
             <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
           </Link>
         </div>
