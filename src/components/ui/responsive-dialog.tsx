@@ -46,7 +46,7 @@ export function ResponsiveDialog({
   )
 }
 
-interface ResponsiveDialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ResponsiveDialogContentProps {
   children: React.ReactNode
   className?: string
   showCloseButton?: boolean
@@ -56,7 +56,6 @@ export function ResponsiveDialogContent({
   children,
   className,
   showCloseButton = true,
-  ...props
 }: ResponsiveDialogContentProps) {
   const isMobile = useIsMobile()
 
@@ -67,7 +66,6 @@ export function ResponsiveDialogContent({
           "max-h-[70vh] flex flex-col p-0 rounded-t-[24px] bg-background border border-border",
           className
         )}
-        {...props}
       >
         {/* Custom drag handle */}
         <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted" />
@@ -82,7 +80,6 @@ export function ResponsiveDialogContent({
         "w-[95vw] !max-w-[500px] sm:w-full !overflow-hidden !rounded-3xl rounded-3xl !border-0 p-0",
         className
       )}
-      {...props}
     >
       {children}
     </DialogContent>
@@ -108,7 +105,6 @@ export function ResponsiveDialogHeader({
           "bg-[#1a202c] px-6 py-6 rounded-t-[24px] border-b border-gray-700 flex-shrink-0 text-left p-0 pt-0",
           className
         )}
-        {...props}
       >
         <div className="px-6 py-6">
           {children}
@@ -123,7 +119,6 @@ export function ResponsiveDialogHeader({
         "bg-[#1a202c] px-6 py-7 !rounded-t-3xl rounded-t-3xl border-b border-gray-700 flex-shrink-0 min-h-[64px] text-left",
         className
       )}
-      {...props}
     >
       {children}
     </DialogHeader>
@@ -146,7 +141,6 @@ export function ResponsiveDialogTitle({
     return (
       <DrawerTitle 
         className={cn("flex items-center gap-2 text-white", className)}
-        {...props}
       >
         {children}
       </DrawerTitle>
@@ -156,7 +150,6 @@ export function ResponsiveDialogTitle({
   return (
     <DialogTitle 
       className={cn("flex items-center gap-2 text-white", className)}
-      {...props}
     >
       {children}
     </DialogTitle>
@@ -179,7 +172,6 @@ export function ResponsiveDialogDescription({
     return (
       <DrawerDescription 
         className={cn("text-gray-400", className)}
-        {...props}
       >
         {children}
       </DrawerDescription>
@@ -189,7 +181,6 @@ export function ResponsiveDialogDescription({
   return (
     <DialogDescription 
       className={cn("text-gray-400", className)}
-      {...props}
     >
       {children}
     </DialogDescription>
@@ -215,7 +206,6 @@ export function ResponsiveDialogFooter({
           "px-6 py-4 border-t flex-shrink-0 bg-gray-50 flex flex-row gap-2",
           className
         )}
-        {...props}
       >
         {children}
       </DrawerFooter>
@@ -228,7 +218,6 @@ export function ResponsiveDialogFooter({
         "px-6 py-4 border-t flex-shrink-0 bg-gray-50",
         className
       )}
-      {...props}
     >
       {children}
     </DialogFooter>
@@ -255,7 +244,6 @@ export function ResponsiveDialogBody({
           : "overflow-y-auto max-h-[calc(90vh-180px)] px-6 py-4 custom-scrollbar",
         className
       )}
-      {...props}
     >
       {children}
     </div>

@@ -457,7 +457,7 @@ export const ModernPOOverlay = ({
     const mq = window.matchMedia('(max-width: 1300px)');
     const handleMQ = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsNarrowLayout(e.matches);
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('POOverlay media query', { viewportNarrow: e.matches, vw: window.innerWidth });
       }
     };
@@ -473,7 +473,7 @@ export const ModernPOOverlay = ({
         // Only force narrow if container itself shrinks below threshold while viewport is still wide.
         if (cw < 600 && !mq.matches) {
           setIsNarrowLayout(true);
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.log('POOverlay container override', { containerWidth: cw, vw: window.innerWidth });
           }
         }
