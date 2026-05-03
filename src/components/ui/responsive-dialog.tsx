@@ -46,7 +46,7 @@ export function ResponsiveDialog({
   )
 }
 
-interface ResponsiveDialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ResponsiveDialogContentProps {
   children: React.ReactNode
   className?: string
   showCloseButton?: boolean
@@ -56,7 +56,6 @@ export function ResponsiveDialogContent({
   children,
   className,
   showCloseButton = true,
-  ...props
 }: ResponsiveDialogContentProps) {
   const isMobile = useIsMobile()
 
