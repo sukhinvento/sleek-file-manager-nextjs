@@ -1,21 +1,15 @@
-
 import { useState, useEffect } from 'react';
 
+const getIsMobile = () =>
+  typeof window !== 'undefined' && window.innerWidth < 640;
+
 export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(getIsMobile);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint for modals
-    };
-
-    // Initial check
+    const checkMobile = () => setIsMobile(getIsMobile());
     checkMobile();
-
-    // Listen for window resize
     window.addEventListener('resize', checkMobile);
-
-    // Cleanup
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
