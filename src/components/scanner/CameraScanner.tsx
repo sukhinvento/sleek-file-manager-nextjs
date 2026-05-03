@@ -21,7 +21,7 @@ export const CameraScanner = ({ onScan, onClose, scanType }: CameraScannerProps)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [lastScan, setLastScan] = useState<string | null>(null);
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scanIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     startCamera();

@@ -473,7 +473,7 @@ export const ModernPOOverlay = ({
         // Only force narrow if container itself shrinks below threshold while viewport is still wide.
         if (cw < 600 && !mq.matches) {
           setIsNarrowLayout(true);
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.log('POOverlay container override', { containerWidth: cw, vw: window.innerWidth });
           }
         }
