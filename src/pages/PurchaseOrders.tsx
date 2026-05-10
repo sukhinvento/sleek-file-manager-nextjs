@@ -539,7 +539,7 @@ export const PurchaseOrders = () => {
         {/* Desktop Layout - All in one line */}
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
           {/* Status Filter Pills */}
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-0">
               {statuses.map(status => (
                 <Button
@@ -561,7 +561,7 @@ export const PurchaseOrders = () => {
               <Input
                 type="search"
                 placeholder="Search PO, vendor, or address..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -634,7 +634,7 @@ export const PurchaseOrders = () => {
           </div>
 
           {/* Status Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-full">
               {statuses.map(status => (
                 <Button

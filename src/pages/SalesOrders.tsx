@@ -498,7 +498,7 @@ export const SalesOrders = () => {
         {/* Desktop Layout - All in one line */}
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
           {/* Status Filter Pills */}
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-0">
               {statuses.map(status => (
                 <Button
@@ -520,7 +520,7 @@ export const SalesOrders = () => {
               <Input
                 type="search"
                 placeholder="Search orders, customers..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -554,7 +554,7 @@ export const SalesOrders = () => {
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
           {/* Status Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-full">
               {statuses.map(status => (
                 <Button
@@ -576,7 +576,7 @@ export const SalesOrders = () => {
               <Input
                 type="search"
                 placeholder="Search orders..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
