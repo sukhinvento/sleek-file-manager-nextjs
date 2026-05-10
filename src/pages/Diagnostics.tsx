@@ -408,7 +408,7 @@ export const Diagnostics = () => {
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
         {/* Desktop Layout */}
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-0">
               {statuses.map(status => (
                 <Button
@@ -429,7 +429,7 @@ export const Diagnostics = () => {
               <Input
                 type="search"
                 placeholder="Search tests, patients..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -462,7 +462,7 @@ export const Diagnostics = () => {
 
         {/* Mobile Layout */}
         <div className="lg:hidden space-y-3">
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-full">
               {statuses.map(status => (
                 <Button
@@ -483,7 +483,7 @@ export const Diagnostics = () => {
               <Input
                 type="search"
                 placeholder="Search tests..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

@@ -498,7 +498,7 @@ export const Inventory = () => {
         {/* Desktop Layout - All in one line */}
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
           {/* Category Filter Pills */}
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-0">
               {categories.map(category => (
                 <Button
@@ -520,7 +520,7 @@ export const Inventory = () => {
               <Input
                 type="search"
                 placeholder="Search items, SKU, or supplier..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -554,7 +554,7 @@ export const Inventory = () => {
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
           {/* Category Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
             <div className="flex gap-2 pb-2 w-max min-w-full">
               {categories.map(category => (
                 <Button
@@ -576,7 +576,7 @@ export const Inventory = () => {
               <Input
                 type="search"
                 placeholder="Search items..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
