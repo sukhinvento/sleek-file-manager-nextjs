@@ -274,8 +274,8 @@
 }
 
 .nav-item.active {
-  background: hsl(var(--sidebar-active) / 0.12);
-  color: hsl(var(--sidebar-active));
+  background: hsl(0 0% 100% / 0.1);
+  color: hsl(0 0% 100%);
   font-weight: 500;
 }
 
@@ -287,7 +287,7 @@
   transform: translateY(-50%);
   width: 2px;
   height: 16px;
-  background: hsl(var(--sidebar-active));
+  background: hsl(0 0% 100%);
   border-radius: 0 2px 2px 0;
 }
 
