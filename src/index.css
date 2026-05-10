@@ -183,19 +183,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
+    --primary: 220 26% 65%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 14%;
     --muted-foreground: 215 20% 65%;
     --accent: 217 33% 17%;
-    --accent-foreground: 199 89% 65%;
+    --accent-foreground: 220 26% 75%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 199 89% 48%;
+    --ring: 220 26% 65%;
     
     --sidebar-bg: 222 47% 5%;
     --sidebar-hover: 222 40% 12%;
@@ -382,7 +382,7 @@
 }
 
 .action-button-primary:hover {
-  background: hsl(199 89% 33%);
+  background: hsl(220 26% 18%);
   box-shadow: 0 4px 12px -2px hsl(var(--primary) / 0.3);
   transform: translateY(-1px);
 }
