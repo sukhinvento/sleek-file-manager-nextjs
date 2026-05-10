@@ -594,22 +594,6 @@ export const PurchaseOrders = () => {
 
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
-          {/* Status Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-2 pb-2 w-max min-w-full">
-              {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 animate-fade-in"
-                  onClick={() => setSelectedStatus(status)}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
           {/* Search and Action Buttons */}
           <div className="flex gap-2 flex-wrap">
             <div className="relative flex-1 min-w-0">
@@ -617,7 +601,7 @@ export const PurchaseOrders = () => {
               <Input
                 type="search"
                 placeholder="Search orders..."
-                className="pl-8 text-sm"
+                className="pl-8 text-sm h-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -646,6 +630,22 @@ export const PurchaseOrders = () => {
                 <ArrowUpDown className="mr-1 h-4 w-4" /> 
                 <span className="hidden sm:inline">Sort</span>
               </Button>
+            </div>
+          </div>
+
+          {/* Status Filter Pills */}
+          <div className="overflow-x-auto overflow-y-hidden">
+            <div className="flex gap-2 pb-2 w-max min-w-full">
+              {statuses.map(status => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 animate-fade-in"
+                  onClick={() => setSelectedStatus(status)}
+                >
+                  {status}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
