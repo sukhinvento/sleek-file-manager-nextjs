@@ -537,7 +537,7 @@ export const StockTransfer = () => {
                 <Button
                   key={status}
                   variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-sm px-3 py-1 animate-fade-in"
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 animate-fade-in"
                   onClick={() => setSelectedStatus(status)}
                 >
                   {status}
@@ -593,7 +593,7 @@ export const StockTransfer = () => {
                 <Button
                   key={status}
                   variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs sm:text-sm px-3 py-1 animate-fade-in"
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 animate-fade-in"
                   onClick={() => setSelectedStatus(status)}
                 >
                   {status}
