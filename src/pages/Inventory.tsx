@@ -499,7 +499,7 @@ export const Inventory = () => {
         <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
           {/* Category Filter Pills */}
           <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 pb-2 w-max min-w-0">
+            <div className="flex gap-2 w-max min-w-0">
               {categories.map(category => (
                 <Button
                   key={category}
@@ -555,7 +555,7 @@ export const Inventory = () => {
         <div className="lg:hidden space-y-3">
           {/* Category Filter Pills */}
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 pb-2 w-max min-w-full">
+            <div className="flex gap-2 w-max min-w-full">
               {categories.map(category => (
                 <Button
                   key={category}
