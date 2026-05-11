@@ -553,22 +553,6 @@ export const SalesOrders = () => {
 
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
-          {/* Status Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
-              {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
-                  onClick={() => setSelectedStatus(status)}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
           {/* Search and Action Buttons */}
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -607,8 +591,23 @@ export const SalesOrders = () => {
               <span className="hidden sm:inline">Sort</span>
             </Button>
           </div>
+
+          {/* Status Filter Pills */}
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-2 w-max min-w-full">
+              {statuses.map(status => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                  onClick={() => setSelectedStatus(status)}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Data Table Section */}
       <div className="space-y-4">
