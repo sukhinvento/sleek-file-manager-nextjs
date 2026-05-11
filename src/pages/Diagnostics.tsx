@@ -462,21 +462,6 @@ export const Diagnostics = () => {
 
         {/* Mobile Layout */}
         <div className="lg:hidden space-y-3">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
-              {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
-                  onClick={() => setSelectedStatus(status)}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -511,6 +496,21 @@ export const Diagnostics = () => {
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
+          </div>
+
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-2 w-max min-w-full">
+              {statuses.map(status => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                  onClick={() => setSelectedStatus(status)}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

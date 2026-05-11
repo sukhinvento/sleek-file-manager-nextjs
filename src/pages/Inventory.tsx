@@ -553,22 +553,6 @@ export const Inventory = () => {
 
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
-          {/* Category Filter Pills */}
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
-              {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
           {/* Search and Action Buttons */}
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -606,6 +590,22 @@ export const Inventory = () => {
               <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
               <span className="hidden sm:inline">Sort</span>
             </Button>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-2 w-max min-w-full">
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
