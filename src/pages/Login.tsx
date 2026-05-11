@@ -33,8 +33,8 @@ export const Login = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#556B2F] flex items-center justify-center relative overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen">
+      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#556B2F] items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 w-full h-full overflow-hidden opacity-20">
           <svg className="absolute top-10 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="60" cy="60" r="60" fill="white" />
@@ -85,7 +85,7 @@ export const Login = () => {
         </div>
       </div>
       
-      <div className="hidden md:flex md:w-1/2 items-center justify-center bg-white p-8">
+      <div className="flex w-full md:w-1/2 items-center justify-center bg-white p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
