@@ -608,6 +608,7 @@ export const Inventory = () => {
             </div>
           </div>
         </div>
+      </div>
 
       {/* Data Table Section */}
       <div className="space-y-4">
