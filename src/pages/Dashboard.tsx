@@ -31,13 +31,13 @@ const QuickActionCard = ({
     <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 relative overflow-hidden">
       <div className="flex flex-col sm:flex-row">
         <div className="relative z-10 flex-1 mb-4 sm:mb-0 sm:pr-4">
-          <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-slate-600 mb-3 sm:mb-4" />
+          <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-3 sm:mb-4" />
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{title}</h3>
           <p className="text-sm sm:text-base text-gray-500 mb-4">{description}</p>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={onClick}
-              className="bg-slate-600 hover:bg-slate-700 text-white w-full sm:w-auto"
+              className="action-button-primary w-full sm:w-auto"
               size="sm"
             >
               {title}

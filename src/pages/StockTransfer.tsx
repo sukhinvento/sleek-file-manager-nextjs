@@ -37,7 +37,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'approved': return 'bg-primary/10 text-primary border-primary/20';
       case 'in transit': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -56,7 +56,7 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
   const getStatusColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case 'low': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'normal': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'normal': return 'bg-primary/10 text-primary border-primary/20';
       case 'medium': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'critical': return 'bg-red-100 text-red-800 border-red-200';
@@ -322,32 +322,36 @@ export const StockTransfer = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Transfers Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all transfers"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalTransfers}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalTransfers}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <Package className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Mini Chart */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1">
                     <div className="flex items-end gap-px h-4">
                       {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
+                        <div
+                          key={i}
+                          className="bg-primary/60 rounded-sm flex-1 opacity-70"
                           style={{ height: `${height * 2}px` }}
                         />
                       ))}
@@ -359,13 +363,17 @@ export const StockTransfer = () => {
                   </div>
                 </div>
               </CardContent>
-              
+
               {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
+              <Package className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Pending Transfers Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Pending' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')}
+              title="Filter by Pending"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -420,7 +428,11 @@ export const StockTransfer = () => {
             </Card>
             
             {/* In Transit Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'In Transit' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'In Transit' ? 'All' : 'In Transit')}
+              title="Filter by In Transit"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -453,7 +465,11 @@ export const StockTransfer = () => {
             </Card>
             
             {/* Completed Transfers Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Completed' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Completed' ? 'All' : 'Completed')}
+              title="Filter by Completed"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -525,6 +541,7 @@ export const StockTransfer = () => {
           </div>
         </div>
       </section>
+
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">

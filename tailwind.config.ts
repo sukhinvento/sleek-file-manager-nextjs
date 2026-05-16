@@ -91,6 +91,14 @@ export default {
         "stock-low-bg": "hsl(var(--stock-low-bg))",
         "stock-normal": "hsl(var(--stock-normal))",
         "stock-normal-bg": "hsl(var(--stock-normal-bg))",
+        "sidebar-active": "hsl(var(--sidebar-active))",
+        "sidebar-bg": "hsl(var(--sidebar-bg))",
+        "sidebar-text": "hsl(var(--sidebar-text))",
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-success": "var(--gradient-success)",
+        "gradient-subtle": "var(--gradient-subtle)",
       },
       borderRadius: {
         lg: "var(--radius)",

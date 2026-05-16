@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="hsl(220,52%,48%)"/>
+      <stop offset="100%" stop-color="hsl(222,55%,28%)"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield -->
+  <path d="M32 6 L51 16 L51 38 Q51 54 32 62 Q13 54 13 38 L13 16 Z"
+        stroke="white" stroke-width="3" stroke-linejoin="round"/>
+  <!-- ECG line -->
+  <polyline points="17,37 23,37 27,29 32,45 37,31 41,37 47,37"
+            stroke="#4dd8c8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

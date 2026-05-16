@@ -383,28 +383,28 @@ export const VendorManagement = () => {
         <div className="h-scroll py-4">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Vendors Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden">
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Vendors</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalVendors}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Vendors</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalVendors}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <Building2 className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <Building2 className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Mini Chart */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1">
                     <div className="flex items-end gap-px h-4">
                       {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
+                        <div
+                          key={i}
+                          className="bg-primary/60 rounded-sm flex-1 opacity-70"
                           style={{ height: `${height * 2}px` }}
                         />
                       ))}
@@ -416,9 +416,9 @@ export const VendorManagement = () => {
                   </div>
                 </div>
               </CardContent>
-              
+
               {/* Background Icon */}
-              <Building2 className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
+              <Building2 className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Active Vendors Card */}
@@ -763,7 +763,7 @@ export const VendorManagement = () => {
                        <TableCell>
                          <div className="space-y-1">
                            <div>
-                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 pointer-events-none">
+                             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 pointer-events-none">
                                {vendor.category}
                              </Badge>
                            </div>
@@ -926,7 +926,7 @@ export const VendorManagement = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Category</p>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
                         {vendor.category}
                       </Badge>
                     </div>

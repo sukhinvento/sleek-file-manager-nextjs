@@ -26,6 +26,8 @@ export const AppLayout = ({
   const getPageTitle = (pathname: string) => {
     const titleMap: Record<string, string> = {
       '/': 'Dashboard',
+      '/dashboard': 'Hospital Overview',
+      '/files-dashboard': 'File Management',
       '/inventory-dashboard': 'Inventory Dashboard',
       '/inventory': 'Inventory Management',
       '/purchase-orders': 'Purchase Orders',
@@ -33,11 +35,18 @@ export const AppLayout = ({
       '/vendors': 'Vendor Management',
       '/stock-transfer': 'Stock Transfer',
       '/billing': 'Billing',
+      '/diagnostics': 'Diagnostics',
       '/patients': 'Patients',
+      '/patients/admit': 'New Patient Admission',
+      '/rooms': 'Room Management',
+      '/doctors': 'Doctor Management',
       '/settings': 'Settings',
       '/upload': 'Upload Files',
       '/files': 'View Files',
-      '/edit': 'Edit Files'
+      '/edit': 'Edit Files',
+      '/analytics/usage': 'Usage Statistics',
+      '/analytics/trends': 'Trends Analytics',
+      '/analytics/distribution': 'Distribution Analytics',
     };
     return titleMap[pathname] || 'Dashboard';
   };
@@ -92,14 +101,8 @@ export const AppLayout = ({
         }
       },
       '/patients': {
-        text: 'Add Patient',
-        action: () => {
-          window.dispatchEvent(new CustomEvent('openCreateModal', {
-            detail: {
-              type: 'patient'
-            }
-          }));
-        }
+        text: 'Admit Patient',
+        action: () => navigate('/patients/admit'),
       },
       '/billing': {
         text: 'New Invoice',
@@ -225,15 +228,21 @@ export const AppLayout = ({
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       
       {/* Desktop Header - Only show on desktop */}
-      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-14' : 'lg:left-56'} left-0 hidden lg:block`}>
+      <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-60'} left-0 hidden lg:block`}>
         <PageHeader title={getPageTitle(location.pathname)} notificationCount={3} userName="John Smith" userEmail="john.smith@company.com" onCreateClick={getCreateButtonConfig(location.pathname)?.action} createButtonText={getCreateButtonConfig(location.pathname)?.text} />
       </div>
-      
-      <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-14' : 'lg:ml-56'}`}>
+
+      <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-60'}`}>
         <main className="h-screen pt-12 lg:pt-12 bg-background flex flex-col min-w-0">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 min-w-0">
-            {children}
-          </div>
+          {location.pathname === '/patients/admit' ? (
+            <div className="flex-1 overflow-hidden min-w-0">
+              {children}
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 min-w-0">
+              {children}
+            </div>
+          )}
         </main>
       </div>
     </div>;

@@ -20,7 +20,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'scheduled': return 'bg-primary/10 text-primary border-primary/20';
       case 'in progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
       case 'pending': return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -40,7 +40,7 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
     switch (priority.toLowerCase()) {
       case 'emergency': return 'bg-red-100 text-red-800 border-red-200';
       case 'urgent': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'routine': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'routine': return 'bg-primary/10 text-primary border-primary/20';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -308,29 +308,37 @@ export const Diagnostics = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Tests Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all tests"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Tests</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Tests</p>
+                    <div className="text-2xl font-bold text-primary">{stats.total}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <FileText className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <FileText className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
+              <FileText className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
 
             {/* Scheduled Tests Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Scheduled' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Scheduled' ? 'All' : 'Scheduled')}
+              title="Filter by Scheduled"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -348,7 +356,11 @@ export const Diagnostics = () => {
             </Card>
 
             {/* In Progress Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'In Progress' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'In Progress' ? 'All' : 'In Progress')}
+              title="Filter by In Progress"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -366,7 +378,11 @@ export const Diagnostics = () => {
             </Card>
 
             {/* Completed Tests Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Completed' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Completed' ? 'All' : 'Completed')}
+              title="Filter by Completed"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -384,7 +400,11 @@ export const Diagnostics = () => {
             </Card>
 
             {/* Urgent/Emergency Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Urgent' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Urgent' ? 'All' : 'Urgent')}
+              title="Filter by Urgent"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -403,6 +423,7 @@ export const Diagnostics = () => {
           </div>
         </div>
       </section>
+
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">

@@ -289,32 +289,36 @@ export const Inventory = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Items Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all items"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Items</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalItems}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Items</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalItems}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <Package className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Mini Chart */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1">
                     <div className="flex items-end gap-px h-4">
                       {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
+                        <div
+                          key={i}
+                          className="bg-primary/60 rounded-sm flex-1 opacity-70"
                           style={{ height: `${height * 2}px` }}
                         />
                       ))}
@@ -326,13 +330,17 @@ export const Inventory = () => {
                   </div>
                 </div>
               </CardContent>
-              
+
               {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
+              <Package className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Critical Items Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Critical' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Critical' ? 'All' : 'Critical')}
+              title="Filter by Critical stock"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -387,7 +395,11 @@ export const Inventory = () => {
             </Card>
             
             {/* Low Stock Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Low' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Low' ? 'All' : 'Low')}
+              title="Filter by Low Stock"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -492,6 +504,7 @@ export const Inventory = () => {
           </div>
         </div>
       </section>
+
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
@@ -652,7 +665,7 @@ export const Inventory = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                           {item.category}
                         </Badge>
                       </TableCell>
@@ -799,7 +812,7 @@ export const Inventory = () => {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground">Category</p>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
                         {item.category}
                       </Badge>
                     </div>

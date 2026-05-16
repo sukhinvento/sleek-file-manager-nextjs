@@ -43,7 +43,7 @@ const StatusBadge = ({ status, type = 'order' }: { status: string; type?: 'order
       }
     } else {
       switch (status.toLowerCase()) {
-        case 'processing': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'processing': return 'bg-primary/10 text-primary border-primary/20';
         case 'shipped': return 'bg-purple-100 text-purple-800 border-purple-200';
         case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
         case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -287,32 +287,36 @@ export const SalesOrders = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Orders Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all orders"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Orders</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalOrders}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Orders</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalOrders}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <Package className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Mini Chart */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1">
                     <div className="flex items-end gap-px h-4">
                       {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
+                        <div
+                          key={i}
+                          className="bg-primary/60 rounded-sm flex-1 opacity-70"
                           style={{ height: `${height * 2}px` }}
                         />
                       ))}
@@ -324,47 +328,17 @@ export const SalesOrders = () => {
                   </div>
                 </div>
               </CardContent>
-              
+
               {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Total Revenue Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Revenue</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      {formatIndianCurrency(stats.totalRevenue)}
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Value Breakdown */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Orders: {stats.totalOrders}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+22%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
+              <Package className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Processing Orders Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Processing' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Processing' ? 'All' : 'Processing')}
+              title="Filter by Processing"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -418,43 +392,12 @@ export const SalesOrders = () => {
               <Clock className="absolute bottom-0 right-0 h-12 w-12 text-amber-500/5 transform translate-x-3 translate-y-3" />
             </Card>
             
-            {/* Pending Payments Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-                      {formatIndianCurrency(stats.pendingPayments)}
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Status Indicators */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-red-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-red-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(stats.pendingPayments / stats.totalRevenue) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-red-700">{Math.round((stats.pendingPayments / stats.totalRevenue) * 100)}%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <AlertTriangle className="absolute bottom-0 right-0 h-12 w-12 text-red-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
             {/* Delivered Orders Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Delivered' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Delivered' ? 'All' : 'Delivered')}
+              title="Filter by Delivered"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -489,9 +432,71 @@ export const SalesOrders = () => {
               {/* Background Icon */}
               <CheckCircle className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
             </Card>
+
+            {/* Total Revenue Card */}
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
+              <CardContent className="p-3 relative z-10">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Revenue</p>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                      {formatIndianCurrency(stats.totalRevenue)}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1 mb-1">
+                  <div className="flex items-center gap-1 text-xs">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    <span className="text-emerald-600">Orders: {stats.totalOrders}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>+22%</span>
+                  </div>
+                </div>
+              </CardContent>
+              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
+            </Card>
+
+            {/* Pending Payments Card */}
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 relative overflow-hidden">
+              <CardContent className="p-3 relative z-10">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Pending $</p>
+                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                      {formatIndianCurrency(stats.pendingPayments)}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1 mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-red-200 rounded-full h-1.5">
+                      <div
+                        className="bg-red-500 h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${(stats.pendingPayments / (stats.totalRevenue || 1)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-red-700">{Math.round((stats.pendingPayments / (stats.totalRevenue || 1)) * 100)}%</span>
+                  </div>
+                </div>
+              </CardContent>
+              <AlertTriangle className="absolute bottom-0 right-0 h-12 w-12 text-red-500/5 transform translate-x-3 translate-y-3" />
+            </Card>
           </div>
         </div>
       </section>
+
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">

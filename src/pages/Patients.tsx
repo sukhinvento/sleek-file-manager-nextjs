@@ -1,11 +1,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Filter, User, Phone, Mail, Calendar, TrendingUp, Activity, Heart, ArrowUpDown, Eye, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, User, Phone, Mail, Calendar, Activity, Heart, ArrowUpDown, Eye, Edit, Trash2, LogOut, Check } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,12 +15,13 @@ import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import * as patientService from '@/services/patientService';
 import { Patient } from '@/services/patientService';
 import { ModernPatientOverlay } from '@/components/patients/ModernPatientOverlay';
+import { DischargeModal } from '@/components/patients/DischargeModal';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'discharged': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'discharged': return 'bg-primary/10 text-primary border-primary/20';
       case 'admitted': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'critical': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -33,6 +36,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export const Patients = () => {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   
   // Data state
@@ -52,9 +56,14 @@ export const Patients = () => {
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [filterDept, setFilterDept] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<'name' | 'age' | 'admissionDate' | 'lastVisit'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDischargeOpen, setIsDischargeOpen] = useState(false);
+  const [dischargePatient, setDischargePatient] = useState<Patient | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,21 +115,35 @@ export const Patients = () => {
   }, []);
 
   const statuses = ['All', 'Active', 'Admitted', 'Discharged', 'Critical'];
-  
-  // Filter logic
+
+  const departments = useMemo(() => ['All', ...Array.from(new Set(patients.map(p => p.department).filter(Boolean))).sort()], [patients]);
+
+  const SORT_LABELS: Record<string, string> = {
+    name: 'Name', age: 'Age', admissionDate: 'Admission Date', lastVisit: 'Last Visit',
+  };
+
+  // Filter + sort logic
   const filteredPatients = useMemo(() => {
-    return patients.filter(patient => {
-      const matchesSearch = !searchTerm || 
+    const filtered = patients.filter(patient => {
+      const matchesSearch = !searchTerm ||
         patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         patient.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         patient.phone.includes(searchTerm) ||
         patient.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
       const matchesStatus = selectedStatus === 'All' || patient.status === selectedStatus;
-      
-      return matchesSearch && matchesStatus;
+      const matchesDept = filterDept === 'All' || patient.department === filterDept;
+      return matchesSearch && matchesStatus && matchesDept;
     });
-  }, [patients, searchTerm, selectedStatus]);
+
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === 'name') cmp = a.name.localeCompare(b.name);
+      else if (sortBy === 'age') cmp = (a.age ?? 0) - (b.age ?? 0);
+      else if (sortBy === 'admissionDate') cmp = (a.admissionDate ?? '').localeCompare(b.admissionDate ?? '');
+      else if (sortBy === 'lastVisit') cmp = (a.lastVisit ?? '').localeCompare(b.lastVisit ?? '');
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [patients, searchTerm, selectedStatus, filterDept, sortBy, sortOrder]);
 
   // Infinite scroll for mobile
   const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
@@ -210,37 +233,45 @@ export const Patients = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Patients Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all patients"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalPatients}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalPatients}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <User className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <User className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span className="text-blue-600">All patients</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                    <span className="text-primary">All patients</span>
                   </div>
                 </div>
               </CardContent>
-              
-              <User className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
+
+              <User className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
 
             {/* Active Patients Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Active' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')}
+              title="Filter by Active"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -291,7 +322,11 @@ export const Patients = () => {
             </Card>
 
             {/* Admitted Patients Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Admitted' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Admitted' ? 'All' : 'Admitted')}
+              title="Filter by Admitted"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -317,7 +352,11 @@ export const Patients = () => {
             </Card>
 
             {/* Critical Patients Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Critical' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Critical' ? 'All' : 'Critical')}
+              title="Filter by Critical"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -345,6 +384,7 @@ export const Patients = () => {
         </div>
       </section>
 
+
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
         {/* Desktop Layout - All in one line */}
@@ -366,7 +406,7 @@ export const Patients = () => {
           </div>
           
           {/* Search and Action Buttons */}
-          <div className="flex gap-3 flex-shrink-0 min-w-0">
+          <div className="flex gap-2 flex-shrink-0 min-w-0">
             <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -377,21 +417,54 @@ export const Patients = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm">
-              <Filter className="mr-1 h-4 w-4" /> 
-              Filters
-            </Button>
-            <Button variant="outline" size="sm">
-              <ArrowUpDown className="mr-1 h-4 w-4" /> 
-              Sort
-            </Button>
+            {/* Filter dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className={filterDept !== 'All' ? 'border-primary text-primary' : ''}>
+                  <Filter className="mr-1 h-4 w-4" />
+                  {filterDept !== 'All' ? filterDept : 'Filter'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Department</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {departments.map(dept => (
+                  <DropdownMenuItem key={dept} onClick={() => setFilterDept(dept)} className="flex items-center justify-between text-sm">
+                    {dept}
+                    {filterDept === dept && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Sort dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <ArrowUpDown className="mr-1 h-4 w-4" />
+                  {SORT_LABELS[sortBy]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(['name', 'age', 'admissionDate', 'lastVisit'] as const).map(key => (
+                  <DropdownMenuItem key={key} onClick={() => {
+                    if (sortBy === key) setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+                    else { setSortBy(key); setSortOrder('asc'); }
+                  }} className="flex items-center justify-between text-sm">
+                    {SORT_LABELS[key]}
+                    {sortBy === key && <span className="text-xs text-primary">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Mobile/Tablet Layout - Stacked */}
         <div className="lg:hidden space-y-3">
           {/* Search and Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -402,14 +475,45 @@ export const Patients = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
-              <Filter className="h-4 w-4 sm:mr-1" /> 
-              <span className="hidden sm:inline">Filters</span>
-            </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3">
-              <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
-              <span className="hidden sm:inline">Sort</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className={`px-2 sm:px-3 ${filterDept !== 'All' ? 'border-primary text-primary' : ''}`}>
+                  <Filter className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Filter</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Department</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {departments.map(dept => (
+                  <DropdownMenuItem key={dept} onClick={() => setFilterDept(dept)} className="flex items-center justify-between text-sm">
+                    {dept}
+                    {filterDept === dept && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                  <ArrowUpDown className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Sort</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(['name', 'age', 'admissionDate', 'lastVisit'] as const).map(key => (
+                  <DropdownMenuItem key={key} onClick={() => {
+                    if (sortBy === key) setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+                    else { setSortBy(key); setSortOrder('asc'); }
+                  }} className="flex items-center justify-between text-sm">
+                    {SORT_LABELS[key]}
+                    {sortBy === key && <span className="text-xs text-primary">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Status Filter Pills */}
@@ -525,8 +629,17 @@ export const Patients = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setDischargePatient(patient); setIsDischargeOpen(true); }}
+                          className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                          title="Initiate Discharge"
+                        >
+                          <LogOut className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleDeletePatient(patient.id)}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
@@ -719,6 +832,13 @@ export const Patients = () => {
         patient={selectedPatient}
         isEditMode={isEditMode}
         onSave={handleSavePatient}
+      />
+
+      {/* Discharge Process Modal */}
+      <DischargeModal
+        patient={dischargePatient}
+        isOpen={isDischargeOpen}
+        onClose={() => { setIsDischargeOpen(false); setDischargePatient(null); }}
       />
     </div>
   );

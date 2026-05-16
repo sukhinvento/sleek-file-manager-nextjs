@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
+import { HospitalDashboard } from "./pages/HospitalDashboard";
 import { UploadFiles } from "./pages/UploadFiles";
 import { ViewFiles } from "./pages/ViewFiles";
 import { EditFiles } from "./pages/EditFiles";
@@ -19,6 +20,12 @@ import { Patients } from "./pages/Patients";
 import { VendorManagement } from "./pages/VendorManagement";
 import { SalesOrders } from "./pages/SalesOrders";
 import { StockTransfer } from "./pages/StockTransfer";
+import { UsageStatistics } from "./pages/UsageStatistics";
+import { TrendsAnalytics } from "./pages/TrendsAnalytics";
+import { DistributionAnalytics } from "./pages/DistributionAnalytics";
+import { PatientAdmission } from "./pages/PatientAdmission";
+import { RoomManagement } from "./pages/RoomManagement";
+import { DoctorManagement } from "./pages/DoctorManagement";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -36,12 +43,32 @@ const App = () => (
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/dashboard" element={
             <AppLayout>
+              <HospitalDashboard />
+            </AppLayout>
+          } />
+          <Route path="/files-dashboard" element={
+            <AppLayout>
               <Dashboard />
             </AppLayout>
           } />
           <Route path="/patients" element={
             <AppLayout>
               <Patients />
+            </AppLayout>
+          } />
+          <Route path="/patients/admit" element={
+            <AppLayout>
+              <PatientAdmission />
+            </AppLayout>
+          } />
+          <Route path="/rooms" element={
+            <AppLayout>
+              <RoomManagement />
+            </AppLayout>
+          } />
+          <Route path="/doctors" element={
+            <AppLayout>
+              <DoctorManagement />
             </AppLayout>
           } />
           <Route path="/inventory" element={
@@ -111,17 +138,17 @@ const App = () => (
           } />
           <Route path="/analytics/usage" element={
             <AppLayout>
-              <div className="p-4">Usage Statistics Analytics</div>
+              <UsageStatistics />
             </AppLayout>
           } />
           <Route path="/analytics/trends" element={
             <AppLayout>
-              <div className="p-4">Trends Analytics</div>
+              <TrendsAnalytics />
             </AppLayout>
           } />
           <Route path="/analytics/distribution" element={
             <AppLayout>
-              <div className="p-4">Distribution Analytics</div>
+              <DistributionAnalytics />
             </AppLayout>
           } />
           <Route path="*" element={<NotFound />} />

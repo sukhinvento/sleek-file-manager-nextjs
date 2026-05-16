@@ -284,65 +284,45 @@ export const Billing = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
+      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
+        <div className="stat-cards-scroll">
           <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
             {/* Total Invoices Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus('All')}
+              title="Show all invoices"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Invoices</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalInvoices}</div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Invoices</p>
+                    <div className="text-2xl font-bold text-primary">{stats.totalInvoices}</div>
                   </div>
                   <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <FileText className="h-5 w-5 text-blue-600" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1 mb-1">
                   <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span className="text-blue-600">This month</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                    <span className="text-primary">This month</span>
                   </div>
                 </div>
               </CardContent>
-              
-              <FileText className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Total Amount Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Amount</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(stats.totalRevenue / 1000).toFixed(0)}K
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-emerald-600">Collection</span>
-                    <span className="text-xs font-bold text-emerald-700">{stats.totalRevenue > 0 ? Math.round((stats.totalPaid / stats.totalRevenue) * 100) : 0}%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
+
+              <FileText className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
             </Card>
             
             {/* Pending Payments Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Pending' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')}
+              title="Filter by Pending"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -368,7 +348,11 @@ export const Billing = () => {
             </Card>
             
             {/* Collected Amount Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden">
+            <Card
+              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Paid' ? 'stat-card-active' : ''}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'Paid' ? 'All' : 'Paid')}
+              title="Filter by Paid"
+            >
               <CardContent className="p-3 relative z-10">
                 <div className="flex items-start justify-between mb-2">
                   <div className="space-y-1">
@@ -394,9 +378,37 @@ export const Billing = () => {
               
               <CheckCircle className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
             </Card>
+
+            {/* Total Amount Card */}
+            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
+              <CardContent className="p-3 relative z-10">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Amount</p>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                      ${(stats.totalRevenue / 1000).toFixed(0)}K
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1 mb-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-emerald-600">Collection</span>
+                    <span className="text-xs font-bold text-emerald-700">{stats.totalRevenue > 0 ? Math.round((stats.totalPaid / stats.totalRevenue) * 100) : 0}%</span>
+                  </div>
+                </div>
+              </CardContent>
+              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
+            </Card>
           </div>
         </div>
       </section>
+
+      {/* Active card filter indicator */}
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">

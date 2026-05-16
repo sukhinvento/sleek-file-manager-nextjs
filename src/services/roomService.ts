@@ -322,6 +322,27 @@ export const checkOutPatient = async (assignmentId: string, checkOutDate: string
 };
 
 /**
+ * Update a room's status and/or details
+ */
+export const updateRoom = async (id: string, updates: Partial<Room>): Promise<Room> => {
+  await delay(300);
+  const index = mockRooms.findIndex(r => r.id === id);
+  if (index === -1) throw new Error('Room not found');
+  mockRooms[index] = { ...mockRooms[index], ...updates };
+  return { ...mockRooms[index] };
+};
+
+/**
+ * Add a new room
+ */
+export const addRoom = async (room: Omit<Room, 'id'>): Promise<Room> => {
+  await delay(300);
+  const newRoom: Room = { ...room, id: `R${String(mockRooms.length + 1).padStart(3, '0')}` };
+  mockRooms.push(newRoom);
+  return { ...newRoom };
+};
+
+/**
  * Get room statistics
  */
 export const getRoomStats = async () => {

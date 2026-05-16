@@ -11,6 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Patient } from '@/services/patientService';
+import { DatePicker } from '@/components/ui/date-picker';
+
+const toDate = (s: string): Date | undefined => s ? new Date(s + 'T00:00:00') : undefined;
+const fromDate = (d: Date | undefined): string => d ? d.toISOString().split('T')[0] : '';
 import { BarcodeQRManager } from '../inventory/BarcodeQRManager';
 
 interface ModernPatientOverlayProps {
@@ -509,16 +513,11 @@ export const ModernPatientOverlay = ({
                   <Label htmlFor="lastVisit" className="text-sm font-medium">
                     Last Visit Date
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="lastVisit"
-                      type="date"
-                      value={formData.lastVisit}
-                      onChange={(e) => handleInputChange('lastVisit', e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                  <DatePicker
+                    date={toDate(formData.lastVisit)}
+                    onDateChange={d => handleInputChange('lastVisit', fromDate(d))}
+                    placeholder="Select last visit date"
+                  />
                 </div>
               </div>
             </CardContent>

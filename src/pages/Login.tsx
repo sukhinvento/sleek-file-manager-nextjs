@@ -43,7 +43,7 @@ export const Login = () => {
         console.log('Logged in user:', response.data.user);
         
         // Navigate to dashboard
-        navigate("/dashboard");
+        navigate("/inventory-dashboard");
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -64,7 +64,7 @@ export const Login = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#556B2F] items-center justify-center relative overflow-hidden">
+      <div className="hidden md:flex w-full md:w-1/2 items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(220 52% 48%), hsl(222 55% 22%))' }}>
         <div className="absolute inset-0 w-full h-full overflow-hidden opacity-20">
           <svg className="absolute top-10 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="60" cy="60" r="60" fill="white" />
@@ -162,14 +162,14 @@ export const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-slate-600 focus:ring-slate-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary/50 border-border rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
+                <a href="#" className="font-medium text-primary hover:text-primary/80">
                   Forgot your password?
                 </a>
               </div>
@@ -186,7 +186,7 @@ export const Login = () => {
             <div className="mt-4 text-center text-sm">
               <p className="text-gray-600">
                 Don't have an account?{" "}
-                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
+                <a href="#" className="font-medium text-primary hover:text-primary/80">
                   Contact Administrator
                 </a>
               </p>
