@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import axios from "axios";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,20 +17,47 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock login - replace with actual authentication logic
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      debugger;
+      // Actual API call to backend
+      const response = await axios.post<{
+        access_token: string;
+        token_type: string;
+        expires_in: number;
+        user: {
+          userId: string;
+          username: string;
+          roles: string[];
+        };
+      }>(`${API_BASE_URL}/auth/login`, {
+        username,
+        password
+      });
 
-      if (email === "admin@example.com" && password === "password") {
+      // Store the auth token
+      if (response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        
         toast.success("Login successful!");
+        console.log('Logged in user:', response.data.user);
+        
+        // Navigate to dashboard
         navigate("/dashboard");
-      } else {
-        toast.error("Invalid credentials. Try admin@example.com / password");
-        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error("An error occurred during login.");
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Invalid username or password");
+      } else if (error.response?.status === 400) {
+        toast.error("Please provide valid credentials");
+      } else if (!error.response) {
+        toast.error("Cannot connect to server. Please check if backend is running at " + API_BASE_URL);
+      } else {
+        toast.error(error.response?.data?.message || "An error occurred during login");
+      }
+      
       setIsLoading(false);
     }
   };
@@ -95,17 +125,18 @@ export const Login = () => {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username / Email
                 </label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="mt-1"
+                  autoComplete="username"
                 />
               </div>
               <div>
@@ -115,11 +146,12 @@ export const Login = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="mt-1"
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -155,7 +187,7 @@ export const Login = () => {
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
-                  Sign up
+                  Contact Administrator
                 </a>
               </p>
             </div>

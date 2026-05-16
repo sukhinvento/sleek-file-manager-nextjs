@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,12 +26,12 @@ import { VendorSortModal } from '@/components/vendor/VendorSortModal';
 import { ModernVendorOverlay } from '@/components/vendor/ModernVendorOverlay';
 import { Vendor } from '@/types/inventory';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
 import { countActiveFilters } from '@/lib/filterUtils';
 import * as vendorService from '@/services/vendorService';
+import type { VendorFilterParams } from '@/services/vendorService';
 import { VendorWithRisk } from '@/services/vendorService';
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -118,23 +118,137 @@ export const VendorManagement = () => {
   // Sort state
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
 
-  // Load vendors from service
-  const loadVendors = async () => {
+  // Build backend filter query from frontend filters
+  const buildBackendFilter = useMemo(() => {
+    const filter: Record<string, any> = {};
+    
+    // Status filter
+    if (selectedStatus !== 'All') {
+      filter['custom_status'] = selectedStatus;
+    }
+    
+    // Category filter
+    if (selectedCategory !== 'All') {
+      filter['custom_category'] = selectedCategory;
+    }
+    
+    // Advanced filters from filter modal
+    if (selectedFilters.vendorId) {
+      filter['vendorCode'] = { regex: selectedFilters.vendorId, options: 'i' };
+    }
+    
+    if (selectedFilters.contactPerson) {
+      filter['contactPersons'] = { regex: selectedFilters.contactPerson, options: 'i' };
+    }
+    
+    if (selectedFilters.phone) {
+      filter['custom_phone'] = { regex: selectedFilters.phone, options: 'i' };
+    }
+    
+    if (selectedFilters.email) {
+      filter['custom_email'] = { regex: selectedFilters.email, options: 'i' };
+    }
+    
+    if (selectedFilters.city) {
+      filter['custom_city'] = { regex: selectedFilters.city, options: 'i' };
+    }
+    
+    if (selectedFilters.state) {
+      filter['custom_state'] = { regex: selectedFilters.state, options: 'i' };
+    }
+    
+    if (selectedFilters.category && selectedFilters.category !== 'All') {
+      filter['custom_category'] = selectedFilters.category;
+    }
+    
+    if (selectedFilters.status && selectedFilters.status !== 'All') {
+      filter['custom_status'] = selectedFilters.status;
+    }
+    
+    if (selectedFilters.paymentTerms) {
+      filter['paymentTerms'] = { regex: selectedFilters.paymentTerms, options: 'i' };
+    }
+    
+    if (selectedFilters.registrationDateRange?.from) {
+      filter['createdAt'] = { gte: selectedFilters.registrationDateRange.from.toISOString() };
+      if (selectedFilters.registrationDateRange.to) {
+        filter['createdAt'] = {
+          ...filter['createdAt'],
+          lte: selectedFilters.registrationDateRange.to.toISOString()
+        };
+      }
+    }
+    
+    if (selectedFilters.creditLimitRange?.min) {
+      filter['custom_creditLimit'] = { gte: Number(selectedFilters.creditLimitRange.min) };
+      if (selectedFilters.creditLimitRange.max) {
+        filter['custom_creditLimit'] = {
+          ...filter['custom_creditLimit'],
+          lte: Number(selectedFilters.creditLimitRange.max)
+        };
+      }
+    }
+    
+    if (selectedFilters.outstandingBalanceRange?.min) {
+      filter['custom_outstandingBalance'] = { gte: Number(selectedFilters.outstandingBalanceRange.min) };
+      if (selectedFilters.outstandingBalanceRange.max) {
+        filter['custom_outstandingBalance'] = {
+          ...filter['custom_outstandingBalance'],
+          lte: Number(selectedFilters.outstandingBalanceRange.max)
+        };
+      }
+    }
+    
+    return filter;
+  }, [selectedStatus, selectedCategory, selectedFilters]);
+
+  // Build sort string for backend
+  const buildSortString = useMemo(() => {
+    return `${sortConfig.field}_${sortConfig.direction}`;
+  }, [sortConfig]);
+
+  // Load vendors from service with backend filtering
+  const loadVendors = useCallback(async () => {
     try {
       setIsLoadingData(true);
-      const data = await vendorService.fetchVendors();
-      setVendors(data);
-    } catch (error) {
+      
+      const filterParams: vendorService.VendorFilterParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sort: buildSortString,
+        filter: buildBackendFilter,
+      };
+      
+      // Add search term to filter if provided
+      if (searchTerm && searchTerm.trim()) {
+        filterParams.filter = {
+          ...buildBackendFilter,
+          name: { regex: searchTerm.trim(), options: 'i' }
+        };
+      } else {
+        filterParams.filter = buildBackendFilter;
+      }
+      
+      const result = await vendorService.fetchVendors(filterParams);
+      setVendors(result.vendors || []);
+      
+      // Update pagination info if available
+      if (result.total !== undefined) {
+        // Store total for pagination
+      }
+    } catch (error: any) {
       console.error('Error loading vendors:', error);
       toast({
         title: "Error",
-        description: "Failed to load vendors. Please try again.",
+        description: error?.message || "Failed to load vendors. Please try again.",
         variant: "destructive",
       });
+      // Set empty vendors array on error to prevent blank page
+      setVendors([]);
     } finally {
       setIsLoadingData(false);
     }
-  };
+  }, [currentPage, itemsPerPage, buildSortString, buildBackendFilter, searchTerm]);
 
   // Load stats from service
   const loadStats = async () => {
@@ -146,9 +260,12 @@ export const VendorManagement = () => {
     }
   };
 
-  // Load data on mount
+  // Load data on mount and when filters/sort change
   useEffect(() => {
     loadVendors();
+  }, [loadVendors]);
+  
+  useEffect(() => {
     loadStats();
   }, []);
 
@@ -164,70 +281,26 @@ export const VendorManagement = () => {
     return () => window.removeEventListener('openCreateModal', handleOpenCreateModal);
   }, []);
 
-  // Get unique values for filters
-  const statuses = ['All', ...Array.from(new Set(vendors.map(vendor => vendor.status)))];
-  const categories = ['All', ...Array.from(new Set(vendors.map(vendor => vendor.category)))];
+  // Get unique values for filters (will be fetched from backend or cached)
+  const statuses = ['All', 'Active', 'Inactive', 'Pending'];
+  const categories = ['All']; // Will be populated from backend or user selection
 
   // Count active filters
   const activeFilterCount = useMemo(() => countActiveFilters(selectedFilters), [selectedFilters]);
-  const hasFilters = activeFilterCount > 0;
+  const hasFilters = activeFilterCount > 0 || selectedStatus !== 'All' || selectedCategory !== 'All';
   const hasSort = sortConfig.field !== 'name' || sortConfig.direction !== 'asc';
 
-  // Filter logic
-  const filteredVendors = useMemo(() => {
-    return vendors.filter(vendor => {
-      const matchesSearch = !searchTerm || 
-        vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.vendorId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = selectedStatus === 'All' || vendor.status === selectedStatus;
-      const matchesCategory = selectedCategory === 'All' || vendor.category === selectedCategory;
-      
-      const matchesVendorId = !selectedFilters.vendorId || vendor.vendorId.toLowerCase().includes(selectedFilters.vendorId.toLowerCase());
-      const matchesContactPerson = !selectedFilters.contactPerson || vendor.contactPerson.toLowerCase().includes(selectedFilters.contactPerson.toLowerCase());
-      const matchesPhone = !selectedFilters.phone || vendor.phone.toLowerCase().includes(selectedFilters.phone.toLowerCase());
-      const matchesEmail = !selectedFilters.email || vendor.email.toLowerCase().includes(selectedFilters.email.toLowerCase());
-      const matchesCity = !selectedFilters.city || vendor.city?.toLowerCase().includes(selectedFilters.city.toLowerCase());
-      const matchesState = !selectedFilters.state || vendor.state?.toLowerCase().includes(selectedFilters.state.toLowerCase());
-      const matchesFilterCategory = !selectedFilters.category || selectedFilters.category === 'All' || vendor.category === selectedFilters.category;
-      const matchesFilterStatus = !selectedFilters.status || selectedFilters.status === 'All' || vendor.status === selectedFilters.status;
-      const matchesPaymentTerms = !selectedFilters.paymentTerms || vendor.paymentTerms.toLowerCase().includes(selectedFilters.paymentTerms.toLowerCase());
-      
-      const matchesRegDateRange = !selectedFilters.registrationDateRange?.from || 
-        (new Date(vendor.registrationDate) >= new Date(selectedFilters.registrationDateRange.from) &&
-         (!selectedFilters.registrationDateRange.to || new Date(vendor.registrationDate) <= new Date(selectedFilters.registrationDateRange.to)));
-      
-      const matchesCreditLimit = (!selectedFilters.creditLimitRange?.min || vendor.creditLimit >= Number(selectedFilters.creditLimitRange.min)) &&
-        (!selectedFilters.creditLimitRange?.max || vendor.creditLimit <= Number(selectedFilters.creditLimitRange.max));
-      
-      const matchesOutstanding = (!selectedFilters.outstandingBalanceRange?.min || vendor.outstandingBalance >= Number(selectedFilters.outstandingBalanceRange.min)) &&
-        (!selectedFilters.outstandingBalanceRange?.max || vendor.outstandingBalance <= Number(selectedFilters.outstandingBalanceRange.max));
-      
-      return matchesSearch && matchesStatus && matchesCategory && matchesVendorId && matchesContactPerson &&
-        matchesPhone && matchesEmail && matchesCity && matchesState && matchesFilterCategory && matchesFilterStatus &&
-        matchesPaymentTerms && matchesRegDateRange && matchesCreditLimit && matchesOutstanding;
-    });
-  }, [vendors, searchTerm, selectedStatus, selectedCategory, selectedFilters]);
-
-  // Infinite scroll for mobile
-  const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
-    data: filteredVendors,
-    itemsPerPage: 10,
-    enabled: isMobile
-  });
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
-  const currentPageData = isMobile 
-    ? mobileDisplayedItems
-    : filteredVendors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Vendors are already filtered by backend, so use them directly
+  const filteredVendors = vendors;
+  
+  // Pagination logic - backend handles pagination
+  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage) || 1;
+  const currentPageData = filteredVendors; // Backend already returns paginated results
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedStatus, selectedCategory, selectedFilters]);
+  }, [searchTerm, selectedStatus, selectedCategory, selectedFilters, sortConfig]);
 
   // Event handlers
   const handleApplyFilters = (filters: any) => {
@@ -271,7 +344,10 @@ export const VendorManagement = () => {
 
   const handleSaveVendor = async (vendorData: VendorWithRisk) => {
     try {
-      if (vendorData.id && (vendorData.id.startsWith('v-') || vendorData.id.match(/^\d+$/))) {
+      // Check if this is an update (has valid MongoDB ObjectId) or create (empty/short id)
+      const isUpdate = vendorData.id && vendorData.id.length === 24; // MongoDB ObjectId is exactly 24 chars
+      
+      if (isUpdate) {
         // Update existing vendor
         await vendorService.updateVendor(vendorData.id, vendorData);
         toast({
@@ -740,7 +816,7 @@ export const VendorManagement = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => handleDeleteVendor(vendor.vendorId)}
+                            onClick={() => handleDeleteVendor(vendor.id)}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -794,7 +870,7 @@ export const VendorManagement = () => {
 
         {/* Mobile Cards View */}
         <div className="md:hidden">
-          {mobileDisplayedItems.map((vendor: VendorWithRisk) => (
+          {currentPageData.map((vendor: VendorWithRisk) => (
               <Card key={vendor.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewVendor(vendor)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -830,7 +906,7 @@ export const VendorManagement = () => {
                         size="sm" 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteVendor(vendor.vendorId);
+                          handleDeleteVendor(vendor.id);
                         }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >

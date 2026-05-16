@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { Vendor } from '@/types/inventory';
 import { formatIndianCurrency } from '@/lib/utils';
+import { fetchActiveTaxes, type Tax } from '@/services/taxService';
 
 interface ModernVendorOverlayProps {
   vendor: Vendor | null;
@@ -168,7 +169,8 @@ export const ModernVendorOverlay = ({
   const [status, setStatus] = useState<string>('Active');
   const [website, setWebsite] = useState<string>('');
   const [taxId, setTaxId] = useState<string>('');
-  const [gstNumber, setGstNumber] = useState<string>('');
+  const [applicableTaxIds, setApplicableTaxIds] = useState<string[]>([]);
+  const [defaultPurchaseTaxId, setDefaultPurchaseTaxId] = useState<string>('');
   const [paymentTerms, setPaymentTerms] = useState<string>('Net 30');
   const [creditLimit, setCreditLimit] = useState<number>(0);
   const [bankName, setBankName] = useState<string>('');
@@ -177,6 +179,32 @@ export const ModernVendorOverlay = ({
   const [notes, setNotes] = useState<string>('');
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // Tax data
+  const [availableTaxes, setAvailableTaxes] = useState<Tax[]>([]);
+  const [loadingTaxes, setLoadingTaxes] = useState<boolean>(false);
+
+  // Load active taxes on mount
+  useEffect(() => {
+    const loadTaxes = async () => {
+      setLoadingTaxes(true);
+      try {
+        const taxes = await fetchActiveTaxes('purchase');
+        setAvailableTaxes(taxes);
+      } catch (error) {
+        console.error('Error loading taxes:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load tax options. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingTaxes(false);
+      }
+    };
+    
+    loadTaxes();
+  }, []);
 
   useEffect(() => {
     if (vendor) {
@@ -193,7 +221,12 @@ export const ModernVendorOverlay = ({
       setStatus(vendor.status || 'Active');
       setWebsite(vendor.website || '');
       setTaxId(vendor.taxId || '');
-      setGstNumber(vendor.gstNumber || '');
+      
+      // TODO: Get tax IDs from vendor if available (will need backend to populate)
+      // For now, this will be set when vendor data includes applicable_tax_ids
+      // setApplicableTaxIds(vendor.applicableTaxIds || []);
+      // setDefaultPurchaseTaxId(vendor.defaultPurchaseTaxId || '');
+      
       setPaymentTerms(vendor.paymentTerms || 'Net 30');
       setCreditLimit(vendor.creditLimit || 0);
       setBankName(vendor.bankName || '');
@@ -215,7 +248,8 @@ export const ModernVendorOverlay = ({
       setStatus('Active');
       setWebsite('');
       setTaxId('');
-      setGstNumber('');
+      setApplicableTaxIds([]);
+      setDefaultPurchaseTaxId('');
       setPaymentTerms('Net 30');
       setCreditLimit(0);
       setBankName('');
@@ -267,8 +301,8 @@ export const ModernVendorOverlay = ({
     setIsSaving(true);
 
     try {
-      const vendorData: Vendor = {
-        id: vendor?.id || Date.now().toString(),
+      const vendorData: any = {
+        id: vendor?.id || '', // Empty string for new vendors - backend will create MongoDB ObjectId
         vendorId: vendor?.vendorId || `V${String(Date.now()).slice(-6)}`,
         name,
         contactPerson,
@@ -283,7 +317,6 @@ export const ModernVendorOverlay = ({
         status: status as 'Active' | 'Inactive' | 'Pending',
         website,
         taxId: taxId || '',
-        gstNumber,
         paymentTerms,
         creditLimit,
         bankName,
@@ -295,6 +328,9 @@ export const ModernVendorOverlay = ({
         outstandingBalance: vendor?.outstandingBalance || 0,
         registrationDate: vendor?.registrationDate || new Date().toISOString().split('T')[0],
         lastOrderDate: vendor?.lastOrderDate,
+        // Use tax IDs instead of gstNumber
+        applicableTaxIds: applicableTaxIds.length > 0 ? applicableTaxIds : undefined,
+        defaultPurchaseTaxId: defaultPurchaseTaxId || undefined,
       };
 
       if (vendor && onUpdate) {
@@ -693,16 +729,86 @@ export const ModernVendorOverlay = ({
                   placeholder="Enter PAN number"
                 />
               </div>
+            </div>
+            
+            <div className="space-y-3">
               <div>
-                <Label htmlFor="gst-number" className="text-xs font-medium">GST Number</Label>
-                <Input
-                  id="gst-number"
-                  value={gstNumber}
-                  onChange={(e) => setGstNumber(e.target.value)}
-                  disabled={!isEditMode}
-                  className="h-9 text-sm mt-1"
-                  placeholder="Enter GST number"
-                />
+                <Label className="text-xs font-medium">Applicable Tax Slabs</Label>
+                <Select
+                  disabled={!isEditMode || loadingTaxes}
+                  value={applicableTaxIds.length > 0 ? applicableTaxIds[0] : ''}
+                  onValueChange={(value) => {
+                    if (value && !applicableTaxIds.includes(value)) {
+                      setApplicableTaxIds([...applicableTaxIds, value]);
+                      // Auto-set as default if it's the first one
+                      if (applicableTaxIds.length === 0) {
+                        setDefaultPurchaseTaxId(value);
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-sm mt-1">
+                    <SelectValue placeholder={loadingTaxes ? "Loading taxes..." : "Select applicable taxes"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTaxes
+                      .filter(tax => !applicableTaxIds.includes(tax._id))
+                      .map((tax) => (
+                        <SelectItem key={tax._id} value={tax._id}>
+                          {tax.name} ({tax.rate}%)
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Display selected taxes */}
+                {applicableTaxIds.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {applicableTaxIds.map((taxId) => {
+                      const tax = availableTaxes.find(t => t._id === taxId);
+                      return (
+                        <Badge
+                          key={taxId}
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (isEditMode) {
+                              setApplicableTaxIds(applicableTaxIds.filter(id => id !== taxId));
+                              if (defaultPurchaseTaxId === taxId) {
+                                setDefaultPurchaseTaxId('');
+                              }
+                            }
+                          }}
+                        >
+                          {tax ? `${tax.name} (${tax.rate}%)` : taxId}
+                          {isEditMode && <X className="h-3 w-3 ml-1" />}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <Label className="text-xs font-medium">Default Purchase Tax</Label>
+                <Select
+                  disabled={!isEditMode || applicableTaxIds.length === 0}
+                  value={defaultPurchaseTaxId}
+                  onValueChange={setDefaultPurchaseTaxId}
+                >
+                  <SelectTrigger className="h-9 text-sm mt-1">
+                    <SelectValue placeholder={applicableTaxIds.length === 0 ? "Select applicable taxes first" : "Select default tax"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTaxes
+                      .filter(tax => applicableTaxIds.includes(tax._id))
+                      .map((tax) => (
+                        <SelectItem key={tax._id} value={tax._id}>
+                          {tax.name} ({tax.rate}%)
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>

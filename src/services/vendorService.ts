@@ -1,215 +1,337 @@
 import { Vendor } from '@/types/inventory';
+import apiClient from '@/lib/api-client';
 
 // Extended vendor interface with risk level
 export interface VendorWithRisk extends Vendor {
   riskLevel: string;
 }
 
-// Mock data
-let mockVendors: VendorWithRisk[] = [
-  {
-    id: '1',
-    vendorId: 'V001',
-    name: 'PharmaCorp Ltd',
-    contactPerson: 'John Anderson',
-    phone: '+1-555-0123',
-    email: 'john@pharmacorp.com',
-    address: '123 Industrial Blvd',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    country: 'USA',
-    category: 'Pharmaceuticals',
-    status: 'Active',
-    totalOrders: 45,
-    totalValue: 125000.50,
-    creditLimit: 50000.00,
-    outstandingBalance: 12500.00,
-    paymentTerms: 'Net 30',
-    registrationDate: '2023-01-15',
-    riskLevel: 'Low',
-    taxId: 'TAX123456789',
-    gstNumber: 'GST123456789',
-    website: 'www.pharmacorp.com',
-    bankName: 'Chase Bank',
-    accountNumber: '1234567890',
-    ifscCode: 'CHAS0001234'
-  },
-  {
-    id: '2',
-    vendorId: 'V002',
-    name: 'MedSupply Co',
-    contactPerson: 'Sarah Wilson',
-    phone: '+1-555-0124',
-    email: 'sarah@medsupply.com',
-    address: '456 Healthcare Ave',
-    city: 'Chicago',
-    state: 'IL',
-    zipCode: '60601',
-    country: 'USA',
-    category: 'Medical Supplies',
-    status: 'Active',
-    totalOrders: 32,
-    totalValue: 89000.25,
-    creditLimit: 30000.00,
-    outstandingBalance: 8500.00,
-    paymentTerms: 'Net 15',
-    registrationDate: '2023-03-20',
-    riskLevel: 'Medium',
-    taxId: 'TAX987654321',
-    gstNumber: 'GST987654321',
-    website: 'www.medsupply.com',
-    bankName: 'Bank of America',
-    accountNumber: '9876543210',
-    ifscCode: 'BOFA0009876'
-  },
-  {
-    id: '3',
-    vendorId: 'V003',
-    name: 'HealthEquip Inc',
-    contactPerson: 'Michael Brown',
-    phone: '+1-555-0125',
-    email: 'michael@healthequip.com',
-    address: '789 Medical Plaza',
-    city: 'Los Angeles',
-    state: 'CA',
-    zipCode: '90001',
-    country: 'USA',
-    category: 'Equipment',
-    status: 'Active',
-    totalOrders: 28,
-    totalValue: 156000.75,
-    creditLimit: 75000.00,
-    outstandingBalance: 25000.00,
-    paymentTerms: 'Net 45',
-    registrationDate: '2022-11-10',
-    riskLevel: 'High',
-    taxId: 'TAX456789123',
-    gstNumber: 'GST456789123',
-    website: 'www.healthequip.com',
-    bankName: 'Wells Fargo',
-    accountNumber: '4567891230',
-    ifscCode: 'WELL0004567'
-  }
-];
+// Backend API response interface
+interface BackendVendor {
+  _id: string;
+  vendor_code: string;
+  name: string;
+  legal_name: string;
+  tax_id: string;
+  address: string;
+  contact_persons: string[];
+  default_lead_time_days: number;
+  payment_terms: string;
+  supported_tax_slabs?: string[]; // Legacy field
+  applicable_tax_ids?: string[]; // Tax IDs (preferred)
+  default_purchase_tax_id?: string; // Default tax ID (preferred)
+  custom_fields: Record<string, any>;
+  tenantId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Filter interface for backend queries
+export interface VendorFilterParams {
+  page?: number;
+  limit?: number;
+  sort?: string; // Format: "field_asc" or "field_desc" or "field1_asc,field2_desc"
+  filter?: Record<string, any>; // MongoDB-style filter
+  search?: string; // Search term for text search
+}
+
+// Response interface for paginated vendor list
+interface VendorListResponse {
+  data: BackendVendor[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+// Map backend vendor to frontend vendor interface
+const mapBackendToFrontend = (backendVendor: BackendVendor): VendorWithRisk => {
+  const customFields = backendVendor.custom_fields || {};
+  
+  // Parse address (assuming format: "street, city, state, zip, country")
+  const addressParts = backendVendor.address?.split(',').map(p => p.trim()) || [];
+  
+  return {
+    id: backendVendor._id,
+    vendorId: backendVendor.vendor_code,
+    name: backendVendor.name,
+    contactPerson: backendVendor.contact_persons?.[0] || '',
+    phone: customFields.phone || '',
+    email: customFields.email || '',
+    address: addressParts[0] || backendVendor.address,
+    city: customFields.city || addressParts[1] || '',
+    state: customFields.state || addressParts[2] || '',
+    zipCode: customFields.zipCode || addressParts[3] || '',
+    country: customFields.country || addressParts[4] || '',
+    category: customFields.industry || customFields.category || '',
+    status: (customFields.status || 'Active') as 'Active' | 'Inactive' | 'Pending',
+    totalOrders: customFields.totalOrders || 0,
+    lastOrderDate: customFields.lastOrderDate,
+    totalValue: customFields.totalValue || 0,
+    paymentTerms: backendVendor.payment_terms || '',
+    taxId: backendVendor.tax_id || '',
+    gstNumber: customFields.gstNumber || backendVendor.supported_tax_slabs?.[0] || '',
+    website: customFields.website || '',
+    bankName: customFields.bankName || '',
+    accountNumber: customFields.accountNumber || '',
+    ifscCode: customFields.ifscCode || '',
+    creditLimit: customFields.creditLimit || 0,
+    outstandingBalance: customFields.outstandingBalance || 0,
+    registrationDate: customFields.registrationDate || backendVendor.createdAt || new Date().toISOString().split('T')[0],
+    notes: customFields.notes || '',
+    riskLevel: customFields.rating || customFields.riskLevel || 'Low',
+  };
+};
+
+// Extended frontend vendor interface with tax IDs
+interface VendorWithTaxIds extends VendorWithRisk {
+  applicableTaxIds?: string[];
+  defaultPurchaseTaxId?: string;
+}
+
+// Map frontend vendor to backend format
+const mapFrontendToBackend = (vendor: Partial<VendorWithTaxIds>): Partial<BackendVendor> => {
+  const addressParts = [
+    vendor.address,
+    vendor.city,
+    vendor.state,
+    vendor.zipCode,
+    vendor.country,
+  ].filter(Boolean);
+  
+  const backendData: Partial<BackendVendor> = {
+    vendor_code: vendor.vendorId,
+    name: vendor.name,
+    legal_name: vendor.name, // Using name as legal_name if not provided separately
+    tax_id: vendor.taxId || '',
+    address: addressParts.join(', '),
+    contact_persons: vendor.contactPerson ? [vendor.contactPerson] : [],
+    default_lead_time_days: 14, // Default value
+    payment_terms: vendor.paymentTerms || '',
+    custom_fields: {
+      industry: vendor.category,
+      rating: vendor.riskLevel,
+      status: vendor.status,
+      totalOrders: vendor.totalOrders,
+      totalValue: vendor.totalValue,
+      creditLimit: vendor.creditLimit,
+      outstandingBalance: vendor.outstandingBalance,
+      registrationDate: vendor.registrationDate,
+      website: vendor.website,
+      bankName: vendor.bankName,
+      accountNumber: vendor.accountNumber,
+      ifscCode: vendor.ifscCode,
+      phone: vendor.phone,
+      email: vendor.email,
+      city: vendor.city,
+      state: vendor.state,
+      zipCode: vendor.zipCode,
+      country: vendor.country,
+      category: vendor.category,
+      lastOrderDate: vendor.lastOrderDate,
+      notes: vendor.notes,
+    },
+  };
+  
+  // Use tax IDs if provided (preferred), otherwise fall back to legacy supported_tax_slabs
+  if (vendor.applicableTaxIds && vendor.applicableTaxIds.length > 0) {
+    backendData.applicable_tax_ids = vendor.applicableTaxIds;
+  } else if (vendor.gstNumber) {
+    // Legacy support for gstNumber
+    backendData.supported_tax_slabs = [vendor.gstNumber];
+  }
+  
+  if (vendor.defaultPurchaseTaxId) {
+    backendData.default_purchase_tax_id = vendor.defaultPurchaseTaxId;
+  }
+  
+  return backendData;
+};
 
 /**
- * Fetch all vendors
- * TODO: Replace with actual API call: GET /api/vendors
+ * Fetch vendors with filtering, sorting, and pagination
+ * API call: GET /vendors with query parameters
  */
-export const fetchVendors = async (): Promise<VendorWithRisk[]> => {
-  await delay(500);
-  return [...mockVendors];
+export const fetchVendors = async (
+  params?: VendorFilterParams
+): Promise<{ vendors: VendorWithRisk[]; total?: number; page?: number; limit?: number; totalPages?: number }> => {
+  try {
+      const queryParams: Record<string, any> = {};
+      
+      if (params?.page) queryParams.page = String(params.page);
+      if (params?.limit) queryParams.limit = String(params.limit);
+      if (params?.sort) queryParams.sort = params.sort;
+      
+      // Send filter as a JSON string in the filter parameter
+      if (params?.filter && Object.keys(params.filter).length > 0) {
+        queryParams.filter = JSON.stringify(params.filter);
+      }
+    
+    const response = await apiClient.get<BackendVendor[] | VendorListResponse>('/vendors', {
+      params: queryParams,
+    });
+    
+    // Handle both array response and paginated response
+    if (Array.isArray(response.data)) {
+      return {
+        vendors: response.data.map(mapBackendToFrontend),
+      };
+    } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      const listResponse = response.data as VendorListResponse;
+      return {
+        vendors: (listResponse.data || []).map(mapBackendToFrontend),
+        total: listResponse.total,
+        page: listResponse.page,
+        limit: listResponse.limit,
+        totalPages: listResponse.totalPages,
+      };
+    } else {
+      // Fallback: empty result
+      console.warn('Unexpected response format:', response.data);
+      return {
+        vendors: [],
+      };
+    }
+  } catch (error: any) {
+    console.error('Error fetching vendors:', error);
+    // Return empty array instead of throwing to prevent blank page
+    return {
+      vendors: [],
+    };
+  }
 };
 
 /**
  * Fetch a single vendor by ID
- * TODO: Replace with actual API call: GET /api/vendors/:id
+ * API call: GET /vendors/:id
  */
 export const fetchVendorById = async (id: string): Promise<VendorWithRisk | null> => {
-  await delay(300);
-  return mockVendors.find(vendor => vendor.id === id) || null;
+  try {
+    const response = await apiClient.get<BackendVendor>(`/vendors/${id}`);
+    return mapBackendToFrontend(response.data);
+  } catch (error) {
+    console.error('Error fetching vendor by ID:', error);
+    return null;
+  }
 };
 
 /**
  * Create a new vendor
- * TODO: Replace with actual API call: POST /api/vendors
+ * API call: POST /vendors
  */
-export const createVendor = async (vendorData: Omit<VendorWithRisk, 'id' | 'totalOrders' | 'totalValue' | 'outstandingBalance'>): Promise<VendorWithRisk> => {
-  await delay(800);
-  const newVendor: VendorWithRisk = {
-    ...vendorData,
-    id: `v-${Date.now()}`,
-    totalOrders: 0,
-    totalValue: 0,
-    outstandingBalance: 0,
-  };
-  mockVendors.push(newVendor);
-  return newVendor;
+export const createVendor = async (
+  vendorData: Omit<VendorWithRisk, 'id' | 'totalOrders' | 'totalValue' | 'outstandingBalance'>
+): Promise<VendorWithRisk> => {
+  try {
+    const backendData = mapFrontendToBackend({
+      ...vendorData,
+      totalOrders: 0,
+      totalValue: 0,
+      outstandingBalance: 0,
+    });
+    
+    const response = await apiClient.post<BackendVendor>('/vendors', backendData);
+    return mapBackendToFrontend(response.data);
+  } catch (error) {
+    console.error('Error creating vendor:', error);
+    throw error;
+  }
 };
 
 /**
  * Update an existing vendor
- * TODO: Replace with actual API call: PUT /api/vendors/:id
+ * API call: PATCH /vendors/:id
  */
-export const updateVendor = async (id: string, vendorData: Partial<VendorWithRisk>): Promise<VendorWithRisk> => {
-  await delay(800);
-  const index = mockVendors.findIndex(vendor => vendor.id === id);
-  if (index === -1) {
-    throw new Error('Vendor not found');
+export const updateVendor = async (
+  id: string,
+  vendorData: Partial<VendorWithRisk>
+): Promise<VendorWithRisk> => {
+  try {
+    const backendData = mapFrontendToBackend(vendorData);
+    
+    const response = await apiClient.patch<BackendVendor>(`/vendors/${id}`, backendData);
+    return mapBackendToFrontend(response.data);
+  } catch (error) {
+    console.error('Error updating vendor:', error);
+    throw error;
   }
-  mockVendors[index] = { ...mockVendors[index], ...vendorData };
-  return mockVendors[index];
 };
 
 /**
  * Delete a vendor
- * TODO: Replace with actual API call: DELETE /api/vendors/:id
+ * API call: DELETE /vendors/:id
  */
 export const deleteVendor = async (id: string): Promise<void> => {
-  await delay(500);
-  const index = mockVendors.findIndex(vendor => vendor.id === id);
-  if (index === -1) {
-    throw new Error('Vendor not found');
+  try {
+    await apiClient.delete(`/vendors/${id}`);
+  } catch (error) {
+    console.error('Error deleting vendor:', error);
+    throw error;
   }
-  mockVendors.splice(index, 1);
 };
 
 /**
  * Fetch vendor statistics
- * TODO: Replace with actual API call: GET /api/vendors/stats
+ * Uses backend filtering for efficient aggregation
  */
 export const fetchVendorStats = async () => {
-  await delay(400);
-  
-  const totalVendors = mockVendors.length;
-  const activeVendors = mockVendors.filter(v => v.status === 'Active').length;
-  const totalValue = mockVendors.reduce((sum, v) => sum + v.totalValue, 0);
-  const outstandingBalance = mockVendors.reduce((sum, v) => sum + v.outstandingBalance, 0);
-  const highRiskVendors = mockVendors.filter(v => v.riskLevel === 'High').length;
-  
-  return {
-    totalVendors,
-    activeVendors,
-    totalValue,
-    outstandingBalance,
-    highRiskVendors,
-    averageOrderValue: totalVendors > 0 ? totalValue / totalVendors : 0,
-  };
+  try {
+    // Fetch vendors for stats (with reasonable limit)
+    const result = await fetchVendors({ limit: 1000 });
+    const vendors = result.vendors || [];
+    
+    const totalVendors = vendors.length;
+    const activeVendors = vendors.filter(v => v.status === 'Active').length;
+    const totalValue = vendors.reduce((sum, v) => sum + (v.totalValue || 0), 0);
+    const outstandingBalance = vendors.reduce((sum, v) => sum + (v.outstandingBalance || 0), 0);
+    const highRiskVendors = vendors.filter(v => v.riskLevel === 'High').length;
+    
+    return {
+      totalVendors,
+      activeVendors,
+      totalValue,
+      outstandingBalance,
+      highRiskVendors,
+      averageOrderValue: totalVendors > 0 ? totalValue / totalVendors : 0,
+    };
+  } catch (error) {
+    console.error('Error fetching vendor stats:', error);
+    // Return default stats on error
+    return {
+      totalVendors: 0,
+      activeVendors: 0,
+      totalValue: 0,
+      outstandingBalance: 0,
+      highRiskVendors: 0,
+      averageOrderValue: 0,
+    };
+  }
 };
 
 /**
- * Search vendors
- * TODO: Replace with actual API call: GET /api/vendors/search?q=...
+ * Search vendors using backend search endpoint
  */
-export const searchVendors = async (query: string): Promise<VendorWithRisk[]> => {
-  await delay(300);
-  const lowerQuery = query.toLowerCase();
-  return mockVendors.filter(vendor =>
-    vendor.name.toLowerCase().includes(lowerQuery) ||
-    vendor.vendorId.toLowerCase().includes(lowerQuery) ||
-    vendor.contactPerson.toLowerCase().includes(lowerQuery) ||
-    vendor.email.toLowerCase().includes(lowerQuery)
-  );
-};
-
-/**
- * Get vendors by category
- * TODO: Replace with actual API call: GET /api/vendors/category/:category
- */
-export const getVendorsByCategory = async (category: string): Promise<VendorWithRisk[]> => {
-  await delay(300);
-  return mockVendors.filter(vendor => vendor.category === category);
-};
-
-/**
- * Get vendors by status
- * TODO: Replace with actual API call: GET /api/vendors/status/:status
- */
-export const getVendorsByStatus = async (status: string): Promise<VendorWithRisk[]> => {
-  await delay(300);
-  return mockVendors.filter(vendor => vendor.status === status);
+export const searchVendors = async (
+  query: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<{ vendors: VendorWithRisk[]; total?: number; page?: number; limit?: number }> => {
+  try {
+    const response = await apiClient.get<BackendVendor[]>('/vendors/search', {
+      params: { q: query, page, limit },
+    });
+    
+    if (Array.isArray(response.data)) {
+      return {
+        vendors: response.data.map(mapBackendToFrontend),
+        page,
+        limit,
+      };
+    }
+    
+    return { vendors: [] };
+  } catch (error) {
+    console.error('Error searching vendors:', error);
+    throw error;
+  }
 };
