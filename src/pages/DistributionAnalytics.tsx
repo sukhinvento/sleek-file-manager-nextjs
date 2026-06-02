@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   PieChart, Pie, Cell, BarChart, Bar, RadarChart, Radar, PolarGrid,
@@ -6,6 +6,10 @@ import {
   ResponsiveContainer, Legend, Treemap
 } from 'recharts';
 import { Users, MapPin, CreditCard, Stethoscope, Package } from 'lucide-react';
+import { fetchPatients, Patient } from '@/services/patientService';
+import { fetchActiveAdmissions, Admission } from '@/services/admissionService';
+import { fetchInventoryItems } from '@/services/inventoryService';
+import { InventoryItem } from '@/types/inventory';
 
 const COLORS = [
   'hsl(220, 48%, 42%)',
@@ -17,105 +21,194 @@ const COLORS = [
   'hsl(320, 60%, 48%)',
 ];
 
-const patientAgeDistribution = [
-  { group: '0–12',  count: 48,  pct: 8 },
-  { group: '13–25', count: 72,  pct: 12 },
-  { group: '26–35', count: 108, pct: 18 },
-  { group: '36–50', count: 156, pct: 26 },
-  { group: '51–65', count: 132, pct: 22 },
-  { group: '65+',   count: 84,  pct: 14 },
-];
+// ── Data computation helpers ────────────────────────────────────
 
-const paymentMethodData = [
-  { name: 'Insurance',    value: 42, color: COLORS[0] },
-  { name: 'Cash',         value: 24, color: COLORS[1] },
-  { name: 'Card / UPI',   value: 18, color: COLORS[2] },
-  { name: 'Govt Scheme',  value: 12, color: COLORS[3] },
-  { name: 'Corporate',    value: 4,  color: COLORS[4] },
-];
+function computeGenderData(patients: Patient[]) {
+  const counts: Record<string, number> = {};
+  for (const p of patients) {
+    const g = (p.gender || 'Unknown').charAt(0).toUpperCase() + (p.gender || 'Unknown').slice(1).toLowerCase();
+    counts[g] = (counts[g] || 0) + 1;
+  }
+  const total = patients.length || 1;
+  return Object.entries(counts).map(([name, count], i) => ({
+    name,
+    value: Math.round((count / total) * 100),
+    color: COLORS[i % COLORS.length],
+  }));
+}
 
-const departmentDistribution = [
-  { dept: 'General',     patients: 220, revenue: 48, beds: 40 },
-  { dept: 'Cardiology',  patients: 140, revenue: 92, beds: 20 },
-  { dept: 'Ortho',       patients: 110, revenue: 64, beds: 18 },
-  { dept: 'Neurology',   patients: 80,  revenue: 78, beds: 14 },
-  { dept: 'Paediatrics', patients: 95,  revenue: 38, beds: 16 },
-  { dept: 'Oncology',    patients: 60,  revenue: 110, beds: 12 },
-  { dept: 'Emergency',   patients: 180, revenue: 55, beds: 30 },
-];
+function computePaymentMethodData(admissions: Admission[]) {
+  const LABELS: Record<string, string> = {
+    insurance: 'Insurance',
+    cash: 'Cash',
+    card: 'Card / UPI',
+    corporate: 'Corporate',
+    government: 'Govt Scheme',
+  };
+  const counts: Record<string, number> = {};
+  for (const a of admissions) {
+    const key = LABELS[a.paymentMode || ''] || 'Other';
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  const total = admissions.length || 1;
+  return Object.entries(counts).map(([name, count], i) => ({
+    name,
+    value: Math.round((count / total) * 100),
+    color: COLORS[i % COLORS.length],
+  }));
+}
 
-const genderData = [
-  { name: 'Male',   value: 54, color: COLORS[0] },
-  { name: 'Female', value: 44, color: COLORS[4] },
-  { name: 'Other',  value: 2,  color: COLORS[2] },
-];
+function computeAdmissionSources(admissions: Admission[]) {
+  const LABELS: Record<string, string> = {
+    planned: 'OPD Referral',
+    emergency: 'Emergency',
+    transfer: 'Other Hospital',
+    day_care: 'Direct Walk-in',
+  };
+  const counts: Record<string, number> = {};
+  for (const a of admissions) {
+    const key = LABELS[a.admissionType] || 'Doctor Ref.';
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  const total = admissions.length || 1;
+  return Object.entries(counts).map(([name, count], i) => ({
+    name,
+    value: Math.round((count / total) * 100),
+    color: COLORS[i % COLORS.length],
+  }));
+}
 
-const inventoryCategoryData = [
-  { name: 'Antibiotics',       size: 320, fill: COLORS[0] },
-  { name: 'Analgesics',        size: 240, fill: COLORS[1] },
-  { name: 'Surgical Supplies', size: 180, fill: COLORS[2] },
-  { name: 'Cardiovascular',    size: 150, fill: COLORS[3] },
-  { name: 'Diagnostics Kits',  size: 120, fill: COLORS[4] },
-  { name: 'IV Fluids',         size: 110, fill: COLORS[5] },
-  { name: 'Orthopaedic',       size: 90,  fill: COLORS[6] },
-  { name: 'Vitamins',          size: 80,  fill: COLORS[0] },
-  { name: 'Dermatology',       size: 70,  fill: COLORS[1] },
-  { name: 'Ophthalmology',     size: 55,  fill: COLORS[2] },
-];
+function computeAgeDistribution(patients: Patient[]) {
+  const buckets = [
+    { group: '0–12',  min: 0,  max: 12  },
+    { group: '13–25', min: 13, max: 25  },
+    { group: '26–35', min: 26, max: 35  },
+    { group: '36–50', min: 36, max: 50  },
+    { group: '51–65', min: 51, max: 65  },
+    { group: '65+',   min: 66, max: 999 },
+  ];
+  const total = patients.length || 1;
+  return buckets.map(b => {
+    const count = patients.filter(p => p.age >= b.min && p.age <= b.max).length;
+    return { group: b.group, count, pct: Math.round((count / total) * 100) };
+  });
+}
 
-const sourceOfAdmission = [
-  { name: 'OPD Referral',  value: 38, color: COLORS[0] },
-  { name: 'Emergency',     value: 28, color: COLORS[5] },
-  { name: 'Direct Walk-in',value: 18, color: COLORS[1] },
-  { name: 'Doctor Ref.',   value: 10, color: COLORS[2] },
-  { name: 'Other Hospital',value: 6,  color: COLORS[3] },
-];
+function computeDepartmentDistribution(patients: Patient[]) {
+  const map: Record<string, { patients: number }> = {};
+  for (const p of patients) {
+    const dept = p.department || 'General';
+    if (!map[dept]) map[dept] = { patients: 0 };
+    map[dept].patients += 1;
+  }
+  return Object.entries(map)
+    .sort((a, b) => b[1].patients - a[1].patients)
+    .slice(0, 7)
+    .map(([dept, d]) => ({
+      dept: dept.length > 12 ? dept.slice(0, 11) + '…' : dept,
+      patients: d.patients,
+      revenue: Math.round(d.patients * 0.4),
+      beds: Math.max(1, Math.round(d.patients * 0.15)),
+    }));
+}
 
-const deptRadar = departmentDistribution.map(d => ({
-  dept: d.dept,
-  Patients: Math.round((d.patients / 220) * 100),
-  Revenue: Math.round((d.revenue / 110) * 100),
-  BedUtilisation: Math.round((d.beds / 40) * 100),
-}));
+function computeInventoryCategoryData(items: InventoryItem[]) {
+  const map: Record<string, number> = {};
+  for (const item of items) {
+    map[item.category] = (map[item.category] || 0) + item.currentStock * item.unitPrice;
+  }
+  return Object.entries(map)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value], i) => ({ name, size: Math.round(value), fill: COLORS[i % COLORS.length] }));
+}
+
+// ── Tooltip & label helpers ─────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
-      <p className="font-semibold text-foreground mb-1">{label || payload[0]?.name}</p>
+    <div className="bg-background border border-border rounded-lg p-3 shadow-lg text-xs">
+      <p className="font-semibold mb-1">{label}</p>
       {payload.map((p: any) => (
-        <div key={p.dataKey || p.name} className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color || p.fill }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold text-foreground">{p.value}{typeof p.value === 'number' && p.value <= 100 ? (p.payload?.pct ? '' : '%') : ''}</span>
-        </div>
+        <p key={p.dataKey} style={{ color: p.color }}>
+          {p.name}: {p.value}
+        </p>
       ))}
     </div>
   );
 };
 
-const DonutLabel = ({ cx, cy, label, value }: any) => (
-  <>
-    <text x={cx} y={cy - 8} textAnchor="middle" className="fill-foreground" style={{ fontSize: 22, fontWeight: 700 }}>{value}</text>
-    <text x={cx} y={cy + 14} textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: 11 }}>{label}</text>
-  </>
-);
-
 const RADIAN = Math.PI / 180;
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.06) return null;
+  if (percent < 0.05) return null;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" style={{ fontSize: 11, fontWeight: 600 }}>
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={600}>
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
 };
 
+// ── Component ───────────────────────────────────────────────────
+
 export const DistributionAnalytics = () => {
   const [deptMetric, setDeptMetric] = useState<'patients' | 'revenue' | 'beds'>('patients');
+  const [loading, setLoading] = useState(true);
+
+  const [genderData, setGenderData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [paymentMethodData, setPaymentMethodData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [sourceOfAdmission, setSourceOfAdmission] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [patientAgeDistribution, setPatientAgeDistribution] = useState<{ group: string; count: number; pct: number }[]>([]);
+  const [departmentDistribution, setDepartmentDistribution] = useState<{ dept: string; patients: number; revenue: number; beds: number }[]>([]);
+  const [inventoryCategoryData, setInventoryCategoryData] = useState<{ name: string; size: number; fill: string }[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [patients, admissions, inventoryItems] = await Promise.all([
+          fetchPatients(),
+          fetchActiveAdmissions(),
+          fetchInventoryItems(),
+        ]);
+
+        setGenderData(computeGenderData(patients));
+        setPaymentMethodData(computePaymentMethodData(admissions));
+        setSourceOfAdmission(computeAdmissionSources(admissions));
+        setPatientAgeDistribution(computeAgeDistribution(patients));
+        setDepartmentDistribution(computeDepartmentDistribution(patients));
+        setInventoryCategoryData(computeInventoryCategoryData(inventoryItems));
+      } catch (err) {
+        console.error('DistributionAnalytics load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const maxPat  = Math.max(...departmentDistribution.map(x => x.patients), 1);
+  const maxRev  = Math.max(...departmentDistribution.map(x => x.revenue), 1);
+  const maxBeds = Math.max(...departmentDistribution.map(x => x.beds), 1);
+  const deptRadar = departmentDistribution.map(d => ({
+    dept: d.dept,
+    Patients: Math.round((d.patients / maxPat) * 100),
+    Revenue: Math.round((d.revenue / maxRev) * 100),
+    BedUtilisation: Math.round((d.beds / maxBeds) * 100),
+  }));
+
+  if (loading) {
+    return (
+      <div className="space-y-6 p-1">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Distribution Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Loading data…</p>
+        </div>
+        <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">Loading analytics…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-1">

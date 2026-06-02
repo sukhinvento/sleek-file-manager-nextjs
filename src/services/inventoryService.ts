@@ -1,158 +1,160 @@
+import apiClient from '@/lib/api-client';
 import { InventoryItem } from '@/types/inventory';
-import { inventoryItemsData } from '@/data/inventoryData';
 
-// Mock data - clone the initial data
-let mockInventoryItems: InventoryItem[] = [...inventoryItemsData];
+function mapInventoryItem(raw: any): InventoryItem {
+  return {
+    id: raw._id || raw.id || '',
+    name: raw.name || '',
+    category: raw.category || '',
+    sku: raw.sku || '',
+    currentStock: raw.current_stock ?? raw.currentStock ?? 0,
+    minStock: raw.min_stock_level ?? raw.minStock ?? 0,
+    maxStock: raw.max_stock_level ?? raw.maxStock ?? 0,
+    unitPrice: raw.unit_price ?? raw.unitPrice ?? 0,
+    supplier: raw.supplier || raw.vendor_name || '',
+    manufacturer: raw.manufacturer || '',
+    expiryDate: raw.expiry_date || raw.expiryDate,
+    batchNumber: raw.batch_number || raw.batchNumber || '',
+    location: raw.location || '',
+    description: raw.description || '',
+    saleUnit: raw.sale_unit || raw.saleUnit || raw.unit_of_measure,
+    barcode: raw.barcode || '',
+    barcodeType: raw.barcode_type || raw.barcodeType,
+    qrCode: raw.qr_code || raw.qrCode,
+    rfidTag: raw.rfid_tag || raw.rfidTag || '',
+    rfidEnabled: raw.rfid_enabled ?? raw.rfidEnabled,
+    serialNumbers: raw.serial_numbers || raw.serialNumbers,
+    trackingEnabled: raw.tracking_enabled ?? raw.trackingEnabled,
+  };
+}
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function toBackendBody(itemData: Partial<InventoryItem>): Record<string, any> {
+  const body: Record<string, any> = {};
+  if (itemData.name !== undefined)         body.name           = itemData.name;
+  if (itemData.category !== undefined)     body.category       = itemData.category;
+  if (itemData.sku !== undefined)          body.sku            = itemData.sku;
+  if (itemData.currentStock !== undefined) body.current_stock  = itemData.currentStock;
+  if (itemData.minStock !== undefined)     body.min_stock_level = itemData.minStock;
+  if (itemData.maxStock !== undefined)     body.max_stock_level = itemData.maxStock;
+  if (itemData.unitPrice !== undefined)    body.unit_price     = itemData.unitPrice;
+  if (itemData.supplier !== undefined)     body.supplier       = itemData.supplier;
+  if (itemData.manufacturer !== undefined) body.manufacturer   = itemData.manufacturer;
+  if (itemData.expiryDate !== undefined)   body.expiry_date    = itemData.expiryDate;
+  if (itemData.batchNumber !== undefined)  body.batch_number   = itemData.batchNumber;
+  if (itemData.location !== undefined)     body.location       = itemData.location;
+  if (itemData.description !== undefined)  body.description    = itemData.description;
+  if (itemData.saleUnit !== undefined)     body.sale_unit      = itemData.saleUnit;
+  if (itemData.barcode !== undefined)      body.barcode        = itemData.barcode;
+  if (itemData.rfidTag !== undefined)      body.rfid_tag       = itemData.rfidTag;
+  return body;
+}
 
 /**
  * Fetch all inventory items
- * TODO: Replace with actual API call: GET /api/inventory
+ * GET /inventory?limit=200
  */
 export const fetchInventoryItems = async (): Promise<InventoryItem[]> => {
-  await delay(500);
-  return [...mockInventoryItems];
+  const response = await apiClient.get('/inventory', { params: { limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapInventoryItem);
 };
 
 /**
  * Fetch a single inventory item by ID
- * TODO: Replace with actual API call: GET /api/inventory/:id
+ * GET /inventory/:id
  */
 export const fetchInventoryItemById = async (id: string): Promise<InventoryItem | null> => {
-  await delay(300);
-  return mockInventoryItems.find(item => item.id === id) || null;
+  try {
+    const response = await apiClient.get(`/inventory/${id}`);
+    return mapInventoryItem(response.data);
+  } catch {
+    return null;
+  }
 };
 
 /**
  * Create a new inventory item
- * TODO: Replace with actual API call: POST /api/inventory
+ * POST /inventory
  */
 export const createInventoryItem = async (itemData: Omit<InventoryItem, 'id'>): Promise<InventoryItem> => {
-  await delay(800);
-  const newItem: InventoryItem = {
-    ...itemData,
-    id: `inv-${Date.now()}`,
-  };
-  mockInventoryItems.push(newItem);
-  return newItem;
+  const response = await apiClient.post('/inventory', toBackendBody(itemData));
+  return mapInventoryItem(response.data);
 };
 
 /**
  * Update an existing inventory item
- * TODO: Replace with actual API call: PUT /api/inventory/:id
+ * PATCH /inventory/:id
  */
 export const updateInventoryItem = async (id: string, itemData: Partial<InventoryItem>): Promise<InventoryItem> => {
-  await delay(800);
-  const index = mockInventoryItems.findIndex(item => item.id === id);
-  if (index === -1) {
-    throw new Error('Inventory item not found');
-  }
-  mockInventoryItems[index] = { ...mockInventoryItems[index], ...itemData };
-  return mockInventoryItems[index];
+  const response = await apiClient.patch(`/inventory/${id}`, toBackendBody(itemData));
+  return mapInventoryItem(response.data);
 };
 
 /**
  * Delete an inventory item
- * TODO: Replace with actual API call: DELETE /api/inventory/:id
+ * DELETE /inventory/:id
  */
 export const deleteInventoryItem = async (id: string): Promise<void> => {
-  await delay(500);
-  const index = mockInventoryItems.findIndex(item => item.id === id);
-  if (index === -1) {
-    throw new Error('Inventory item not found');
-  }
-  mockInventoryItems.splice(index, 1);
+  await apiClient.delete(`/inventory/${id}`);
 };
 
 /**
  * Fetch inventory statistics
- * TODO: Replace with actual API call: GET /api/inventory/stats
+ * GET /inventory/stats
  */
 export const fetchInventoryStats = async () => {
-  await delay(400);
-  
-  const getItemStatus = (item: InventoryItem): string => {
-    if (item.currentStock === 0) return 'Out of Stock';
-    if (item.currentStock < item.minStock) return 'Critical';
-    if (item.currentStock < item.minStock * 1.5) return 'Low';
-    return 'Normal';
-  };
-  
-  const totalItems = mockInventoryItems.length;
-  const totalValue = mockInventoryItems.reduce((sum, item) => sum + (item.currentStock * item.unitPrice), 0);
-  const lowStockItems = mockInventoryItems.filter(item => getItemStatus(item) !== 'Normal').length;
-  const criticalItems = mockInventoryItems.filter(item => getItemStatus(item) === 'Critical').length;
-  const outOfStockItems = mockInventoryItems.filter(item => item.currentStock === 0).length;
-  const totalCategories = [...new Set(mockInventoryItems.map(item => item.category))].length;
-  
+  const response = await apiClient.get('/inventory/stats');
+  const raw = response.data || {};
   return {
-    totalItems,
-    totalValue,
-    lowStockItems,
-    criticalItems,
-    outOfStockItems,
-    totalCategories,
-    averageValue: totalItems > 0 ? totalValue / totalItems : 0,
+    totalItems:      raw.totalItems      ?? raw.total_items       ?? raw.total        ?? 0,
+    lowStockItems:   raw.lowStockItems   ?? raw.low_stock_items   ?? raw.low_stock    ?? 0,
+    criticalItems:   raw.criticalItems   ?? raw.critical_items    ?? raw.low_stock    ?? 0,
+    outOfStockItems: raw.outOfStockItems ?? raw.out_of_stock_items ?? raw.out_of_stock ?? 0,
+    totalValue:      raw.totalValue      ?? raw.total_value       ?? 0,
+    totalCategories: raw.totalCategories ?? raw.total_categories  ?? 0,
+    averageValue:    raw.averageValue    ?? raw.average_value      ?? 0,
   };
 };
 
 /**
  * Update stock level for an item
- * TODO: Replace with actual API call: POST /api/inventory/:id/stock
+ * POST /inventory/:id/adjust-stock
  */
 export const updateStockLevel = async (id: string, quantity: number, type: 'add' | 'subtract'): Promise<InventoryItem> => {
-  await delay(600);
-  const index = mockInventoryItems.findIndex(item => item.id === id);
-  if (index === -1) {
-    throw new Error('Inventory item not found');
-  }
-  
-  const currentStock = mockInventoryItems[index].currentStock;
-  const newStock = type === 'add' ? currentStock + quantity : currentStock - quantity;
-  
-  if (newStock < 0) {
-    throw new Error('Stock cannot be negative');
-  }
-  
-  mockInventoryItems[index] = {
-    ...mockInventoryItems[index],
-    currentStock: newStock,
-  };
-  
-  return mockInventoryItems[index];
+  const response = await apiClient.post(`/inventory/${id}/adjust-stock`, {
+    quantity,
+    adjustment_type: type,
+    reason: 'manual',
+  });
+  return mapInventoryItem(response.data);
 };
 
 /**
  * Search inventory items
- * TODO: Replace with actual API call: GET /api/inventory/search?q=...
+ * GET /inventory?search=X
  */
 export const searchInventoryItems = async (query: string): Promise<InventoryItem[]> => {
-  await delay(300);
-  const lowerQuery = query.toLowerCase();
-  return mockInventoryItems.filter(item =>
-    item.name.toLowerCase().includes(lowerQuery) ||
-    item.sku.toLowerCase().includes(lowerQuery) ||
-    item.category.toLowerCase().includes(lowerQuery) ||
-    item.supplier.toLowerCase().includes(lowerQuery)
-  );
+  const response = await apiClient.get('/inventory', { params: { search: query, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapInventoryItem);
 };
 
 /**
  * Get items by category
- * TODO: Replace with actual API call: GET /api/inventory/category/:category
+ * GET /inventory?category=X
  */
 export const getInventoryItemsByCategory = async (category: string): Promise<InventoryItem[]> => {
-  await delay(300);
-  return mockInventoryItems.filter(item => item.category === category);
+  const response = await apiClient.get('/inventory', { params: { category, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapInventoryItem);
 };
 
 /**
  * Get low stock items
- * TODO: Replace with actual API call: GET /api/inventory/low-stock
+ * GET /inventory?low_stock=true
  */
 export const getLowStockItems = async (): Promise<InventoryItem[]> => {
-  await delay(300);
-  return mockInventoryItems.filter(item => item.currentStock <= item.minStock);
+  const response = await apiClient.get('/inventory', { params: { low_stock: true, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapInventoryItem);
 };

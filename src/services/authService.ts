@@ -7,12 +7,16 @@ interface LoginCredentials {
 
 interface AuthResponse {
   access_token: string;
-  token_type: string;
-  expires_in: number;
-  user: {
+  roles: string[];
+  scopes: string[];
+  tenantId: string;
+  // legacy shape support
+  user?: {
     userId: string;
     username: string;
     roles: string[];
+    scopes?: string[];
+    tenantId?: string;
   };
 }
 
@@ -31,12 +35,19 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
     
     if (response.data.access_token) {
-      // Store token
       setAuthToken(response.data.access_token);
-      
-      // Store user data
+      // Normalise user data from either response shape
+      const raw = response.data.user ?? response.data as any;
+      const userData = {
+        userId: raw.userId || raw.sub || raw._id || '',
+        username: raw.username || credentials.username,
+        name: raw.name || raw.full_name || raw.display_name || raw.fullName || '',
+        roles: raw.roles || response.data.roles || [],
+        scopes: raw.scopes || response.data.scopes || [],
+        tenantId: raw.tenantId || response.data.tenantId || 'default',
+      };
       if (typeof window !== 'undefined') {
-        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        localStorage.setItem('user_data', JSON.stringify(userData));
       }
     }
     
@@ -106,6 +117,77 @@ export const hasAnyRole = (roles: string[]): boolean => {
   return roles.some(role => user?.roles?.includes(role)) || false;
 };
 
+// --- Profile APIs ---
+
+export interface UserProfile {
+  _id: string;
+  username: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+  roles: string[];
+  scopes?: string[];
+  status?: string;
+  tenantId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+}
+
+/**
+ * Fetch the current user's profile
+ * API: GET /auth/profile
+ */
+export const getProfile = async (): Promise<UserProfile> => {
+  const response = await apiClient.get<UserProfile>('/auth/profile');
+  return response.data;
+};
+
+/**
+ * Update the current user's profile
+ * API: PATCH /auth/profile
+ */
+export const updateProfile = async (data: UpdateProfilePayload): Promise<UserProfile> => {
+  const response = await apiClient.patch<UserProfile>('/auth/profile', data);
+  // Sync localStorage with latest profile data
+  if (typeof window !== 'undefined') {
+    const existing = localStorage.getItem('user_data');
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing);
+        localStorage.setItem('user_data', JSON.stringify({
+          ...parsed,
+          name: response.data.name || parsed.name,
+        }));
+      } catch { /* ignore */ }
+    }
+  }
+  return response.data;
+};
+
+/**
+ * Change password
+ * API: POST /auth/profile/change-password
+ */
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+  const response = await apiClient.post<{ message: string }>('/auth/profile/change-password', {
+    currentPassword,
+    newPassword,
+  });
+  return response.data;
+};
+
 export const authService = {
   login,
   logout,
@@ -113,6 +195,9 @@ export const authService = {
   isAuthenticated,
   hasRole,
   hasAnyRole,
+  getProfile,
+  updateProfile,
+  changePassword,
 };
 
 export default authService;

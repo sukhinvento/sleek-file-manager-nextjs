@@ -4,18 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, User, Phone, Mail, Calendar, Activity, Heart, ArrowUpDown, Eye, Edit, Trash2, LogOut, Check } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { toast } from "@/hooks/use-toast";
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
+import { toast } from '@/hooks/use-toast';
+import { MobileTableView } from '@/components/ui/mobile-table-view';
 import * as patientService from '@/services/patientService';
 import { Patient } from '@/services/patientService';
 import { ModernPatientOverlay } from '@/components/patients/ModernPatientOverlay';
 import { DischargeModal } from '@/components/patients/DischargeModal';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const PRIMARY   = STAT_ACCENTS.PRIMARY;
+const TEXT_MAIN = 'hsl(215,28%,14%)';
+const TEXT_MUTE = 'hsl(220,12%,54%)';
+const BORDER    = 'hsl(220,16%,90%)';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -29,15 +34,70 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
+    <Badge className={`${getStatusColor(status)} border text-[11px] pointer-events-none`}>
       {status}
     </Badge>
   );
 };
 
+const PatientMobileCard = ({ patient, onClick, onDischarge }: { patient: Patient; onClick?: () => void; onDischarge?: () => void }) => {
+  const statusColor = (s: string) => {
+    switch (s.toLowerCase()) {
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'discharged': return 'bg-primary/10 text-primary border-primary/20';
+      case 'admitted': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  return (
+    <Card className="w-full cursor-pointer active:scale-[0.99] transition-all duration-150 hover:shadow-md" style={{ borderColor: BORDER }} onClick={onClick}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: `${PRIMARY}15` }}>
+              <User size={15} style={{ color: PRIMARY }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: TEXT_MAIN }}>{patient.name}</p>
+              <p className="text-xs truncate leading-tight mt-0.5" style={{ color: TEXT_MUTE }}>{patient.patientId} • {patient.age}y {patient.gender}</p>
+            </div>
+          </div>
+          <Badge className={`${statusColor(patient.status)} border pointer-events-none text-xs`}>{patient.status}</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Department</p>
+            <p className="text-xs font-medium truncate" style={{ color: TEXT_MAIN }}>{patient.department || '—'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Blood Group</p>
+            <p className="text-xs font-medium" style={{ color: TEXT_MAIN }}>{patient.bloodGroup || '—'}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-1">
+            <Calendar size={11} style={{ color: TEXT_MUTE }} />
+            <span className="text-xs" style={{ color: TEXT_MUTE }}>Admitted: {patient.admissionDate || '—'}</span>
+          </div>
+          <span className="text-xs" style={{ color: TEXT_MUTE }}>Last: {patient.lastVisit || '—'}</span>
+        </div>
+        {/* Mobile discharge action */}
+        {onDischarge && patient.status?.toLowerCase() === 'admitted' && (
+          <div className="pt-2 mt-2 border-t" style={{ borderColor: BORDER }}>
+            <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+              onClick={(e) => { e.stopPropagation(); onDischarge(); }}>
+              <LogOut size={12} /> Initiate Discharge
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const Patients = () => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   
   // Data state
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -77,11 +137,7 @@ export const Patients = () => {
       setPatients(patientsData);
     } catch (error) {
       console.error('Failed to load patients:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load patients. Please try again.",
-      });
+      toast({ title: 'Error', description: 'Failed to load patients. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoadingData(false);
     }
@@ -145,18 +201,9 @@ export const Patients = () => {
     });
   }, [patients, searchTerm, selectedStatus, filterDept, sortBy, sortOrder]);
 
-  // Infinite scroll for mobile
-  const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
-    data: filteredPatients,
-    itemsPerPage: 10,
-    enabled: isMobile
-  });
-
   // Pagination logic
   const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
-  const currentPageData = isMobile 
-    ? mobileDisplayedItems
-    : filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentPageData = filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -191,16 +238,9 @@ export const Patients = () => {
       await patientService.deletePatient(patientId);
       setPatients(patients.filter(p => p.id !== patientId));
       await loadStats();
-      toast({
-        title: "Patient Deleted",
-        description: "Patient record has been successfully deleted.",
-      });
+      toast({ title: 'Patient Deleted', description: 'Patient record has been successfully deleted.', variant: 'success' });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete patient. Please try again.",
-      });
+      toast({ title: 'Error', description: 'Failed to delete patient. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -233,195 +273,52 @@ export const Patients = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
-        <div className="stat-cards-scroll">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {/* Total Patients Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus('All')}
-              title="Show all patients"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-primary">{stats.totalPatients}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                    <span className="text-primary">All patients</span>
-                  </div>
-                </div>
-              </CardContent>
-
-              <User className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
-            </Card>
-
-            {/* Active Patients Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Active' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')}
-              title="Filter by Active"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Active</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.activePatients}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
-                      <Activity className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="relative w-8 h-8 flex items-center justify-center">
-                    <svg className="w-8 h-8 transform -rotate-90">
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        className="text-green-200"
-                      />
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        strokeDasharray={`${stats.totalPatients > 0 ? (stats.activePatients / stats.totalPatients) * 75.4 : 0} 75.4`}
-                        className="text-green-500"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-green-700 leading-none">
-                        {stats.totalPatients > 0 ? Math.round((stats.activePatients / stats.totalPatients) * 100) : 0}%
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-green-600">of total</span>
-                </div>
-              </CardContent>
-              
-              <Activity className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-
-            {/* Admitted Patients Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Admitted' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Admitted' ? 'All' : 'Admitted')}
-              title="Filter by Admitted"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wider">Admitted</p>
-                    <div className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.admittedPatients}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-yellow-500/10 rounded-full flex items-center justify-center z-10">
-                      <Heart className="h-5 w-5 text-yellow-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
-                    <span className="text-yellow-600">In hospital</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <Heart className="absolute bottom-0 right-0 h-12 w-12 text-yellow-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-
-            {/* Critical Patients Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Critical' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Critical' ? 'All' : 'Critical')}
-              title="Filter by Critical"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Critical</p>
-                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{stats.criticalPatients}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
-                      <Activity className="h-5 w-5 text-red-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                    <span className="text-red-600">Needs attention</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <Activity className="absolute bottom-0 right-0 h-12 w-12 text-red-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total" value={stats.totalPatients} icon={User} accent={STAT_ACCENTS.PRIMARY}
+            active={selectedStatus === 'All'} onClick={() => setSelectedStatus('All')} />
+          <StatCard label="Active" value={stats.activePatients} icon={Activity} accent={STAT_ACCENTS.SUCCESS}
+            active={selectedStatus === 'Active'} onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')} />
+          <StatCard label="Admitted" value={stats.admittedPatients} icon={Heart} accent={STAT_ACCENTS.WARNING}
+            active={selectedStatus === 'Admitted'} onClick={() => setSelectedStatus(selectedStatus === 'Admitted' ? 'All' : 'Admitted')} />
+          <StatCard label="Critical" value={stats.criticalPatients} icon={Activity} accent={STAT_ACCENTS.DANGER}
+            active={selectedStatus === 'Critical'} onClick={() => setSelectedStatus(selectedStatus === 'Critical' ? 'All' : 'Critical')} />
         </div>
-      </section>
+      </div>
 
 
       {/* Filters Section - Sticky */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
-        {/* Desktop Layout - All in one line */}
-        <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
-          {/* Status Filter Pills */}
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-3 overflow-hidden">
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-3">
           <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-0">
+            <div className="flex gap-1.5 w-max">
               {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={status}
                   onClick={() => setSelectedStatus(status)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedStatus === status ? PRIMARY : 'transparent',
+                    color: selectedStatus === status ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedStatus === status ? PRIMARY : BORDER,
+                  }}>
                   {status}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
-          
-          {/* Search and Action Buttons */}
-          <div className="flex gap-2 flex-shrink-0 min-w-0">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search patients..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="relative w-60">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search patients…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            {/* Filter dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className={filterDept !== 'All' ? 'border-primary text-primary' : ''}>
-                  <Filter className="mr-1 h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+                  style={filterDept !== 'All' ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}>
+                  <Filter size={13} />
                   {filterDept !== 'All' ? filterDept : 'Filter'}
                 </Button>
               </DropdownMenuTrigger>
@@ -436,11 +333,10 @@ export const Patients = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            {/* Sort dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ArrowUpDown className="mr-1 h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                  <ArrowUpDown size={13} />
                   {SORT_LABELS[sortBy]}
                 </Button>
               </DropdownMenuTrigger>
@@ -461,25 +357,20 @@ export const Patients = () => {
           </div>
         </div>
 
-        {/* Mobile/Tablet Layout - Stacked */}
-        <div className="lg:hidden space-y-3">
-          {/* Search and Action Buttons */}
+        {/* Mobile */}
+        <div className="lg:hidden space-y-2">
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search patients..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search patients…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className={`px-2 sm:px-3 ${filterDept !== 'All' ? 'border-primary text-primary' : ''}`}>
-                  <Filter className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Filter</span>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+                  style={filterDept !== 'All' ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}>
+                  <Filter size={13} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -495,9 +386,8 @@ export const Patients = () => {
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="px-2 sm:px-3">
-                  <ArrowUpDown className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Sort</span>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                  <ArrowUpDown size={13} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
@@ -515,313 +405,143 @@ export const Patients = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          {/* Status Filter Pills */}
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
+            <div className="flex gap-1.5 w-max">
               {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={status}
                   onClick={() => setSelectedStatus(status)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedStatus === status ? PRIMARY : 'transparent',
+                    color: selectedStatus === status ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedStatus === status ? PRIMARY : BORDER,
+                  }}>
                   {status}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Patients Table Section */}
-      <div className="space-y-4">
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <Card className="border-border/50 shadow-sm">
-            <div className="overflow-x-auto">
-              {isLoadingData ? (
-                <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                  <p className="text-sm text-muted-foreground">Loading patients...</p>
-                </div>
-              ) : filteredPatients.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                  <User className="h-12 w-12 text-muted-foreground opacity-50" />
-                  <div className="text-center space-y-2">
-                    <h3 className="font-semibold text-lg">No patients found</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {searchTerm || selectedStatus !== 'All' 
-                        ? 'Try adjusting your filters' 
-                        : 'Get started by adding your first patient'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-              <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold w-[20%]">Patient Details</TableHead>
-                  <TableHead className="font-semibold w-[20%]">Contact Info</TableHead>
-                  <TableHead className="font-semibold w-[20%]">Medical Info</TableHead>
-                  <TableHead className="font-semibold w-[15%]">Status</TableHead>
-                  <TableHead className="font-semibold w-[15%]">Last Visit</TableHead>
-                  <TableHead className="font-semibold text-right w-[10%]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentPageData.map((patient) => (
-                  <TableRow key={patient.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{patient.name}</div>
-                        <div className="text-sm text-muted-foreground">ID: {patient.patientId}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {patient.age} years, {patient.gender}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <Phone className="w-3 h-3 mr-1" />
-                          {patient.phone}
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {patient.email}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="text-sm">Blood: {patient.bloodGroup}</div>
-                        <div className="text-sm text-muted-foreground">{patient.doctor}</div>
-                        <Badge variant="outline" className="text-xs">{patient.department}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={patient.status} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-sm">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {patient.lastVisit}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleViewPatient(patient)}
-                          className="h-8 w-8 p-0"
-                          title="View"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditPatient(patient)}
-                          className="h-8 w-8 p-0"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setDischargePatient(patient); setIsDischargeOpen(true); }}
-                          className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                          title="Initiate Discharge"
-                        >
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePatient(patient.id)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              </Table>
-              )}
-            </div>
-          </Card>
+      {/* Patients Table */}
+      {isLoadingData ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading patients...</p>
         </div>
-
-        {/* Mobile Cards View */}
-        <div className="md:hidden">
-          {isLoadingData ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Loading patients...</p>
-            </div>
-          ) : currentPageData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <User className="h-12 w-12 text-muted-foreground opacity-50" />
-              <p className="text-sm text-muted-foreground">No patients found</p>
-            </div>
-          ) : (
-            currentPageData.map((patient) => (
-              <Card key={patient.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewPatient(patient)}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-base">{patient.name}</h3>
-                      <p className="text-sm text-muted-foreground">ID: {patient.patientId}</p>
-                    </div>
-                    <div className="flex gap-1 ml-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewPatient(patient);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPatient(patient);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePatient(patient.id);
-                        }}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Age / Gender</p>
-                      <p className="font-medium">{patient.age} yrs, {patient.gender}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Status</p>
-                      <StatusBadge status={patient.status} />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Phone</p>
-                      <p className="font-medium text-xs">{patient.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Blood Group</p>
-                      <p className="font-medium">{patient.bloodGroup}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Department</p>
-                      <Badge variant="outline" className="text-xs">{patient.department}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Last Visit</p>
-                      <p className="font-medium">{patient.lastVisit}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+      ) : currentPageData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <User className="h-12 w-12 text-muted-foreground opacity-50" />
+          <p className="text-sm text-muted-foreground">No patients found</p>
         </div>
-      </div>
+      ) : (
+        <MobileTableView
+          stickyHeader={true}
+          data={currentPageData}
+          renderMobileItem={(patient, onView) => <PatientMobileCard patient={patient as Patient} onClick={onView} onDischarge={() => { setDischargePatient(patient as Patient); setIsDischargeOpen(true); }} />}
+          columns={[
+            {
+              key: 'name',
+              label: 'Patient',
+              width: 'w-[22%]',
+              render: (value, patient) => (
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{value as string}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>
+                    {(patient as any).patientId} · {(patient as any).age}y {(patient as any).gender}
+                  </p>
+                </div>
+              )
+            },
+            {
+              key: 'phone',
+              label: 'Contact',
+              width: 'w-[18%]',
+              render: (value, patient) => (
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <Phone size={11} style={{ color: TEXT_MUTE }} />
+                    <p className="text-[11px]" style={{ color: TEXT_MAIN }}>{value as string}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={11} style={{ color: TEXT_MUTE }} />
+                    <p className="text-[11px] truncate max-w-[130px]" style={{ color: TEXT_MUTE }}>{(patient as any).email}</p>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'department',
+              label: 'Medical Info',
+              width: 'w-[20%]',
+              render: (value, patient) => (
+                <div>
+                  <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full border inline-block"
+                    style={{ background: `${PRIMARY}14`, color: PRIMARY, borderColor: `${PRIMARY}33` }}>
+                    {value as string}
+                  </span>
+                  <p className="text-[11px] mt-1" style={{ color: TEXT_MUTE }}>
+                    Blood: <span className="font-semibold" style={{ color: TEXT_MAIN }}>{(patient as any).bloodGroup}</span>
+                  </p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>{(patient as any).doctor}</p>
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              width: 'w-[13%]',
+              render: (value) => <StatusBadge status={value as string} />
+            },
+            {
+              key: 'lastVisit',
+              label: 'Last Visit',
+              width: 'w-[17%]',
+              render: (value, patient) => (
+                <div>
+                  <div className="flex items-center gap-1">
+                    <Calendar size={11} style={{ color: TEXT_MUTE }} />
+                    <p className="text-sm" style={{ color: TEXT_MAIN }}>{value as string}</p>
+                  </div>
+                  {(patient as any).admissionDate && (
+                    <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>Admitted: {(patient as any).admissionDate}</p>
+                  )}
+                </div>
+              )
+            }
+          ]}
+          onRowClick={(patient) => handleViewPatient(patient)}
+          getActions={(patient) => [
+            { label: 'View', onClick: () => handleViewPatient(patient), icon: Eye },
+            { label: 'Edit', onClick: () => handleEditPatient(patient), icon: Edit },
+            { label: 'Discharge', onClick: () => { setDischargePatient(patient); setIsDischargeOpen(true); }, icon: LogOut },
+            { label: 'Delete', onClick: () => handleDeletePatient(patient.id), variant: 'destructive' as const, icon: Trash2 }
+          ]}
+        />
+      )}
 
-      {/* Desktop Pagination */}
-      {!isMobile && !isLoadingData && totalPages > 1 && (
-        <div>
+      {/* Pagination */}
+      {!isLoadingData && totalPages > 1 && (
+        <div className="flex justify-center">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
+                <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
               </PaginationItem>
-              
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNumber;
-                if (totalPages <= 5) {
-                  pageNumber = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNumber = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNumber = totalPages - 4 + i;
-                } else {
-                  pageNumber = currentPage - 2 + i;
-                }
-
+                const page = i + Math.max(1, Math.min(currentPage - 2, totalPages - 4));
                 return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(pageNumber)}
-                      isActive={currentPage === pageNumber}
-                      className="cursor-pointer"
-                    >
-                      {pageNumber}
-                    </PaginationLink>
+                  <PaginationItem key={page}>
+                    <PaginationLink onClick={() => setCurrentPage(page)} isActive={currentPage === page} className="cursor-pointer">{page}</PaginationLink>
                   </PaginationItem>
                 );
               })}
-
               <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
+                <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        </div>
-      )}
-
-      {/* Mobile: Show loading indicator and load more button */}
-      {isMobile && (
-        <div className="text-center">
-          {hasMoreItems ? (
-            <div className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                Showing {mobileDisplayedItems.length} of {filteredPatients.length} patients
-              </div>
-              {isLoading ? (
-                <div className="text-sm text-muted-foreground">Loading...</div>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  onClick={loadMoreItems}
-                  className="w-full"
-                >
-                  Load More
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              All {filteredPatients.length} patients loaded
-            </div>
-          )}
         </div>
       )}
       

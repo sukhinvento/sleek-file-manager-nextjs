@@ -1,16 +1,18 @@
-// Medication Service - Handles medication prescriptions and inventory
+// Medication Service — catalog and prescriptions
+import apiClient from '@/lib/api-client';
 
 export interface Medication {
   id: string;
+  drugCode: string;
   name: string;
   genericName: string;
-  dosage: string;
-  form: 'Tablet' | 'Capsule' | 'Syrup' | 'Injection' | 'Ointment' | 'Drops';
+  dosageForm: 'Tablet' | 'Capsule' | 'Syrup' | 'Injection' | 'Cream' | 'Drops' | 'Inhaler' | 'Other';
+  strength: string;
   price: number;
   stockQuantity: number;
   manufacturer: string;
   category: string;
-  description?: string;
+  isActive: boolean;
 }
 
 export interface PatientMedication {
@@ -20,8 +22,8 @@ export interface PatientMedication {
   medicationId: string;
   medicationName: string;
   dosage: string;
-  frequency: string; // e.g., "Once daily", "Twice daily", "3 times daily"
-  duration: string; // e.g., "7 days", "2 weeks", "1 month"
+  frequency: string;
+  duration: string;
   quantity: number;
   startDate: string;
   endDate: string;
@@ -32,212 +34,79 @@ export interface PatientMedication {
   totalCost: number;
 }
 
-// Mock medication data
-const mockMedications: Medication[] = [
-  {
-    id: 'MED001',
-    name: 'Paracetamol',
-    genericName: 'Acetaminophen',
-    dosage: '500mg',
-    form: 'Tablet',
-    price: 0.50,
-    stockQuantity: 5000,
-    manufacturer: 'PharmaCorp',
-    category: 'Pain Relief',
-    description: 'Pain reliever and fever reducer'
-  },
-  {
-    id: 'MED002',
-    name: 'Amoxicillin',
-    genericName: 'Amoxicillin',
-    dosage: '250mg',
-    form: 'Capsule',
-    price: 1.20,
-    stockQuantity: 3000,
-    manufacturer: 'MediPharma',
-    category: 'Antibiotic',
-    description: 'Broad-spectrum antibiotic'
-  },
-  {
-    id: 'MED003',
-    name: 'Omeprazole',
-    genericName: 'Omeprazole',
-    dosage: '20mg',
-    form: 'Capsule',
-    price: 0.80,
-    stockQuantity: 2500,
-    manufacturer: 'HealthMeds',
-    category: 'Gastric',
-    description: 'Proton pump inhibitor for acid reflux'
-  },
-  {
-    id: 'MED004',
-    name: 'Metformin',
-    genericName: 'Metformin HCl',
-    dosage: '500mg',
-    form: 'Tablet',
-    price: 0.60,
-    stockQuantity: 4000,
-    manufacturer: 'DiabetesCare',
-    category: 'Diabetes',
-    description: 'Blood sugar control medication'
-  },
-  {
-    id: 'MED005',
-    name: 'Amlodipine',
-    genericName: 'Amlodipine Besylate',
-    dosage: '5mg',
-    form: 'Tablet',
-    price: 0.70,
-    stockQuantity: 3500,
-    manufacturer: 'CardioPharma',
-    category: 'Cardiovascular',
-    description: 'Calcium channel blocker for hypertension'
-  },
-  {
-    id: 'MED006',
-    name: 'Cough Syrup',
-    genericName: 'Dextromethorphan',
-    dosage: '100ml',
-    form: 'Syrup',
-    price: 4.50,
-    stockQuantity: 800,
-    manufacturer: 'RespiCare',
-    category: 'Respiratory',
-    description: 'Cough suppressant'
-  },
-  {
-    id: 'MED007',
-    name: 'Insulin Glargine',
-    genericName: 'Insulin Glargine',
-    dosage: '100 units/ml',
-    form: 'Injection',
-    price: 25.00,
-    stockQuantity: 500,
-    manufacturer: 'DiabetesCare',
-    category: 'Diabetes',
-    description: 'Long-acting insulin'
-  },
-  {
-    id: 'MED008',
-    name: 'Ciprofloxacin',
-    genericName: 'Ciprofloxacin',
-    dosage: '500mg',
-    form: 'Tablet',
-    price: 1.50,
-    stockQuantity: 2000,
-    manufacturer: 'MediPharma',
-    category: 'Antibiotic',
-    description: 'Fluoroquinolone antibiotic'
-  },
-  {
-    id: 'MED009',
-    name: 'Aspirin',
-    genericName: 'Acetylsalicylic Acid',
-    dosage: '75mg',
-    form: 'Tablet',
-    price: 0.30,
-    stockQuantity: 6000,
-    manufacturer: 'CardioPharma',
-    category: 'Cardiovascular',
-    description: 'Blood thinner and pain reliever'
-  },
-  {
-    id: 'MED010',
-    name: 'Eye Drops',
-    genericName: 'Artificial Tears',
-    dosage: '10ml',
-    form: 'Drops',
-    price: 3.50,
-    stockQuantity: 1000,
-    manufacturer: 'VisionCare',
-    category: 'Ophthalmology',
-    description: 'Lubricating eye drops'
-  }
-];
+const FORM_MAP: Record<string, Medication['dosageForm']> = {
+  tablet: 'Tablet', capsule: 'Capsule', syrup: 'Syrup', injection: 'Injection',
+  cream: 'Cream', drops: 'Drops', inhaler: 'Inhaler', other: 'Other',
+};
 
-// Mock patient medications
-const mockPatientMedications: PatientMedication[] = [
-  {
-    id: 'PM001',
-    patientId: 'P001',
-    patientName: 'John Smith',
-    medicationId: 'MED001',
-    medicationName: 'Paracetamol 500mg',
-    dosage: '500mg',
-    frequency: 'Three times daily',
-    duration: '7 days',
-    quantity: 21,
-    startDate: '2024-01-15',
-    endDate: '2024-01-22',
-    prescribedBy: 'Dr. Sarah Johnson',
-    status: 'Active',
-    instructions: 'Take after meals',
-    price: 0.50,
-    totalCost: 10.50
-  }
-];
+function mapMedication(raw: any): Medication {
+  return {
+    id: raw._id || raw.id || '',
+    drugCode: raw.drug_code || '',
+    name: raw.name || '',
+    genericName: raw.generic_name || '',
+    dosageForm: FORM_MAP[String(raw.dosage_form || '').toLowerCase()] || 'Other',
+    strength: raw.strength || '',
+    price: raw.price_per_unit ?? 0,
+    stockQuantity: raw.stock_quantity ?? 0,
+    manufacturer: raw.manufacturer || '',
+    category: raw.category || '',
+    isActive: raw.is_active ?? true,
+  };
+}
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const PRESCRIPTION_STATUS: Record<string, PatientMedication['status']> = {
+  active: 'Active', completed: 'Completed', discontinued: 'Discontinued',
+};
+
+function mapPrescription(raw: any): PatientMedication {
+  const status = PRESCRIPTION_STATUS[String(raw.status || '').toLowerCase()] || 'Active';
+  return {
+    id: raw._id || raw.id || '',
+    patientId: String(raw.patient_id?._id || raw.patient_id || ''),
+    patientName: raw.patient_name || '',
+    medicationId: String(raw.medication_id?._id || raw.medication_id || ''),
+    medicationName: raw.medication_name || raw.medication_id?.name || '',
+    dosage: raw.dosage || '',
+    frequency: raw.frequency || '',
+    duration: raw.duration || '',
+    quantity: raw.quantity ?? 0,
+    startDate: raw.start_date ? raw.start_date.split('T')[0] : '',
+    endDate: raw.end_date ? raw.end_date.split('T')[0] : '',
+    prescribedBy: raw.prescribed_by || '',
+    status,
+    instructions: raw.instructions,
+    price: raw.price ?? 0,
+    totalCost: raw.total_cost ?? 0,
+  };
+}
 
 /**
- * Fetch all medications
+ * Fetch medication catalog
+ * GET /medications/catalog
  */
 export const fetchMedications = async (): Promise<Medication[]> => {
-  await delay(300);
-  return [...mockMedications];
+  const response = await apiClient.get('/medications/catalog', { params: { limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapMedication);
 };
 
 /**
- * Search medications by name or generic name
+ * Search medications
+ * GET /medications/catalog?search=X
  */
 export const searchMedications = async (query: string): Promise<Medication[]> => {
-  await delay(200);
-  const lowerQuery = query.toLowerCase();
-  return mockMedications.filter(med => 
-    med.name.toLowerCase().includes(lowerQuery) ||
-    med.genericName.toLowerCase().includes(lowerQuery) ||
-    med.category.toLowerCase().includes(lowerQuery)
-  );
+  const response = await apiClient.get('/medications/catalog', { params: { search: query, limit: 100 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapMedication);
 };
 
 /**
- * Fetch medications for a specific patient
+ * Fetch prescriptions for a patient
+ * GET /medications/prescriptions?patient_id=X
  */
-export const fetchPatientMedications = async (patientId: string): Promise<PatientMedication[]> => {
-  await delay(300);
-  return mockPatientMedications.filter(pm => pm.patientId === patientId);
-};
-
-/**
- * Add medication prescription for a patient
- */
-export const addPatientMedication = async (medication: Omit<PatientMedication, 'id'>): Promise<PatientMedication> => {
-  await delay(400);
-  const newMedication: PatientMedication = {
-    ...medication,
-    id: `PM${String(mockPatientMedications.length + 1).padStart(3, '0')}`
-  };
-  mockPatientMedications.push(newMedication);
-  return newMedication;
-};
-
-/**
- * Update patient medication
- */
-export const updatePatientMedication = async (id: string, updates: Partial<PatientMedication>): Promise<PatientMedication> => {
-  await delay(400);
-  const index = mockPatientMedications.findIndex(pm => pm.id === id);
-  if (index === -1) throw new Error('Medication not found');
-  
-  mockPatientMedications[index] = { ...mockPatientMedications[index], ...updates };
-  return mockPatientMedications[index];
-};
-
-/**
- * Get medication by ID
- */
-export const getMedicationById = async (id: string): Promise<Medication | null> => {
-  await delay(200);
-  return mockMedications.find(med => med.id === id) || null;
+export const fetchPatientPrescriptions = async (patientId: string): Promise<PatientMedication[]> => {
+  const response = await apiClient.get('/medications/prescriptions', { params: { patient_id: patientId, limit: 100 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapPrescription);
 };

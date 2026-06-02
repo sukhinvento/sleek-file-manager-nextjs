@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Save, Edit3, CheckCircle, Trash2, Plus, FileText, Mail, Copy, Printer, Truck, Package, User, CreditCard, MessageSquare, Calendar, DollarSign, Building2, Phone as PhoneIcon, Mail as MailIcon, MapPin, AlertCircle, Tag, Hash, Smartphone } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { AutosuggestInput } from './AutosuggestInput';
 import { ItemScanner } from '../scanner/ItemScanner';
@@ -17,13 +18,15 @@ import { PurchaseOrder, PurchaseOrderItem, StockItem } from '../../types/purchas
 import { DatePicker } from "@/components/ui/date-picker";
 import { formatIndianCurrency, formatIndianCurrencyFull } from '@/lib/utils';
 import { InventoryItem } from '@/types/inventory';
+import { fetchVendors } from '@/services/vendorService';
+import { fetchRooms } from '@/services/roomService';
 import { InvoiceOptionsDialog, InvoiceGenerationOptions } from '../invoice/InvoiceOptionsDialog';
 import { InvoiceTemplate, InvoiceData } from '../invoice/InvoiceTemplate';
 import { generatePDF } from '@/lib/pdfUtils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OrderStatusDialog, StatusUpdateData, OrderItem } from '../orders/OrderStatusDialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-// Mock vendor data for autocomplete
 interface Vendor {
   id: string;
   name: string;
@@ -32,64 +35,12 @@ interface Vendor {
   address: string;
 }
 
-const mockVendors: Vendor[] = [
-  {
-    id: 'v1',
-    name: 'MedSupply Inc.',
-    email: 'orders@medsupply.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Medical Ave, Healthcare City, HC 12345'
-  },
-  {
-    id: 'v2',
-    name: 'PharmaCorp',
-    email: 'procurement@pharmacorp.com',
-    phone: '+1 (555) 987-6543',
-    address: '456 Pharmacy St, Wellness Town, WT 67890'
-  },
-  {
-    id: 'v3',
-    name: 'HealthTech Solutions',
-    email: 'sales@healthtech.com',
-    phone: '+1 (555) 555-0123',
-    address: '789 Innovation Blvd, Tech Valley, TV 54321'
-  }
-];
-
-// Mock location data for shipping destinations
 interface Location {
   id: string;
   name: string;
   address: string;
   type: 'warehouse' | 'clinic' | 'hospital';
 }
-
-const mockLocations: Location[] = [
-  {
-    id: 'l1',
-    name: 'Main Warehouse',
-    address: '123 Storage Street, Industrial Area, IN 12345',
-    type: 'warehouse'
-  },
-  {
-    id: 'l2',
-    name: 'Central Hospital',
-    address: '456 Health Avenue, Medical District, MD 67890',
-    type: 'hospital'
-  },
-  {
-    id: 'l3',
-    name: 'Downtown Clinic',
-    address: '789 Care Lane, Downtown, DT 54321',
-    type: 'clinic'
-  },
-  {
-    id: 'l4',
-    name: 'Regional Distribution Center',
-    address: '321 Logistics Blvd, Distribution Hub, DH 98765',
-    type: 'warehouse'
-  }
-];
 
 // Custom Vendor Autosuggest Component
 interface VendorAutosuggestProps {
@@ -130,8 +81,9 @@ const VendorAutosuggest = ({ value, onChange, onSelect, vendors, disabled, class
   };
 
   const handleVendorSelect = (vendor: Vendor) => {
-    onSelect(vendor);
+    setUserHasInteracted(false);
     setIsOpen(false);
+    onSelect(vendor);
   };
 
   const handleInputFocus = () => {
@@ -307,69 +259,6 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
   );
 };
 
-// Mock inventory database for scanner
-const mockInventory: InventoryItem[] = [
-  {
-    id: 'INV-001',
-    name: 'Paracetamol 500mg',
-    category: 'Medicines',
-    sku: 'MED-PAR-500',
-    currentStock: 150,
-    minStock: 50,
-    maxStock: 500,
-    unitPrice: 5.99,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-12',
-    description: 'Pain relief medication',
-    batchNumber: 'BATCH-2025-001',
-    saleUnit: 'Strip',
-    barcode: '1234567890128',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-001',
-    rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-002',
-    name: 'Amoxicillin 250mg',
-    category: 'Antibiotics',
-    sku: 'MED-AMX-250',
-    currentStock: 200,
-    minStock: 75,
-    maxStock: 600,
-    unitPrice: 12.50,
-    supplier: 'MediSupply Co',
-    location: 'Shelf B-05',
-    description: 'Antibiotic medication',
-    batchNumber: 'BATCH-2025-002',
-    saleUnit: 'Strip',
-    barcode: '9876543210987',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-002',
-    rfidTag: 'B2C3D4E5F6G78901BCDEF123',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-003',
-    name: 'Ibuprofen 400mg',
-    category: 'Medicines',
-    sku: 'MED-IBU-400',
-    currentStock: 300,
-    minStock: 100,
-    maxStock: 800,
-    unitPrice: 8.75,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-15',
-    description: 'Anti-inflammatory medication',
-    batchNumber: 'BATCH-2025-003',
-    saleUnit: 'Strip',
-    barcode: '5555666677778',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-003',
-    rfidTag: 'C3D4E5F6G7H89012CDEF1234',
-    trackingEnabled: true
-  }
-];
 
 interface ModernPOOverlayProps {
   order: PurchaseOrder | null;
@@ -390,20 +279,25 @@ export const ModernPOOverlay = ({
   onUpdate,
   onDelete
 }: ModernPOOverlayProps) => {
-  const [items, setItems] = useState<PurchaseOrderItem[]>([]);
-  const [vendorName, setVendorName] = useState<string>('');
-  const [vendorEmail, setVendorEmail] = useState<string>('');
-  const [vendorPhone, setVendorPhone] = useState<string>('');
-  const [vendorAddress, setVendorAddress] = useState<string>('');
-  const [shippingAddress, setShippingAddress] = useState<string>('');
-  const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
-  const [paymentMethod, setPaymentMethod] = useState<string>('net-30');
-  const [remarks, setRemarks] = useState<string>('');
+  const { displayName, username } = useCurrentUser();
+  const actor = order?.actor || username || displayName || '';
+  const [items, setItems] = useState<PurchaseOrderItem[]>(order?.items || []);
+  const [vendorId, setVendorId] = useState<string>(order?.vendorId || '');
+  const [vendorName, setVendorName] = useState<string>(order?.vendorName || '');
+  const [vendorEmail, setVendorEmail] = useState<string>(order?.vendorEmail || '');
+  const [vendorPhone, setVendorPhone] = useState<string>(order?.vendorPhone || '');
+  const [vendorAddress, setVendorAddress] = useState<string>(order?.vendorAddress || '');
+  const [shippingAddress, setShippingAddress] = useState<string>(order?.shippingAddress || '');
+  const [orderDate, setOrderDate] = useState<Date | undefined>(order?.orderDate ? new Date(order.orderDate) : new Date());
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(order?.deliveryDate ? new Date(order.deliveryDate) : undefined);
+  const [paymentMethod, setPaymentMethod] = useState<string>(order?.paymentMethod || 'net-30');
+  const [remarks, setRemarks] = useState<string>(Array.isArray(order?.remarks) ? order.remarks.map((r: any) => r.message).join('\n') : (order?.remarks as string) || '');
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
-  
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+
   // Invoice generation states
   const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
   const [invoiceMode, setInvoiceMode] = useState<'print' | 'pdf' | null>(null);
@@ -420,34 +314,6 @@ export const ModernPOOverlay = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  // Initialize form data
-  useEffect(() => {
-    if (order) {
-      setItems(order.items || []);
-      setVendorName(order.vendorName || '');
-      setVendorEmail(order.vendorEmail || '');
-      setVendorPhone(order.vendorPhone || '');
-      setVendorAddress(order.vendorAddress || '');
-      setShippingAddress(order.shippingAddress || '');
-      setOrderDate(order.orderDate ? new Date(order.orderDate) : undefined);
-      setDeliveryDate(order.deliveryDate ? new Date(order.deliveryDate) : undefined);
-      setPaymentMethod(order.paymentMethod || 'net-30');
-      setRemarks(Array.isArray(order.remarks) ? order.remarks.map(r => r.message).join('\n') : order.remarks || '');
-    } else {
-      // Reset for new order
-      setItems([]);
-      setVendorName('');
-      setVendorEmail('');
-      setVendorPhone('');
-      setVendorAddress('');
-      setShippingAddress('');
-      setOrderDate(new Date());
-      setDeliveryDate(undefined);
-      setPaymentMethod('net-30');
-      setRemarks('');
-    }
-    setIsEditMode(isEdit);
-  }, [order, isEdit]);
 
   // Responsive layout: prefer viewport media query (more stable) with container fallback.
   useEffect(() => {
@@ -489,6 +355,32 @@ export const ModernPOOverlay = ({
     };
   }, [isOpen]);
 
+  // Load vendors and locations from API
+  useEffect(() => {
+    fetchVendors({ limit: 500 }).then(res => {
+      setVendors(res.vendors.map(v => ({
+        id: v.id,
+        name: v.name,
+        email: v.email || '',
+        phone: v.phone || '',
+        address: [v.address, v.city, v.state].filter(Boolean).join(', '),
+      })));
+    }).catch(() => {});
+
+    fetchRooms().then(rooms => {
+      const seen = new Set<string>();
+      const locs: Location[] = [];
+      for (const r of rooms) {
+        const key = r.department || `Room ${r.roomNumber}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          locs.push({ id: r.id, name: key, address: `Floor ${r.floor}, ${r.type} Ward`, type: 'hospital' });
+        }
+      }
+      setLocations(locs);
+    }).catch(() => {});
+  }, []);
+
   const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
 
   const addItem = (stockItem?: StockItem) => {
@@ -510,8 +402,7 @@ export const ModernPOOverlay = ({
       taxSlab: 18
     };
     
-    // Add new item at the beginning of the array to push existing items down
-    setItems([newItem, ...items]);
+    setItems(prev => [newItem, ...prev]);
   };
 
   const handleItemScanned = (item: InventoryItem, quantity?: number) => {
@@ -528,10 +419,7 @@ export const ModernPOOverlay = ({
     
     setItems([newItem, ...items]);
     
-    toast({
-      title: "Item Added via Scanner",
-      description: `${item.name} - Qty: ${quantity || 1}`,
-    });
+    toast({ title: 'Item Added via Scanner', description: `${item.name} - Qty: ${quantity || 1}`, variant: 'success' });
   };
 
   const removeItem = (index: number) => {
@@ -542,23 +430,23 @@ export const ModernPOOverlay = ({
   const updateItem = (index: number, field: string, value: any) => {
     if (isReadOnly) return;
 
-    const updatedItems = [...items];
-    (updatedItems[index] as any)[field] = value;
-
-    if (field === 'qty' || field === 'unitPrice' || field === 'discount') {
-      const qty = updatedItems[index].qty || 0;
-      const unitPrice = updatedItems[index].unitPrice || 0;
-      const discount = updatedItems[index].discount || 0;
-      updatedItems[index].subtotal = (qty * unitPrice) * (1 - discount / 100);
-    }
-
-    setItems(updatedItems);
+    setItems(prev => {
+      const updatedItems = [...prev];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      if (field === 'qty' || field === 'unitPrice' || field === 'discount') {
+        const qty = updatedItems[index].qty || 0;
+        const unitPrice = updatedItems[index].unitPrice || 0;
+        const discount = updatedItems[index].discount || 0;
+        updatedItems[index] = { ...updatedItems[index], subtotal: (qty * unitPrice) * (1 - discount / 100) };
+      }
+      return updatedItems;
+    });
   };
 
   const calculateTotals = () => {
     const subTotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    const tax = subTotal * 0.18; // 18% tax
-    const shipping = 500.0;
+    const tax = subTotal * 0.18;
+    const shipping = subTotal === 0 ? 0 : Math.max(50, Math.min(Math.round(subTotal * 0.02), 1500));
     const total = subTotal + tax + shipping;
     return { subTotal, tax, shipping, total };
   };
@@ -566,30 +454,30 @@ export const ModernPOOverlay = ({
   const totals = calculateTotals();
 
   const handleSaveOrder = async () => {
-    if (!items.length) {
-      toast({
-        title: "Validation Error",
-        description: "Please add at least one item to the order.",
-        variant: "destructive",
-      });
+    const validItems = items.filter(item => item.name.trim() !== '' && item.qty > 0);
+
+    if (!validItems.length) {
+      toast({ title: 'Validation Error', description: 'Please add at least one item to the order.', variant: 'destructive' });
       return;
     }
 
     if (!vendorName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter vendor name.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please enter vendor name.', variant: 'destructive' });
       return;
     }
 
     setIsSaving(true);
 
     try {
+      const subTotal = validItems.reduce((sum, i) => sum + (i.subtotal || 0), 0);
+      const tax = subTotal * 0.18;
+      const shipping = subTotal === 0 ? 0 : Math.max(50, Math.min(Math.round(subTotal * 0.02), 1500));
+      const grandTotal = subTotal + tax + shipping;
+
       const orderData: PurchaseOrder = {
-        id: order?.id || `po-${Date.now()}`,
+        id: order?.id || '',
         poNumber: order?.poNumber || `PO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        vendorId: vendorId || undefined,
         vendorName,
         vendorContact: order?.vendorContact || '',
         vendorPhone,
@@ -599,62 +487,45 @@ export const ModernPOOverlay = ({
         deliveryDate: deliveryDate ? deliveryDate.toISOString().split('T')[0] : '',
         fulfilmentDate: order?.fulfilmentDate || null,
         status: order?.status || 'Pending',
-        items,
-        total: totals.total,
+        items: validItems,
+        total: grandTotal,
         paidAmount: order?.paidAmount || 0,
-        createdBy: order?.createdBy || 'System',
+        createdBy: order?.createdBy || displayName || 'System',
         approvedBy: order?.approvedBy || '',
+        actor,
         notes: order?.notes || '',
         attachments: order?.attachments || 0,
         paymentMethod,
         shippingAddress,
-        remarks: typeof remarks === 'string' ? [{ date: new Date().toISOString().split('T')[0], user: 'System', message: remarks }] : order?.remarks || [],
+        remarks: typeof remarks === 'string' ? [{ date: new Date().toISOString().split('T')[0], user: displayName || 'System', message: remarks }] : order?.remarks || [],
       };
 
       if (order && onUpdate) {
         await onUpdate(orderData);
-        toast({
-          title: "Order Updated",
-          description: `Purchase order ${orderData.poNumber} has been updated successfully.`,
-        });
+        toast({ title: 'Order Updated', description: `Purchase order ${orderData.poNumber} has been updated successfully.`, variant: 'success' });
       } else if (onSave) {
         await onSave(orderData);
-        toast({
-          title: "Order Created",
-          description: `Purchase order ${orderData.poNumber} has been created successfully.`,
-        });
+        toast({ title: 'Order Created', description: `Purchase order ${orderData.poNumber} has been created successfully.`, variant: 'success' });
       }
 
       onClose();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save order. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save order. Please try again.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleDeleteOrder = async () => {
     if (!order?.id || !onDelete) return;
-
-    if (window.confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) {
-      try {
-        await onDelete(order.id);
-        toast({
-          title: "Order Deleted",
-          description: "Purchase order has been deleted successfully.",
-        });
-        onClose();
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete order.",
-          variant: "destructive",
-        });
-      }
+    try {
+      await onDelete(order.id);
+      toast({ title: 'Order Deleted', description: 'Purchase order has been deleted successfully.', variant: 'success' });
+      onClose();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete order.', variant: 'destructive' });
     }
   };
 
@@ -691,10 +562,10 @@ export const ModernPOOverlay = ({
       {!isEditMode && order && !isReadOnly && (
         <>
           {onDelete && order.status !== 'Delivered' && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={handleDeleteOrder}
+              onClick={() => setShowDeleteConfirm(true)}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1" />
@@ -712,11 +583,7 @@ export const ModernPOOverlay = ({
 
   const handleExportPDF = () => {
     if (!order) {
-      toast({
-        title: "No Order Data",
-        description: "Please save the order before exporting to PDF.",
-        variant: "destructive",
-      });
+      toast({ title: 'No Order Data', description: 'Please save the order before exporting to PDF.', variant: 'destructive' });
       return;
     }
     setInvoiceMode('pdf');
@@ -740,16 +607,13 @@ export const ModernPOOverlay = ({
       orderDate: new Date().toISOString().split('T')[0],
     };
     onSave(duplicatedOrder);
-    toast({
-      title: "Order Duplicated",
-      description: `Created duplicate order ${duplicatedOrder.poNumber}`,
-    });
+    toast({ title: 'Order Duplicated', description: `Created duplicate order ${duplicatedOrder.poNumber}`, variant: 'success' });
     onClose();
   };
 
   const handleStatusUpdate = (statusData: StatusUpdateData) => {
-    if (!order || !onSave) {
-      console.error('Cannot update status: order or onSave is missing', { order, onSave });
+    if (!order || (!onSave && !onUpdate)) {
+      console.error('Cannot update status: order or save handler is missing', { order, onSave, onUpdate });
       return;
     }
 
@@ -791,45 +655,39 @@ export const ModernPOOverlay = ({
     // Save the order (dialog already closed by this point)
     try {
       console.log('Saving updated order:', updatedOrder);
-      onSave(updatedOrder);
-      
-      toast({
-        title: "Status Updated",
-        description: `Order ${order.poNumber} status changed to ${statusData.status}`,
-      });
+      if (order && onUpdate) {
+        onUpdate(updatedOrder);
+      } else if (onSave) {
+        onSave(updatedOrder);
+      }
+
+      toast({ title: 'Status Updated', description: `Order ${order.poNumber} status changed to ${statusData.status}`, variant: 'success' });
 
       // If there are damaged or returned items, show additional info
       if (statusData.items) {
         const damagedTotal = statusData.items.reduce((sum, item) => sum + (item.damagedQty || 0), 0);
         const returnedTotal = statusData.items.reduce((sum, item) => sum + (item.returnedQty || 0), 0);
-        
+
         if (damagedTotal > 0 || returnedTotal > 0) {
           setTimeout(() => {
-            toast({
-              title: "Fulfillment Summary",
-              description: `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`,
-              variant: damagedTotal > 0 ? "destructive" : "default",
-            });
+            const msg = `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`;
+            if (damagedTotal > 0) {
+              toast({ title: 'Fulfillment Summary', description: msg, variant: 'destructive' });
+            } else {
+              toast({ title: 'Fulfillment Summary', description: msg, variant: 'success' });
+            }
           }, 1000);
         }
       }
     } catch (error) {
       console.error('Error saving order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to update status. Please try again.', variant: 'destructive' });
     }
   };
 
   const handlePrint = () => {
     if (!order) {
-      toast({
-        title: "No Order Data",
-        description: "Please save the order before printing.",
-        variant: "destructive",
-      });
+      toast({ title: 'No Order Data', description: 'Please save the order before printing.', variant: 'destructive' });
       return;
     }
     setInvoiceMode('print');
@@ -1148,17 +1006,10 @@ export const ModernPOOverlay = ({
                 format: 'a4',
                 quality: 2,
               });
-              toast({
-                title: 'PDF Generated',
-                description: `Invoice has been exported as ${filename}`,
-              });
+              toast({ title: 'PDF Generated', description: `Invoice has been exported as ${filename}`, variant: 'success' });
               setShowInvoicePreview(false);
             } catch (error) {
-              toast({
-                title: 'Export Failed',
-                description: 'Failed to generate PDF. Please try again.',
-                variant: 'destructive',
-              });
+              toast({ title: 'Export Failed', description: 'Failed to generate PDF. Please try again.', variant: 'destructive' });
             }
           }
         }, 500);
@@ -1267,12 +1118,13 @@ export const ModernPOOverlay = ({
                       value={vendorName}
                       onChange={(value) => setVendorName(value)}
                       onSelect={(vendor) => {
+                        setVendorId(vendor.id);
                         setVendorName(vendor.name);
                         setVendorEmail(vendor.email);
                         setVendorPhone(vendor.phone);
                         setVendorAddress(vendor.address);
                       }}
-                      vendors={mockVendors}
+                      vendors={vendors}
                       disabled={!isEditMode && !!order}
                       className="mt-1"
                     />
@@ -1318,7 +1170,7 @@ export const ModernPOOverlay = ({
                       value={shippingAddress}
                       onChange={(value) => setShippingAddress(value)}
                       onSelect={(location) => setShippingAddress(location.address)}
-                      locations={mockLocations}
+                      locations={locations}
                       disabled={!isEditMode && !!order}
                       className="mt-1"
                     />
@@ -1363,6 +1215,18 @@ export const ModernPOOverlay = ({
                       />
                     </div>
                   </div>
+                  {actor && (
+                    <div>
+                      <Label className="text-xs font-medium flex items-center gap-1">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        Processed By
+                      </Label>
+                      <div className="mt-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-muted/50 border border-border/40">
+                        <span className="text-xs font-medium text-foreground">{actor}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground bg-background border border-border/50 rounded px-1 py-0.5">system user</span>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="paymentMethod" className="text-xs font-medium flex items-center gap-1">
                       <CreditCard className="h-3 w-3 text-muted-foreground" />
@@ -1439,13 +1303,23 @@ export const ModernPOOverlay = ({
                                      value={item.name}
                                      onChange={(value) => updateItem(index, 'name', value)}
                                      onSelect={(stockItem) => {
-                                       updateItem(index, 'name', stockItem.name);
-                                       updateItem(index, 'unitPrice', stockItem.unitPrice);
-                                       updateItem(index, 'qty', 1);
-                                       updateItem(index, 'discount', 0);
-                                       if (index === items.length - 1) {
-                                         addItem();
-                                       }
+                                       setItems(prev => {
+                                         const updated = [...prev];
+                                         updated[index] = {
+                                           ...updated[index],
+                                           item_id: stockItem.id,
+                                           name: stockItem.name,
+                                           unitPrice: stockItem.unitPrice,
+                                           qty: 1,
+                                           discount: 0,
+                                           subtotal: stockItem.unitPrice,
+                                           saleUnit: stockItem.saleUnit,
+                                         };
+                                         if (index === prev.length - 1) {
+                                           return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: 18 }];
+                                         }
+                                         return updated;
+                                       });
                                      }}
                                      placeholder="Search products..."
                                    />
@@ -1458,6 +1332,7 @@ export const ModernPOOverlay = ({
                                   <Input
                                     type="number"
                                     value={item.qty}
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
                                     className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     min="1"
@@ -1467,24 +1342,14 @@ export const ModernPOOverlay = ({
                                 )}
                               </TableCell>
                               <TableCell className="p-2">
-                                {(isEditMode || !order) ? (
-                                  <Input
-                                    type="number"
-                                    value={item.unitPrice}
-                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                                    className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    min="0"
-                                    step="0.01"
-                                  />
-                                ) : (
-                                  <span className="whitespace-nowrap">₹{item.unitPrice?.toFixed(2)}</span>
-                                )}
+                                <span className="whitespace-nowrap text-sm">₹{item.unitPrice?.toFixed(2)}</span>
                               </TableCell>
                               <TableCell className="p-2">
                                 {(isEditMode || !order) ? (
                                   <Input
                                     type="number"
                                     value={item.discount}
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
                                     className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     min="0"
@@ -1586,12 +1451,13 @@ export const ModernPOOverlay = ({
                     value={vendorName}
                     onChange={(value) => setVendorName(value)}
                     onSelect={(vendor) => {
+                      setVendorId(vendor.id);
                       setVendorName(vendor.name);
                       setVendorEmail(vendor.email);
                       setVendorPhone(vendor.phone);
                       setVendorAddress(vendor.address);
                     }}
-                    vendors={mockVendors}
+                    vendors={vendors}
                     disabled={!isEditMode && !!order}
                     className="mt-1"
                   />
@@ -1625,7 +1491,7 @@ export const ModernPOOverlay = ({
                     value={shippingAddress}
                     onChange={(value) => setShippingAddress(value)}
                     onSelect={(location) => setShippingAddress(location.address)}
-                    locations={mockLocations}
+                    locations={locations}
                     disabled={!isEditMode && !!order}
                     className="mt-1"
                   />
@@ -1720,14 +1586,22 @@ export const ModernPOOverlay = ({
                                   value={item.name}
                                   onChange={(value) => updateItem(index, 'name', value)}
                                   onSelect={(stockItem) => {
-                                    updateItem(index, 'name', stockItem.name);
-                                    updateItem(index, 'unitPrice', stockItem.unitPrice);
-                                    updateItem(index, 'qty', 1);
-                                    updateItem(index, 'discount', 0);
-                                    // Auto-add new empty row after selection
-                                    if (index === items.length - 1) {
-                                      addItem();
-                                    }
+                                    setItems(prev => {
+                                      const updated = [...prev];
+                                      updated[index] = {
+                                        ...updated[index],
+                                        name: stockItem.name,
+                                        unitPrice: stockItem.unitPrice,
+                                        qty: 1,
+                                        discount: 0,
+                                        subtotal: stockItem.unitPrice,
+                                        saleUnit: stockItem.saleUnit,
+                                      };
+                                      if (index === prev.length - 1) {
+                                        return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: 18 }];
+                                      }
+                                      return updated;
+                                    });
                                   }}
                                   placeholder="Search products..."
                                 />
@@ -1743,6 +1617,7 @@ export const ModernPOOverlay = ({
                                   <Input
                                     type="number"
                                     value={item.qty}
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
                                     className="mt-1 min-w-[60px]"
                                     min="1"
@@ -1754,18 +1629,7 @@ export const ModernPOOverlay = ({
 
                               <div>
                                 <Label className="text-xs font-medium text-muted-foreground">Unit Price</Label>
-                                {(isEditMode || !order) ? (
-                                  <Input
-                                    type="number"
-                                    value={item.unitPrice}
-                                    onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
-                                    className="mt-1"
-                                    min="0"
-                                    step="0.01"
-                                  />
-                                ) : (
-                                  <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
-                                )}
+                                <div className="mt-1 font-medium">₹{item.unitPrice?.toFixed(2)}</div>
                               </div>
                             </div>
 
@@ -1776,6 +1640,7 @@ export const ModernPOOverlay = ({
                                   <Input
                                     type="number"
                                     value={item.discount}
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => updateItem(index, 'discount', Number(e.target.value))}
                                     className="mt-1"
                                     min="0"
@@ -1881,6 +1746,16 @@ export const ModernPOOverlay = ({
         onStatusUpdate={handleStatusUpdate}
       />
     )}
+
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title="Delete purchase order?"
+      description="This will permanently delete this purchase order. This action cannot be undone."
+      confirmLabel="Delete"
+      variant="destructive"
+      onConfirm={handleDeleteOrder}
+    />
     </>
   );
 };

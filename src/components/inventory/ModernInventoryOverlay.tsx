@@ -1,7 +1,6 @@
 import React from 'react';
-import { X, Minimize2, Maximize2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface ModernInventoryOverlayProps {
@@ -33,56 +32,54 @@ const sizeClasses = {
   wide: 'w-full sm:w-[80vw] sm:max-w-[80vw]'
 };
 
-export const ModernInventoryOverlay = ({ 
-  isOpen, 
-  onClose, 
-  title, 
+export const ModernInventoryOverlay = ({
+  isOpen,
+  onClose,
+  title,
   subtitle,
   status,
   statusColor = 'pending',
-  children, 
+  children,
   headerActions,
   quickActions,
   size = 'medium'
 }: ModernInventoryOverlayProps) => {
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent 
-        className={`${sizeClasses[size]} p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20`}
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        className={`${sizeClasses[size]} p-0 flex flex-col h-full bg-background`}
         side="right"
       >
-        {/* Modern Header */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-3 sm:p-6">
-          <div className="flex items-start justify-between mb-2 sm:mb-4">
+        {/* Professional Header */}
+        <div className="flex-shrink-0 border-b border-border px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
+              <div className="flex items-center gap-2.5 mb-1">
+                <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">{title}</h1>
                 {status && (
-                  <Badge variant="outline" className={`${statusColors[statusColor]} text-xs shrink-0`}>
+                  <Badge variant="outline" className={`${statusColors[statusColor]} text-xs font-semibold shrink-0 pointer-events-none`}>
                     {status}
                   </Badge>
                 )}
               </div>
               {subtitle && (
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{subtitle}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">{subtitle}</p>
               )}
             </div>
-            
-            <div className="flex items-center gap-1 sm:gap-2 ml-2">
-              <Button variant="outline" size="sm" onClick={onClose} className="h-9 px-3 bg-background/90 hover:bg-destructive hover:text-destructive-foreground border-border/70">
-                <X className="h-4 w-4 mr-1" />
-                <span className="text-sm font-medium">Close</span>
-              </Button>
-            </div>
+
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
-          
-          {/* Header Actions */}
+
+          {/* Header Actions + Quick Actions */}
           {headerActions && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
                 {quickActions}
               </div>
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1.5">
                 {headerActions}
               </div>
             </div>

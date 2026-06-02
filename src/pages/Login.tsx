@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import axios from "axios";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -18,46 +17,22 @@ export const Login = () => {
     setIsLoading(true);
 
     try {
-      debugger;
-      // Actual API call to backend
-      const response = await axios.post<{
-        access_token: string;
-        token_type: string;
-        expires_in: number;
-        user: {
-          userId: string;
-          username: string;
-          roles: string[];
-        };
-      }>(`${API_BASE_URL}/auth/login`, {
-        username,
-        password
-      });
-
-      // Store the auth token
-      if (response.data.access_token) {
-        localStorage.setItem('auth_token', response.data.access_token);
-        localStorage.setItem('user_data', JSON.stringify(response.data.user));
-        
-        toast.success("Login successful!");
-        console.log('Logged in user:', response.data.user);
-        
-        // Navigate to dashboard
-        navigate("/inventory-dashboard");
-      }
+      await login(username, password);
+      toast({ title: "Login successful!", variant: 'success' });
+      navigate("/inventory-dashboard");
     } catch (error: any) {
       console.error('Login error:', error);
-      
+
       if (error.response?.status === 401) {
-        toast.error("Invalid username or password");
+        toast({ title: "Invalid username or password", variant: 'destructive' });
       } else if (error.response?.status === 400) {
-        toast.error("Please provide valid credentials");
+        toast({ title: "Please provide valid credentials", variant: 'destructive' });
       } else if (!error.response) {
-        toast.error("Cannot connect to server. Please check if backend is running at " + API_BASE_URL);
+        toast({ title: "Cannot connect to server. Please check if backend is running.", variant: 'destructive' });
       } else {
-        toast.error(error.response?.data?.message || "An error occurred during login");
+        toast({ title: error.response?.data?.message || "An error occurred during login", variant: 'destructive' });
       }
-      
+
       setIsLoading(false);
     }
   };

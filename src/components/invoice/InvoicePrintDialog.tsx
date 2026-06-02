@@ -77,10 +77,7 @@ export const InvoicePrintDialog = ({
     // Trigger browser print dialog
     setTimeout(() => {
       window.print();
-      toast({
-        title: 'Print Dialog Opened',
-        description: 'Please complete printing from the browser dialog.',
-      });
+      toast({ title: 'Print Dialog Opened', description: 'Please complete printing from the browser dialog.', variant: 'success' });
     }, 500);
   };
 
@@ -97,16 +94,9 @@ export const InvoicePrintDialog = ({
         quality: 2,
       });
 
-      toast({
-        title: 'PDF Generated',
-        description: `Invoice has been exported as ${filename}`,
-      });
+      toast({ title: 'PDF Generated', description: `Invoice has been exported as ${filename}`, variant: 'success' });
     } catch (error) {
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to generate PDF. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Export Failed', description: 'Failed to generate PDF. Please try again.', variant: 'destructive' });
     }
   };
 

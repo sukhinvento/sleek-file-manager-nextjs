@@ -1,9 +1,9 @@
 import { useState, useCallback, memo } from 'react';
-import { 
-  ResponsiveDialog, 
-  ResponsiveDialogContent, 
-  ResponsiveDialogFooter, 
-  ResponsiveDialogHeader, 
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
   ResponsiveDialogTitle,
   ResponsiveDialogBody
 } from "@/components/ui/responsive-dialog";
@@ -23,12 +23,12 @@ interface StockTransferFilterModalProps {
   statuses: string[];
 }
 
-const StockTransferFilterModalComponent = ({ 
-  isOpen, 
-  onClose, 
-  onApplyFilters, 
-  locations, 
-  statuses 
+const StockTransferFilterModalComponent = ({
+  isOpen,
+  onClose,
+  onApplyFilters,
+  locations,
+  statuses
 }: StockTransferFilterModalProps) => {
   const [filters, setFilters] = useState({
     transferId: '',
@@ -71,134 +71,88 @@ const StockTransferFilterModalComponent = ({
 
   return (
     <ResponsiveDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <ResponsiveDialogContent className="!max-w-[600px] max-w-[600px]">
+      <ResponsiveDialogContent className="sm:max-w-[520px]">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
-            <Truck className="h-5 w-5 text-white" />
+            <Truck className="h-4 w-4 text-white" />
             Filter Stock Transfers
           </ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
         <ResponsiveDialogBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-            {/* Transfer ID */}
-            <div className="space-y-2">
-              <Label htmlFor="transferId">Transfer ID</Label>
-              <Input
-                id="transferId"
-                placeholder="TRN-2024-001"
-                value={filters.transferId}
-                onChange={(e) => handleInputChange('transferId', e.target.value)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 py-3">
+            <div className="space-y-1">
+              <Label htmlFor="transferId" className="text-xs font-medium">Transfer ID</Label>
+              <Input id="transferId" placeholder="TRN-2024-001" className="h-8 text-xs" value={filters.transferId} onChange={(e) => handleInputChange('transferId', e.target.value)} />
             </div>
 
-            {/* Requested By */}
-            <div className="space-y-2">
-              <Label htmlFor="requestedBy">Requested By</Label>
-              <Input
-                id="requestedBy"
-                placeholder="John Doe"
-                value={filters.requestedBy}
-                onChange={(e) => handleInputChange('requestedBy', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="requestedBy" className="text-xs font-medium">Requested By</Label>
+              <Input id="requestedBy" placeholder="John Doe" className="h-8 text-xs" value={filters.requestedBy} onChange={(e) => handleInputChange('requestedBy', e.target.value)} />
             </div>
 
-            {/* From Location */}
-            <div className="space-y-2">
-              <Label htmlFor="fromLocation">From Location</Label>
-              <Select 
-                value={filters.fromLocation} 
-                onValueChange={(value) => handleInputChange('fromLocation', value === 'All' ? '' : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
+            <div className="space-y-1">
+              <Label htmlFor="fromLocation" className="text-xs font-medium">From Location</Label>
+              <Select value={filters.fromLocation} onValueChange={(value) => handleInputChange('fromLocation', value === 'All' ? '' : value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select location" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Locations</SelectItem>
-                  {locations.filter(l => l !== 'All').map(location => (
-                    <SelectItem key={location} value={location}>{location}</SelectItem>
-                  ))}
+                  <SelectItem className="text-xs" value="All">All Locations</SelectItem>
+                  {locations.filter(l => l !== 'All').map(location => <SelectItem className="text-xs" key={location} value={location}>{location}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* To Location */}
-            <div className="space-y-2">
-              <Label htmlFor="toLocation">To Location</Label>
-              <Select 
-                value={filters.toLocation} 
-                onValueChange={(value) => handleInputChange('toLocation', value === 'All' ? '' : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
+            <div className="space-y-1">
+              <Label htmlFor="toLocation" className="text-xs font-medium">To Location</Label>
+              <Select value={filters.toLocation} onValueChange={(value) => handleInputChange('toLocation', value === 'All' ? '' : value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select location" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Locations</SelectItem>
-                  {locations.filter(l => l !== 'All').map(location => (
-                    <SelectItem key={location} value={location}>{location}</SelectItem>
-                  ))}
+                  <SelectItem className="text-xs" value="All">All Locations</SelectItem>
+                  {locations.filter(l => l !== 'All').map(location => <SelectItem className="text-xs" key={location} value={location}>{location}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+            <div className="space-y-1">
+              <Label htmlFor="status" className="text-xs font-medium">Status</Label>
               <Select value={filters.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+                <SelectTrigger id="status" className="h-8 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Statuses</SelectItem>
-                  {statuses.filter(s => s !== 'All').map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
+                  <SelectItem className="text-xs" value="All">All Statuses</SelectItem>
+                  {statuses.filter(s => s !== 'All').map(status => <SelectItem className="text-xs" key={status} value={status}>{status}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Priority */}
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+            <div className="space-y-1">
+              <Label htmlFor="priority" className="text-xs font-medium">Priority</Label>
               <Select value={filters.priority} onValueChange={(value) => handleInputChange('priority', value)}>
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
+                <SelectTrigger id="priority" className="h-8 text-xs"><SelectValue placeholder="Select priority" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Priorities</SelectItem>
-                  {priorities.map(priority => (
-                    <SelectItem key={priority} value={priority}>{priority}</SelectItem>
-                  ))}
+                  <SelectItem className="text-xs" value="All">All Priorities</SelectItem>
+                  {priorities.map(priority => <SelectItem className="text-xs" key={priority} value={priority}>{priority}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Request Date Range */}
-            <div className="space-y-2 md:col-span-2">
-              <Label>Request Date Range</Label>
-              <DatePickerWithRange
-                date={filters.requestDateRange}
-                onDateChange={(range) => handleDateRangeChange('requestDateRange', range)}
-              />
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs font-medium">Request Date Range</Label>
+              <DatePickerWithRange date={filters.requestDateRange} onDateChange={(range) => handleDateRangeChange('requestDateRange', range)} />
             </div>
 
-            {/* Expected Date Range */}
-            <div className="space-y-2 md:col-span-2">
-              <Label>Expected Delivery Date Range</Label>
-              <DatePickerWithRange
-                date={filters.expectedDateRange}
-                onDateChange={(range) => handleDateRangeChange('expectedDateRange', range)}
-              />
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs font-medium">Expected Delivery Date Range</Label>
+              <DatePickerWithRange date={filters.expectedDateRange} onDateChange={(range) => handleDateRangeChange('expectedDateRange', range)} />
             </div>
           </div>
         </ResponsiveDialogBody>
 
         <ResponsiveDialogFooter className="justify-between">
-          <Button variant="outline" onClick={handleClear} className="flex-1 sm:flex-initial">
-            <X className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleClear} className="h-8 text-xs flex-1 sm:flex-initial">
+            <X className="h-3 w-3 mr-1.5" />
             Clear All
           </Button>
-          <Button onClick={handleApply} className="flex-1 sm:flex-initial">
+          <Button size="sm" onClick={handleApply} className="h-8 text-xs flex-1 sm:flex-initial">
             Apply Filters
           </Button>
         </ResponsiveDialogFooter>

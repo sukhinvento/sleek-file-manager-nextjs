@@ -103,7 +103,7 @@ const mapFrontendToBackend = (vendor: Partial<VendorWithTaxIds>): Partial<Backen
     vendor_code: vendor.vendorId,
     name: vendor.name,
     legal_name: vendor.name, // Using name as legal_name if not provided separately
-    tax_id: vendor.taxId || '',
+    tax_id: vendor.taxId || 'N/A',
     address: addressParts.join(', '),
     contact_persons: vendor.contactPerson ? [vendor.contactPerson] : [],
     default_lead_time_days: 14, // Default value

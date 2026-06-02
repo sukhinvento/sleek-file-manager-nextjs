@@ -7,12 +7,21 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Search, Plus, Eye, Edit, Trash2, X, Save,
-  Phone, Mail, Calendar, Star, Users, Clock,
+  Phone, Mail, Calendar, Star, Users, Clock, User,
   Stethoscope, GraduationCap, Globe, CheckCircle, AlertCircle, UserMinus
 } from 'lucide-react';
 import * as doctorService from '@/services/doctorService';
 import { Doctor, DoctorSchedule } from '@/services/doctorService';
 import { toast } from '@/hooks/use-toast';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { MobileTableView } from '@/components/ui/mobile-table-view';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const PRIMARY   = STAT_ACCENTS.PRIMARY;
+const TEXT_MAIN = 'hsl(215,28%,14%)';
+const TEXT_MUTE = 'hsl(220,12%,54%)';
+const BORDER    = 'hsl(220,16%,90%)';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -169,7 +178,7 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
 
   const handleSave = async () => {
     if (!form.name || !form.department || !form.registrationNo) {
-      toast({ variant: 'destructive', title: 'Missing fields', description: 'Name, department, and registration number are required.' });
+      toast({ title: 'Missing fields', description: 'Name, department, and registration number are required.', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -177,14 +186,14 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
       let saved: Doctor;
       if (mode === 'add') {
         saved = await doctorService.addDoctor(form);
-        toast({ title: 'Doctor Added', description: `${saved.name} has been added to the system.` });
+        toast({ title: 'Doctor Added', description: `${saved.name} has been added to the system.`, variant: 'success' });
       } else {
         saved = await doctorService.updateDoctor(doctor!.id, form);
-        toast({ title: 'Doctor Updated', description: `${saved.name}'s profile has been updated.` });
+        toast({ title: 'Doctor Updated', description: `${saved.name}'s profile has been updated.`, variant: 'success' });
       }
       onSave(saved);
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save. Please try again.' });
+      toast({ title: 'Error', description: 'Failed to save. Please try again.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -246,8 +255,12 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
                 </div>
               )}
 
-              {/* Details table */}
+              {/* Personal Details */}
               <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Personal Details</span>
+                </div>
                 {[
                   ['Employee ID', doctor.employeeId],
                   ['Phone', doctor.phone],
@@ -255,59 +268,84 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
                   ['Gender', doctor.gender],
                   ['Date of Birth', doctor.dob],
                   ['Join Date', doctor.joinDate],
-                  ['OPD Slots/Day', doctor.opdSlots > 0 ? String(doctor.opdSlots) : 'N/A'],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex px-4 py-2.5 border-b border-border last:border-0 odd:bg-muted/20">
+                ].map(([label, value], i) => (
+                  <div key={label} className={`flex px-4 py-2.5 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
                     <span className="text-xs text-muted-foreground w-36 flex-shrink-0">{label}</span>
-                    <span className="text-xs font-semibold text-foreground">{value}</span>
+                    <span className="text-xs font-semibold text-foreground">{value || '—'}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Professional Details */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Professional Details</span>
+                </div>
+                {[
+                  ['Specialisation', doctor.specialisation],
+                  ['Consultation Fee', `₹${doctor.consultationFee.toLocaleString('en-IN')}`],
+                  ['OPD Slots/Day', doctor.opdSlots > 0 ? String(doctor.opdSlots) : 'N/A'],
+                  ['Registration No.', doctor.registrationNo],
+                ].map(([label, value], i) => (
+                  <div key={label} className={`flex px-4 py-2.5 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                    <span className="text-xs text-muted-foreground w-36 flex-shrink-0">{label}</span>
+                    <span className="text-xs font-semibold text-foreground">{value || '—'}</span>
                   </div>
                 ))}
               </div>
 
               {/* Qualifications */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Qualifications</p>
-                <div className="flex flex-wrap gap-2">
-                  {doctor.qualification.map(q => (
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <GraduationCap className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Qualifications</span>
+                </div>
+                <div className="px-4 py-3 flex flex-wrap gap-2">
+                  {doctor.qualification.length > 0 ? doctor.qualification.map(q => (
                     <span key={q} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 border border-primary/15 text-xs font-medium text-primary">
                       <GraduationCap className="h-3 w-3" />{q}
                     </span>
-                  ))}
+                  )) : <span className="text-xs text-muted-foreground">No qualifications listed</span>}
                 </div>
               </div>
 
               {/* Languages */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Languages</p>
-                <div className="flex flex-wrap gap-2">
-                  {doctor.languages.map(l => (
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Globe className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Languages</span>
+                </div>
+                <div className="px-4 py-3 flex flex-wrap gap-2">
+                  {doctor.languages.length > 0 ? doctor.languages.map(l => (
                     <span key={l} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs text-foreground">
                       <Globe className="h-3 w-3 text-muted-foreground" />{l}
                     </span>
-                  ))}
+                  )) : <span className="text-xs text-muted-foreground">No languages listed</span>}
                 </div>
               </div>
 
               {/* Schedule */}
               {doctor.schedule.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Weekly Schedule</p>
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    {doctor.schedule.sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day)).map((s, i) => (
-                      <div key={s.day} className={`flex items-center gap-4 px-4 py-2.5 border-b border-border last:border-0 ${i % 2 === 0 ? 'bg-muted/20' : ''}`}>
-                        <span className="text-xs font-semibold text-foreground w-8">{s.day}</span>
-                        <span className="text-xs text-muted-foreground">{s.startTime} – {s.endTime}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">
-                          {(() => {
-                            const [sh, sm] = s.startTime.split(':').map(Number);
-                            const [eh, em] = s.endTime.split(':').map(Number);
-                            const mins = (eh * 60 + em) - (sh * 60 + sm);
-                            return mins > 0 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}`.trim() : '—';
-                          })()}
-                        </span>
-                      </div>
-                    ))}
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                    <Calendar className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Weekly Schedule</span>
                   </div>
+                  {doctor.schedule.sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day)).map((s, i) => (
+                    <div key={s.day} className={`flex items-center gap-4 px-4 py-2.5 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                      <span className="text-xs font-semibold text-foreground w-8">{s.day}</span>
+                      <span className="text-xs text-muted-foreground">{s.startTime} – {s.endTime}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {(() => {
+                          const [sh, sm] = s.startTime.split(':').map(Number);
+                          const [eh, em] = s.endTime.split(':').map(Number);
+                          const mins = (eh * 60 + em) - (sh * 60 + sm);
+                          return mins > 0 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}`.trim() : '—';
+                        })()}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -324,9 +362,12 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
           {isEdit && (
             <>
               {/* Basic Info */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Personal Details</p>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Personal Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 p-4">
                   <FieldGroup label="Full Name" required>
                     <Input value={form.name} onChange={e => upd('name', e.target.value)} placeholder="Dr. First Last" />
                   </FieldGroup>
@@ -350,9 +391,12 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
               </div>
 
               {/* Professional */}
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Professional Details</p>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Professional Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 p-4">
                   <FieldGroup label="Department" required>
                     <SelectField value={form.department} onChange={v => upd('department', v)}
                       options={DEPARTMENTS.map(d => ({ value: d, label: d }))} />
@@ -383,8 +427,12 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
               </div>
 
               {/* Qualifications */}
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Qualifications</p>
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <GraduationCap className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Qualifications</span>
+                </div>
+                <div className="p-4">
                 <div className="flex gap-2 mb-2">
                   <Input value={qualInput} onChange={e => setQualInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addQual()}
@@ -399,12 +447,16 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
                     </span>
                   ))}
                 </div>
+                </div>
               </div>
 
               {/* Languages */}
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Languages</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Globe className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Languages</span>
+                </div>
+                <div className="p-4 flex flex-wrap gap-2">
                   {LANGUAGES.map(lang => {
                     const active = form.languages.includes(lang);
                     return (
@@ -420,19 +472,30 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
               </div>
 
               {/* Schedule */}
-              <div className="border-t border-border pt-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Weekly Schedule</p>
-                <p className="text-xs text-muted-foreground mb-3">Click a day to toggle it on/off, then set times.</p>
-                <ScheduleEditor schedule={form.schedule} onChange={s => upd('schedule', s)} />
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Weekly Schedule</span>
+                </div>
+                <div className="p-4">
+                  <p className="text-xs text-muted-foreground mb-3">Click a day to toggle it on/off, then set times.</p>
+                  <ScheduleEditor schedule={form.schedule} onChange={s => upd('schedule', s)} />
+                </div>
               </div>
 
               {/* Bio */}
-              <div className="border-t border-border pt-4">
-                <FieldGroup label="Bio / Profile Summary">
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                  <Edit className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Bio / Profile Summary</span>
+                </div>
+                <div className="p-4">
+                <FieldGroup label="Bio">
                   <textarea value={form.bio} onChange={e => upd('bio', e.target.value)} rows={3}
                     placeholder="Brief professional summary visible to patients and staff…"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none" />
                 </FieldGroup>
+                </div>
               </div>
             </>
           )}
@@ -472,22 +535,30 @@ export const DoctorManagement = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  const computeStats = (docs: Doctor[]) => ({
+    total: docs.length,
+    active: docs.filter(d => d.status === 'Active').length,
+    onLeave: docs.filter(d => d.status === 'On Leave').length,
+    inactive: docs.filter(d => d.status === 'Inactive').length,
+    departments: new Set(docs.map(d => d.department).filter(Boolean)).size,
+    totalActivePatients: docs.filter(d => d.status === 'Active').reduce((sum, d) => sum + (d.activePatients || 0), 0),
+  });
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [docs, s] = await Promise.all([doctorService.fetchDoctors(), doctorService.fetchDoctorStats()]);
+      const docs = await doctorService.fetchDoctors();
       setDoctors(docs);
-      setStats(s);
+      setStats(computeStats(docs));
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load doctor data.' });
+      toast({ title: 'Error', description: 'Failed to load doctor data.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const refreshStats = async () => {
-    const s = await doctorService.fetchDoctorStats();
-    setStats(s);
+  const refreshStats = () => {
+    setStats(computeStats(doctors));
   };
 
   const departments = useMemo(() => ['All', ...new Set(doctors.map(d => d.department))], [doctors]);
@@ -519,142 +590,276 @@ export const DoctorManagement = () => {
     closeSheet();
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<Doctor | null>(null);
+
   const handleDelete = async (doctor: Doctor) => {
-    if (!confirm(`Remove ${doctor.name} from the system? This cannot be undone.`)) return;
     try {
       await doctorService.deleteDoctor(doctor.id);
       setDoctors(prev => prev.filter(d => d.id !== doctor.id));
       refreshStats();
-      toast({ title: 'Doctor Removed', description: `${doctor.name} has been removed.` });
+      toast({ title: 'Doctor Removed', description: `${doctor.name} has been removed.`, variant: 'success' });
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to remove doctor.' });
+      toast({ title: 'Error', description: 'Failed to remove doctor.', variant: 'destructive' });
     }
   };
-
-  const statCards = [
-    { label: 'Total Doctors', value: stats.total,   status: 'All',      color: 'text-primary',    bg: 'from-primary/5 to-primary/10',         icon: Stethoscope },
-    { label: 'Active',        value: stats.active,   status: 'Active',   color: 'text-green-600',  bg: 'from-green-50 to-lime-50',             icon: CheckCircle },
-    { label: 'On Leave',      value: stats.onLeave,  status: 'On Leave', color: 'text-amber-600',  bg: 'from-amber-50 to-orange-50',           icon: Clock },
-    { label: 'Inactive',      value: stats.inactive, status: 'Inactive', color: 'text-gray-500',   bg: 'from-gray-50 to-slate-50',             icon: UserMinus },
-  ];
 
   return (
     <div className="space-y-4">
       {/* Stat Cards */}
-      <section className="bg-card sm:mx-0">
-        <div className="stat-cards-scroll">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {statCards.map(card => (
-              <Card
-                key={card.status}
-                onClick={() => setFilterStatus(s => s === card.status ? 'All' : card.status)}
-                className={`flex-shrink-0 w-40 sm:w-44 md:w-48 shadow-lg border-none bg-gradient-to-br ${card.bg} relative overflow-hidden stat-card-clickable ${filterStatus === card.status ? 'stat-card-active' : ''}`}
-              >
-                <CardContent className="p-3 relative z-10">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${card.color}`}>{card.label}</p>
-                      <p className={`text-2xl font-bold mt-0.5 ${card.color}`}>{card.value}</p>
-                    </div>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.06)' }}>
-                      <card.icon className={`h-4 w-4 ${card.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-                <card.icon className={`absolute bottom-0 right-0 h-12 w-12 opacity-[0.05] transform translate-x-3 translate-y-3 ${card.color}`} />
-              </Card>
-            ))}
-
-            {/* Departments card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <p className="text-xs font-semibold uppercase tracking-wider text-purple-600 mb-1">Departments</p>
-                <p className="text-2xl font-bold text-purple-700">{stats.departments}</p>
-                <p className="text-xs text-purple-600 mt-1">{stats.totalActivePatients} active patients</p>
-              </CardContent>
-              <Users className="absolute bottom-0 right-0 h-12 w-12 text-purple-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total" value={stats.total} icon={Stethoscope} accent={STAT_ACCENTS.PRIMARY}
+            active={filterStatus === 'All'} onClick={() => setFilterStatus('All')} />
+          <StatCard label="Active" value={stats.active} icon={CheckCircle} accent={STAT_ACCENTS.SUCCESS}
+            active={filterStatus === 'Active'} onClick={() => setFilterStatus(s => s === 'Active' ? 'All' : 'Active')} />
+          <StatCard label="On Leave" value={stats.onLeave} icon={Clock} accent={STAT_ACCENTS.WARNING}
+            active={filterStatus === 'On Leave'} onClick={() => setFilterStatus(s => s === 'On Leave' ? 'All' : 'On Leave')} />
+          <StatCard label="Inactive" value={stats.inactive} icon={UserMinus} accent={STAT_ACCENTS.DANGER}
+            active={filterStatus === 'Inactive'} onClick={() => setFilterStatus(s => s === 'Inactive' ? 'All' : 'Inactive')} />
+          <StatCard label="Departments" value={stats.departments} icon={Users} accent={STAT_ACCENTS.PURPLE} />
         </div>
-      </section>
+      </div>
 
       {/* Active filter pill */}
 
       {/* Filter / Search bar */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 sm:mx-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          {/* Department pills */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {departments.map(dept => (
-              <button key={dept}
-                onClick={() => setFilterDept(d => d === dept ? 'All' : dept)}
-                className={`flex-shrink-0 px-3 h-8 rounded-full text-xs font-semibold transition-colors border ${
-                  filterDept === dept
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'text-muted-foreground border-border hover:border-primary/40'
-                }`}>
-                {dept}
-              </button>
-            ))}
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-3">
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-3">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-1.5 w-max">
+              {departments.map(dept => (
+                <button key={dept}
+                  onClick={() => setFilterDept(d => d === dept ? 'All' : dept)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: filterDept === dept ? PRIMARY : 'transparent',
+                    color: filterDept === dept ? '#fff' : TEXT_MUTE,
+                    borderColor: filterDept === dept ? PRIMARY : BORDER,
+                  }}>
+                  {dept}
+                </button>
+              ))}
+            </div>
           </div>
-
-          <div className="flex gap-2 lg:ml-auto">
-            <div className="relative flex-1 lg:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Name, specialisation, reg. no…" className="pl-8 h-9 text-sm"
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="relative w-60">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Name, specialisation, reg. no…" className="pl-8 h-8 text-xs"
                 value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Button onClick={() => openSheet(null, 'add')} className="gap-2 flex-shrink-0">
-              <Plus className="h-4 w-4" /> Add Doctor
+            <Button size="sm" className="h-8 text-xs gap-1.5 flex-shrink-0" onClick={() => openSheet(null, 'add')}>
+              <Plus size={13} /> Add Doctor
             </Button>
+          </div>
+        </div>
+
+        {/* Mobile */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Name, specialisation…" className="pl-8 h-8 text-xs"
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <Button size="sm" className="h-8 text-xs gap-1.5 flex-shrink-0" onClick={() => openSheet(null, 'add')}>
+              <Plus size={13} /> Add
+            </Button>
+          </div>
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-1.5 w-max">
+              {departments.map(dept => (
+                <button key={dept}
+                  onClick={() => setFilterDept(d => d === dept ? 'All' : dept)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: filterDept === dept ? PRIMARY : 'transparent',
+                    color: filterDept === dept ? '#fff' : TEXT_MUTE,
+                    borderColor: filterDept === dept ? PRIMARY : BORDER,
+                  }}>
+                  {dept}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="block md:hidden space-y-3">
-        {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3 animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-36 bg-muted rounded" />
-                  <div className="h-3 w-24 bg-muted rounded" />
+      {/* Table */}
+      {loading ? (
+        <div className="rounded-xl ring-1 ring-border [overflow:clip]">
+          <table className="w-full text-sm">
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="border-b last:border-b-0">
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-3 w-28 bg-muted animate-pulse rounded" />
+                        <div className="h-2.5 w-20 bg-muted animate-pulse rounded" />
+                      </div>
+                    </div>
+                  </td>
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <td key={j} className="px-3 py-3">
+                      <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl ring-1 ring-border bg-card p-16 text-center">
+          <Stethoscope className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No doctors found</p>
+          <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
+        </div>
+      ) : (
+        <MobileTableView
+          data={filtered}
+          stickyHeader={true}
+          columns={[
+            {
+              key: 'name',
+              label: 'Doctor',
+              width: 'w-[20%]',
+              render: (_value, item) => {
+                const doc = item as Doctor;
+                const st = STATUS_STYLES[doc.status];
+                return (
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-shrink-0">
+                      <DoctorAvatar doctor={doc} size="sm" />
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${st.dot}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate" style={{ color: TEXT_MAIN }}>{doc.name}</p>
+                      <p className="text-[11px] truncate" style={{ color: TEXT_MUTE }}>{doc.specialisation}</p>
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'department',
+              label: 'Department',
+              width: 'w-[13%]',
+              render: (value) => (
+                <Badge className={`${DEPT_COLORS[value as string] ?? 'bg-slate-100 text-slate-700'} border-0 text-[11px] pointer-events-none`}>
+                  {value as string}
+                </Badge>
+              ),
+            },
+            {
+              key: 'qualification',
+              label: 'Qualifications',
+              width: 'w-[12%]',
+              render: (value) => {
+                const quals = value as string[];
+                return (
+                  <div className="flex flex-wrap gap-1">
+                    {quals.slice(0, 2).map(q => (
+                      <span key={q} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/8 text-primary font-medium">{q}</span>
+                    ))}
+                    {quals.length > 2 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{quals.length - 2}</span>
+                    )}
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'experience',
+              label: 'Exp.',
+              width: 'w-[7%]',
+              render: (value) => (
+                <div>
+                  <span className="font-semibold text-sm" style={{ color: TEXT_MAIN }}>{value as number}</span>
+                  <span className="text-[11px]" style={{ color: TEXT_MUTE }}> yr</span>
                 </div>
-              </div>
-            </div>
-          ))
-        ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-10 text-center">
-            <Stethoscope className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No doctors found</p>
-          </div>
-        ) : (
-          filtered.map(doc => {
+              ),
+            },
+            {
+              key: 'activePatients',
+              label: 'Patients',
+              width: 'w-[8%]',
+              render: (value) => (
+                <span className="font-semibold text-sm" style={{ color: TEXT_MAIN }}>{value as number}</span>
+              ),
+            },
+            {
+              key: 'consultationFee',
+              label: 'Fee',
+              width: 'w-[9%]',
+              render: (value) => (
+                <span className="font-semibold text-sm" style={{ color: TEXT_MAIN }}>₹{(value as number).toLocaleString('en-IN')}</span>
+              ),
+            },
+            {
+              key: 'schedule',
+              label: 'Schedule',
+              width: 'w-[12%]',
+              render: (value) => {
+                const schedule = value as DoctorSchedule[];
+                if (!schedule?.length) return <span className="text-[11px] italic" style={{ color: TEXT_MUTE }}>—</span>;
+                return (
+                  <div className="space-y-1">
+                    {[DAYS.slice(0, 4), DAYS.slice(4)].map((row, ri) => (
+                      <div key={ri} className="flex gap-1">
+                        {row.map(day => {
+                          const active = schedule.some(s => s.day === day);
+                          const slot = schedule.find(s => s.day === day);
+                          return (
+                            <span key={day}
+                              title={active && slot ? `${day}: ${slot.startTime}–${slot.endTime}` : undefined}
+                              className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold transition-colors ${
+                                active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground/30'
+                              }`}>
+                              {day[0]}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              width: 'w-[9%]',
+              render: (value) => {
+                const st = STATUS_STYLES[value as Doctor['status']];
+                return <Badge className={`${st.badge} border text-[11px] pointer-events-none`}>{value as string}</Badge>;
+              },
+            },
+          ]}
+          renderMobileItem={(item) => {
+            const doc = item as Doctor;
             const st = STATUS_STYLES[doc.status];
             return (
-              <div key={doc.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
-                {/* Header row */}
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
                     <DoctorAvatar doctor={doc} size="md" />
                     <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${st.dot}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{doc.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{doc.specialisation}</p>
+                    <p className="font-medium text-sm truncate" style={{ color: TEXT_MAIN }}>{doc.name}</p>
+                    <p className="text-xs truncate" style={{ color: TEXT_MUTE }}>{doc.specialisation}</p>
                   </div>
                   <Badge className={`${st.badge} border text-xs pointer-events-none flex-shrink-0`}>{doc.status}</Badge>
                 </div>
-                {/* Dept + Qualifications */}
                 <div className="flex flex-wrap gap-1.5">
                   <Badge className={`${DEPT_COLORS[doc.department] ?? 'bg-slate-100 text-slate-700'} border-0 text-xs pointer-events-none`}>{doc.department}</Badge>
                   {doc.qualification.slice(0, 2).map(q => (
                     <span key={q} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/8 text-primary font-medium">{q}</span>
                   ))}
                 </div>
-                {/* Stats row */}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   {[
                     { label: 'Exp.', value: `${doc.experience} yr` },
@@ -662,12 +867,11 @@ export const DoctorManagement = () => {
                     { label: 'Fee', value: `₹${doc.consultationFee.toLocaleString('en-IN')}` },
                   ].map(s => (
                     <div key={s.label} className="rounded-lg bg-muted/40 py-1.5">
-                      <p className="text-xs font-semibold text-foreground">{s.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                      <p className="text-xs font-semibold" style={{ color: TEXT_MAIN }}>{s.value}</p>
+                      <p className="text-[10px]" style={{ color: TEXT_MUTE }}>{s.label}</p>
                     </div>
                   ))}
                 </div>
-                {/* Schedule dots */}
                 {doc.schedule.length > 0 && (
                   <div className="flex gap-1">
                     {DAYS.map(day => {
@@ -680,7 +884,6 @@ export const DoctorManagement = () => {
                     })}
                   </div>
                 )}
-                {/* Actions */}
                 <div className="flex gap-2 pt-1 border-t border-border">
                   <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => openSheet(doc, 'view')}>
                     <Eye className="h-3.5 w-3.5" /> View
@@ -688,152 +891,21 @@ export const DoctorManagement = () => {
                   <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => openSheet(doc, 'edit')}>
                     <Edit className="h-3.5 w-3.5" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(doc)}>
+                  <Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={() => setDeleteTarget(doc)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                {TABLE_HEADERS.map((h, i) => (
-                  <th key={i} className={`px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap ${
-                    h === 'Exp.' || h === 'Patients' ? 'text-center' :
-                    h === 'Fee' || h === '' ? 'text-right' : 'text-left'
-                  }`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="space-y-1.5">
-                          <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-                          <div className="h-2.5 w-24 bg-muted animate-pulse rounded" />
-                        </div>
-                      </div>
-                    </td>
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-3 w-16 bg-muted animate-pulse rounded" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center">
-                    <Stethoscope className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-muted-foreground">No doctors found</p>
-                    <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map(doc => {
-                  const st = STATUS_STYLES[doc.status];
-                  return (
-                    <tr key={doc.id} className={`hover:bg-muted/20 transition-colors ${doc.status !== 'Active' ? 'opacity-70' : ''}`}>
-                      {/* Doctor */}
-                      <td className="px-4 py-3 min-w-[220px]">
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex-shrink-0">
-                            <DoctorAvatar doctor={doc} size="md" />
-                            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${st.dot}`} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate">{doc.name}</p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[160px]">{doc.specialisation}</p>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Department */}
-                      <td className="px-4 py-3 min-w-[130px]">
-                        <Badge className={`${DEPT_COLORS[doc.department] ?? 'bg-slate-100 text-slate-700'} border-0 text-xs pointer-events-none`}>
-                          {doc.department}
-                        </Badge>
-                      </td>
-                      {/* Qualifications */}
-                      <td className="px-4 py-3 min-w-[150px]">
-                        <div className="flex flex-wrap gap-1">
-                          {doc.qualification.slice(0, 2).map(q => (
-                            <span key={q} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/8 text-primary font-medium whitespace-nowrap">{q}</span>
-                          ))}
-                          {doc.qualification.length > 2 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{doc.qualification.length - 2}</span>
-                          )}
-                        </div>
-                      </td>
-                      {/* Experience */}
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <span className="font-semibold text-foreground text-sm">{doc.experience}</span>
-                        <span className="text-xs text-muted-foreground"> yr</span>
-                      </td>
-                      {/* Patients */}
-                      <td className="px-4 py-3 text-center">
-                        <span className="font-semibold text-foreground text-sm">{doc.activePatients}</span>
-                      </td>
-                      {/* Fee */}
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <span className="font-semibold text-foreground text-sm">₹{doc.consultationFee.toLocaleString('en-IN')}</span>
-                      </td>
-                      {/* Schedule */}
-                      <td className="px-4 py-3 min-w-[170px]">
-                        {doc.schedule.length > 0 ? (
-                          <div className="flex gap-1">
-                            {DAYS.map(day => {
-                              const active = doc.schedule.some(s => s.day === day);
-                              return (
-                                <span key={day} title={active ? `${day}: ${doc.schedule.find(s => s.day === day)?.startTime}–${doc.schedule.find(s => s.day === day)?.endTime}` : undefined}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors ${
-                                    active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground/30'
-                                  }`}>
-                                  {day[0]}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">No schedule</span>
-                        )}
-                      </td>
-                      {/* Status */}
-                      <td className="px-4 py-3">
-                        <Badge className={`${st.badge} border text-xs pointer-events-none`}>{doc.status}</Badge>
-                      </td>
-                      {/* Actions */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 justify-end">
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openSheet(doc, 'view')} title="View profile">
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openSheet(doc, 'edit')} title="Edit doctor">
-                            <Edit className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(doc)} title="Remove doctor">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          }}
+          getActions={(item) => [
+            { label: 'View', onClick: () => openSheet(item as Doctor, 'view'), icon: Eye },
+            { label: 'Edit', onClick: () => openSheet(item as Doctor, 'edit'), icon: Edit },
+            { label: 'Delete', onClick: () => setDeleteTarget(item as Doctor), variant: 'destructive' as const, icon: Trash2 },
+          ]}
+          onRowClick={(item) => openSheet(item as Doctor, 'view')}
+        />
+      )}
 
       {/* Doctor Sheet */}
       {sheetMode && (
@@ -844,6 +916,16 @@ export const DoctorManagement = () => {
           onSave={handleSave}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title={`Remove ${deleteTarget?.name ?? 'doctor'}?`}
+        description="This will permanently remove this doctor from the system. This action cannot be undone."
+        confirmLabel="Remove"
+        variant="destructive"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
     </div>
   );
 };

@@ -1,276 +1,391 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, ComposedChart,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine
+  AreaChart, Area, BarChart, Bar, ComposedChart,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Users, DollarSign, Package, Activity, Calendar } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, Users, DollarSign, Package, Calendar,
+  ArrowUpRight, ArrowDownRight, Activity, Stethoscope, BarChart2,
+} from 'lucide-react';
+import {
+  fetchAdmissionsMonthlyAnalytics,
+  fetchBillingWeeklyAnalytics,
+  fetchBillingMonthlyAnalytics,
+  fetchPOMonthlyAnalytics,
+  fetchDiagnosticsMonthlyCategoryAnalytics,
+  fillMonthGaps,
+  toMonthLabel,
+} from '@/services/analyticsService';
 
-const PRIMARY = 'hsl(220, 48%, 42%)';
-const SUCCESS = 'hsl(158, 70%, 36%)';
-const WARNING = 'hsl(38, 92%, 50%)';
-const DANGER = 'hsl(0, 84%, 60%)';
-const PURPLE = 'hsl(270, 60%, 50%)';
-const CYAN = 'hsl(195, 70%, 42%)';
+// ── Colour palette (mirrors Inventory Dashboard tokens) ─────────────────────
+const PRIMARY       = 'hsl(220, 48%, 42%)';
+const PRIMARY_LIGHT = 'hsl(220, 55%, 60%)';
+const SUCCESS       = 'hsl(158, 70%, 36%)';
+const WARNING       = 'hsl(33, 92%, 48%)';
+const DANGER        = 'hsl(354, 70%, 50%)';
+const CYAN          = 'hsl(195, 70%, 42%)';
+const PURPLE        = 'hsl(270, 60%, 50%)';
 
-const monthlyOverview = [
-  { month: 'Jun',  admissions: 142, discharges: 138, revenue: 4820, inventory: 82, diagnostics: 310 },
-  { month: 'Jul',  admissions: 158, discharges: 152, revenue: 5240, inventory: 94, diagnostics: 340 },
-  { month: 'Aug',  admissions: 165, discharges: 160, revenue: 5580, inventory: 88, diagnostics: 358 },
-  { month: 'Sep',  admissions: 172, discharges: 168, revenue: 5920, inventory: 102, diagnostics: 374 },
-  { month: 'Oct',  admissions: 180, discharges: 174, revenue: 6210, inventory: 110, diagnostics: 390 },
-  { month: 'Nov',  admissions: 175, discharges: 170, revenue: 6050, inventory: 106, diagnostics: 382 },
-  { month: 'Dec',  admissions: 162, discharges: 158, revenue: 5640, inventory: 98, diagnostics: 365 },
-  { month: 'Jan',  admissions: 148, discharges: 144, revenue: 5120, inventory: 90, diagnostics: 344 },
-  { month: 'Feb',  admissions: 155, discharges: 150, revenue: 5380, inventory: 95, diagnostics: 356 },
-  { month: 'Mar',  admissions: 182, discharges: 176, revenue: 6320, inventory: 115, diagnostics: 402 },
-  { month: 'Apr',  admissions: 194, discharges: 188, revenue: 6780, inventory: 122, diagnostics: 428 },
-  { month: 'May',  admissions: 208, discharges: 200, revenue: 7240, inventory: 130, diagnostics: 456 },
-];
+const CATEGORY_COLORS = [PRIMARY, CYAN, SUCCESS, WARNING, PURPLE, DANGER, PRIMARY_LIGHT];
 
-const weeklyBillingTrend = [
-  { week: 'W1',  collected: 168, outstanding: 42, waived: 8 },
-  { week: 'W2',  collected: 185, outstanding: 38, waived: 6 },
-  { week: 'W3',  collected: 172, outstanding: 46, waived: 10 },
-  { week: 'W4',  collected: 198, outstanding: 34, waived: 7 },
-  { week: 'W5',  collected: 210, outstanding: 30, waived: 5 },
-  { week: 'W6',  collected: 224, outstanding: 28, waived: 6 },
-  { week: 'W7',  collected: 240, outstanding: 25, waived: 4 },
-  { week: 'W8',  collected: 218, outstanding: 32, waived: 8 },
-  { week: 'W9',  collected: 256, outstanding: 22, waived: 5 },
-  { week: 'W10', collected: 272, outstanding: 20, waived: 4 },
-  { week: 'W11', collected: 265, outstanding: 24, waived: 6 },
-  { week: 'W12', collected: 288, outstanding: 18, waived: 3 },
-];
-
-const inventoryTurnover = [
-  { month: 'Jun', turnover: 4.2, stockouts: 3, expiry: 2 },
-  { month: 'Jul', turnover: 4.5, stockouts: 2, expiry: 1 },
-  { month: 'Aug', turnover: 4.1, stockouts: 4, expiry: 3 },
-  { month: 'Sep', turnover: 4.8, stockouts: 1, expiry: 1 },
-  { month: 'Oct', turnover: 5.0, stockouts: 2, expiry: 2 },
-  { month: 'Nov', turnover: 4.6, stockouts: 3, expiry: 2 },
-  { month: 'Dec', turnover: 4.3, stockouts: 4, expiry: 4 },
-  { month: 'Jan', turnover: 4.4, stockouts: 2, expiry: 1 },
-  { month: 'Feb', turnover: 4.7, stockouts: 1, expiry: 1 },
-  { month: 'Mar', turnover: 5.2, stockouts: 1, expiry: 0 },
-  { month: 'Apr', turnover: 5.5, stockouts: 0, expiry: 1 },
-  { month: 'May', turnover: 5.8, stockouts: 0, expiry: 0 },
-];
-
-const diagCategoryTrend = [
-  { month: 'Jan', blood: 120, imaging: 68, ecg: 42, urine: 58, biopsy: 14 },
-  { month: 'Feb', blood: 128, imaging: 72, ecg: 45, urine: 62, biopsy: 15 },
-  { month: 'Mar', blood: 148, imaging: 84, ecg: 52, urine: 72, biopsy: 18 },
-  { month: 'Apr', blood: 162, imaging: 92, ecg: 56, urine: 78, biopsy: 20 },
-  { month: 'May', blood: 180, imaging: 104, ecg: 62, urine: 88, biopsy: 22 },
-];
-
-const trendKPIs = [
-  { label: 'Admissions MoM', value: '+7.2%', positive: true, icon: Users },
-  { label: 'Revenue MoM', value: '+6.8%', positive: true, icon: DollarSign },
-  { label: 'Inventory Turnover', value: '5.8×', positive: true, icon: Package },
-  { label: 'Avg LOS', value: '-0.4d', positive: true, icon: Calendar },
-];
-
-const CustomTooltip = ({ active, payload, label }: any) => {
+// ── Custom tooltip ──────────────────────────────────────────────────────────
+const ChartTooltip = ({ active, payload, label, prefix = '', suffix = '' }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
-      <p className="font-semibold text-foreground mb-1">{label}</p>
+    <div style={{ background: 'hsl(0,0%,100%)', border: '1px solid hsl(220,16%,90%)', borderRadius: 8, padding: '8px 12px', boxShadow: '0 4px 16px hsl(220,48%,42%/0.12)', fontSize: 12 }}>
+      <p style={{ fontWeight: 600, marginBottom: 4, color: 'hsl(215,28%,14%)' }}>{label}</p>
       {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold text-foreground">{typeof p.value === 'number' && p.value > 100 ? p.value.toLocaleString() : p.value}</span>
-        </div>
+        <p key={p.dataKey} style={{ color: p.color, margin: '2px 0' }}>
+          {p.name}: {prefix}{typeof p.value === 'number' ? p.value.toLocaleString('en-IN') : p.value}{suffix}
+        </p>
       ))}
     </div>
   );
 };
 
+// ── KPI stat card (mirrors Inventory Dashboard StatCard) ────────────────────
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  trend?: number;
+  sub?: string;
+  accent?: 'primary' | 'danger' | 'warning' | 'success' | 'purple' | 'cyan';
+}
+const StatCard = ({ label, value, icon: Icon, trend, sub, accent = 'primary' }: StatCardProps) => {
+  const colours: Record<string, { bg: string; icon: string; text: string }> = {
+    primary: { bg: 'hsl(220,48%,42%/0.07)', icon: PRIMARY,  text: PRIMARY  },
+    danger:  { bg: 'hsl(354,70%,50%/0.08)', icon: DANGER,   text: DANGER   },
+    warning: { bg: 'hsl(33,92%,48%/0.08)',  icon: WARNING,  text: WARNING  },
+    success: { bg: 'hsl(158,70%,36%/0.08)', icon: SUCCESS,  text: SUCCESS  },
+    purple:  { bg: 'hsl(270,60%,50%/0.08)', icon: PURPLE,   text: PURPLE   },
+    cyan:    { bg: 'hsl(195,70%,42%/0.08)', icon: CYAN,     text: CYAN     },
+  };
+  const c = colours[accent];
+  return (
+    <Card className="border-0 shadow-sm" style={{ background: 'hsl(0,0%,100%)' }}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="p-2 rounded-lg" style={{ background: c.bg }}>
+            <Icon size={18} style={{ color: c.icon }} />
+          </div>
+          {trend !== undefined && (
+            <div className="flex items-center gap-0.5 text-xs font-medium" style={{ color: trend >= 0 ? SUCCESS : DANGER }}>
+              {trend >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+              {Math.abs(trend)}%
+            </div>
+          )}
+        </div>
+        <p className="text-2xl font-bold" style={{ color: 'hsl(215,28%,14%)' }}>{value}</p>
+        <p className="text-xs font-semibold mt-0.5" style={{ color: c.text }}>{label}</p>
+        {sub && <p className="text-xs mt-0.5" style={{ color: 'hsl(220,12%,54%)' }}>{sub}</p>}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ── Section heading ─────────────────────────────────────────────────────────
+const SectionTitle = ({ icon: Icon, children, color = PRIMARY }: { icon?: React.ElementType; children: React.ReactNode; color?: string }) => (
+  <div className="flex items-center gap-2 mb-3">
+    {Icon && <Icon size={16} style={{ color }} />}
+    <h3 className="text-sm font-semibold" style={{ color: 'hsl(215,28%,14%)' }}>{children}</h3>
+  </div>
+);
+
+// ── Chart card wrapper (matches Inventory Dashboard chart cards) ────────────
+const ChartCard = ({ title, subtitle, children, badge }: { title: string; subtitle?: string; children: React.ReactNode; badge?: string }) => (
+  <Card className="border-0 shadow-sm" style={{ background: 'hsl(0,0%,100%)' }}>
+    <CardHeader className="pb-2 pt-4 px-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <CardTitle className="text-sm font-semibold" style={{ color: 'hsl(215,28%,14%)' }}>{title}</CardTitle>
+          {subtitle && <p className="text-xs mt-0.5" style={{ color: 'hsl(220,12%,54%)' }}>{subtitle}</p>}
+        </div>
+        {badge && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'hsl(220,48%,42%/0.08)', color: PRIMARY }}>
+            {badge}
+          </span>
+        )}
+      </div>
+    </CardHeader>
+    <CardContent className="px-2 pb-4">{children}</CardContent>
+  </Card>
+);
+
+const LoadingChart = ({ h = 240 }: { h?: number }) => (
+  <div style={{ height: h, color: 'hsl(220,12%,54%)' }} className="flex items-center justify-center text-sm">
+    Loading…
+  </div>
+);
+
+const EmptyChart = ({ h = 240, msg }: { h?: number; msg: string }) => (
+  <div style={{ height: h }} className="flex flex-col items-center justify-center gap-2">
+    <BarChart2 size={28} style={{ color: 'hsl(220,13%,80%)' }} />
+    <p className="text-sm" style={{ color: 'hsl(220,12%,54%)' }}>{msg}</p>
+  </div>
+);
+
+// ── Metric tab button ───────────────────────────────────────────────────────
+const MetricTab = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button
+    onClick={onClick}
+    className="px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-all"
+    style={{
+      background: active ? PRIMARY : 'transparent',
+      color: active ? '#fff' : 'hsl(220,12%,54%)',
+    }}
+  >
+    {children}
+  </button>
+);
+
 export const TrendsAnalytics = () => {
   const [metric, setMetric] = useState<'admissions' | 'revenue' | 'inventory' | 'diagnostics'>('admissions');
+  const [loading, setLoading] = useState(true);
+
+  const [monthlyOverview, setMonthlyOverview] = useState<any[]>([]);
+  const [weeklyBilling, setWeeklyBilling] = useState<any[]>([]);
+  const [diagCategories, setDiagCategories] = useState<string[]>([]);
+  const [diagRows, setDiagRows] = useState<any[]>([]);
+  const [kpis, setKpis] = useState({ admissionsMoM: 0, revenueMoM: 0, inventoryOrders: 0, avgLos: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [admData, billingWeekly, billingMonthly, poData, diagData] = await Promise.all([
+          fetchAdmissionsMonthlyAnalytics(12),
+          fetchBillingWeeklyAnalytics(12),
+          fetchBillingMonthlyAnalytics(12),
+          fetchPOMonthlyAnalytics(12),
+          fetchDiagnosticsMonthlyCategoryAnalytics(6),
+        ]);
+
+        const admFilled = fillMonthGaps(admData.monthly, 12, { admissions: 0, discharges: 0 });
+        const bilMap = new Map(billingMonthly.map(d => [d.month, d.revenue]));
+        const poMap  = new Map(poData.map(d => [d.month, d.count]));
+
+        const overview = admFilled.map(d => ({
+          month: d.label,
+          admissions: d.admissions,
+          discharges: d.discharges,
+          revenue: bilMap.get(d.month) ?? 0,
+          inventory: poMap.get(d.month) ?? 0,
+        }));
+        setMonthlyOverview(overview);
+
+        const diagWithLabel = diagData.rows.map(row => ({ ...row, month: toMonthLabel(row.month) }));
+        setDiagCategories(diagData.categories);
+        setDiagRows(diagWithLabel);
+        setWeeklyBilling(billingWeekly);
+
+        const lastTwo = overview.slice(-2);
+        const prevAdm = lastTwo[0]?.admissions ?? 0;
+        const currAdm = lastTwo[1]?.admissions ?? 0;
+        const prevRev = lastTwo[0]?.revenue ?? 0;
+        const currRev = lastTwo[1]?.revenue ?? 0;
+        setKpis({
+          admissionsMoM: prevAdm > 0 ? +((((currAdm - prevAdm) / prevAdm) * 100).toFixed(1)) : 0,
+          revenueMoM:    prevRev > 0 ? +((((currRev - prevRev) / prevRev) * 100).toFixed(1)) : 0,
+          inventoryOrders: poData.reduce((s, d) => s + d.count, 0),
+          avgLos: admData.avgLos,
+        });
+      } catch (err) {
+        console.error('TrendsAnalytics load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const metricLabels: Record<typeof metric, string> = {
+    admissions: 'Admissions & Discharges',
+    revenue:    'Billing Revenue (₹K)',
+    inventory:  'Purchase Orders',
+    diagnostics: 'Diagnostics Volume',
+  };
+
+  const metricColors: Record<typeof metric, string> = {
+    admissions: PRIMARY,
+    revenue:    SUCCESS,
+    inventory:  WARNING,
+    diagnostics: PURPLE,
+  };
 
   return (
     <div className="space-y-6 p-1">
-      {/* Header */}
+
+      {/* ── Page header ───────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Trends Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">12-month historical trends across all modules</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(215,28%,14%)' }}>Trends Analytics</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(220,12%,54%)' }}>12-month historical trends across all modules</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border" style={{ borderColor: 'hsl(220,16%,88%)', color: 'hsl(220,12%,54%)' }}>
+          <Activity size={13} />
+          Live Data
         </div>
       </div>
 
-      {/* KPI Strip */}
+      {/* ── KPI strip ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {trendKPIs.map(k => (
-          <Card key={k.label} className="shadow-sm border-none bg-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{k.label}</p>
-                  <p className="text-2xl font-bold" style={{ color: k.positive ? SUCCESS : DANGER }}>{k.value}</p>
-                </div>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${k.positive ? SUCCESS : DANGER}18` }}>
-                  <k.icon className="h-5 w-5" style={{ color: k.positive ? SUCCESS : DANGER }} />
-                </div>
-              </div>
-              <div className="mt-2 flex items-center gap-1 text-xs font-medium" style={{ color: k.positive ? SUCCESS : DANGER }}>
-                {k.positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                month-over-month
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <StatCard
+          label="Admissions MoM"
+          value={loading ? '—' : `${kpis.admissionsMoM >= 0 ? '+' : ''}${kpis.admissionsMoM}%`}
+          icon={Users}
+          trend={kpis.admissionsMoM}
+          sub="month-over-month change"
+          accent={kpis.admissionsMoM >= 0 ? 'success' : 'danger'}
+        />
+        <StatCard
+          label="Revenue MoM"
+          value={loading ? '—' : `${kpis.revenueMoM >= 0 ? '+' : ''}${kpis.revenueMoM}%`}
+          icon={DollarSign}
+          trend={kpis.revenueMoM}
+          sub="billing revenue change"
+          accent={kpis.revenueMoM >= 0 ? 'success' : 'danger'}
+        />
+        <StatCard
+          label="PO Orders (12m)"
+          value={loading ? '—' : kpis.inventoryOrders}
+          icon={Package}
+          sub="total purchase orders"
+          accent="primary"
+        />
+        <StatCard
+          label="Avg LOS (days)"
+          value={loading ? '—' : kpis.avgLos > 0 ? `${kpis.avgLos}d` : 'N/A'}
+          icon={Calendar}
+          sub="average length of stay"
+          accent="cyan"
+        />
       </div>
 
-      {/* Main 12-month Overview */}
-      <Card className="shadow-sm border-none bg-card">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-semibold text-foreground">12-Month Overview</CardTitle>
-              <p className="text-xs text-muted-foreground">Admissions vs Revenue trend</p>
-            </div>
-            <div className="flex gap-1 bg-muted rounded-lg p-1">
-              {(['admissions', 'revenue', 'inventory', 'diagnostics'] as const).map(m => (
-                <button
-                  key={m}
-                  onClick={() => setMetric(m)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold capitalize transition-colors ${
-                    metric === m ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="px-2 pb-4">
+      {/* ── 12-Month Overview ──────────────────────────────────────────── */}
+      <ChartCard
+        title="12-Month Overview"
+        subtitle={`Live data — ${metricLabels[metric]}`}
+        badge="12 months"
+      >
+        {/* Metric tabs */}
+        <div className="flex gap-1 px-2 pb-3 pt-1" style={{ background: 'hsl(220,14%,96%)', borderRadius: 8, margin: '0 8px 12px', padding: '4px' }}>
+          {(['admissions', 'revenue', 'inventory', 'diagnostics'] as const).map(m => (
+            <MetricTab key={m} active={metric === m} onClick={() => setMetric(m)}>
+              {m}
+            </MetricTab>
+          ))}
+        </div>
+
+        {loading ? <LoadingChart h={260} /> : (
           <ResponsiveContainer width="100%" height={260}>
             <ComposedChart data={monthlyOverview} margin={{ top: 4, right: 16, left: -10, bottom: 0 }}>
               <defs>
-                <linearGradient id="tGrad1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={PRIMARY} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={PRIMARY} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="tGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={SUCCESS} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={SUCCESS} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              {metric === 'admissions' && (
-                <>
-                  <Area yAxisId="left" type="monotone" dataKey="admissions" stroke={PRIMARY} fill="url(#tGrad1)" strokeWidth={2.5} name="Admissions" />
-                  <Line yAxisId="left" type="monotone" dataKey="discharges" stroke={SUCCESS} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} name="Discharges" />
-                </>
-              )}
-              {metric === 'revenue' && (
-                <Area yAxisId="left" type="monotone" dataKey="revenue" stroke={SUCCESS} fill="url(#tGrad2)" strokeWidth={2.5} name="Revenue (₹K)" />
-              )}
-              {metric === 'inventory' && (
-                <Area yAxisId="left" type="monotone" dataKey="inventory" stroke={WARNING} fill="url(#tGrad1)" strokeWidth={2.5} name="Inventory Orders" />
-              )}
-              {metric === 'diagnostics' && (
-                <Area yAxisId="left" type="monotone" dataKey="diagnostics" stroke={PURPLE} fill="url(#tGrad1)" strokeWidth={2.5} name="Diagnostics" />
-              )}
-              <ReferenceLine yAxisId="left" x="Jan" stroke={DANGER} strokeDasharray="4 2" label={{ value: 'New Year Dip', fontSize: 9, fill: DANGER, position: 'top' }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Billing Trend + Inventory Turnover */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="shadow-sm border-none bg-card">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-foreground">Billing Collection Trend</CardTitle>
-            <p className="text-xs text-muted-foreground">Weekly collections vs outstanding (₹K)</p>
-          </CardHeader>
-          <CardContent className="px-2 pb-4">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weeklyBillingTrend} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-                <XAxis dataKey="week" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="collected" stackId="a" fill={SUCCESS} name="Collected" />
-                <Bar dataKey="outstanding" stackId="a" fill={WARNING} name="Outstanding" />
-                <Bar dataKey="waived" stackId="a" fill={DANGER} radius={[3, 3, 0, 0]} name="Waived" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-none bg-card">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-foreground">Inventory Health Trend</CardTitle>
-            <p className="text-xs text-muted-foreground">Stock turnover ratio with stockout & expiry events</p>
-          </CardHeader>
-          <CardContent className="px-2 pb-4">
-            <ResponsiveContainer width="100%" height={220}>
-              <ComposedChart data={inventoryTurnover} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 10 }} domain={[3, 7]} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Area yAxisId="left" type="monotone" dataKey="turnover" stroke={PRIMARY} fill={`${PRIMARY}20`} strokeWidth={2.5} name="Turnover Ratio" />
-                <Bar yAxisId="right" dataKey="stockouts" fill={DANGER} opacity={0.7} name="Stockouts" />
-                <Bar yAxisId="right" dataKey="expiry" fill={WARNING} opacity={0.7} name="Expiry Events" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Diagnostics Category Trend */}
-      <Card className="shadow-sm border-none bg-card">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-foreground">Diagnostics Volume by Category</CardTitle>
-          <p className="text-xs text-muted-foreground">Test volumes across categories — last 5 months</p>
-        </CardHeader>
-        <CardContent className="px-2 pb-4">
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={diagCategoryTrend} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
-              <defs>
-                {[
-                  { id: 'dBlood', color: PRIMARY },
-                  { id: 'dImaging', color: CYAN },
-                  { id: 'dEcg', color: SUCCESS },
-                  { id: 'dUrine', color: WARNING },
-                  { id: 'dBiopsy', color: PURPLE },
-                ].map(g => (
-                  <linearGradient key={g.id} id={g.id} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={g.color} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={g.color} stopOpacity={0} />
+                {CATEGORY_COLORS.map((c, i) => (
+                  <linearGradient key={i} id={`ovGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={c} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={c} stopOpacity={0} />
                   </linearGradient>
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip content={<CustomTooltip />} />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+              <Tooltip content={<ChartTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="blood" stroke={PRIMARY} fill="url(#dBlood)" strokeWidth={2} name="Blood Tests" />
-              <Area type="monotone" dataKey="imaging" stroke={CYAN} fill="url(#dImaging)" strokeWidth={2} name="Imaging" />
-              <Area type="monotone" dataKey="ecg" stroke={SUCCESS} fill="url(#dEcg)" strokeWidth={2} name="ECG / Cardio" />
-              <Area type="monotone" dataKey="urine" stroke={WARNING} fill="url(#dUrine)" strokeWidth={2} name="Urine / Path" />
-              <Area type="monotone" dataKey="biopsy" stroke={PURPLE} fill="url(#dBiopsy)" strokeWidth={2} name="Biopsy" />
-            </AreaChart>
+              {metric === 'admissions' && (
+                <>
+                  <Area type="monotone" dataKey="admissions" stroke={PRIMARY} fill="url(#ovGrad0)" strokeWidth={2.5} name="Admissions" dot={false} />
+                  <Area type="monotone" dataKey="discharges" stroke={SUCCESS} fill="url(#ovGrad2)" strokeWidth={2} strokeDasharray="5 3" name="Discharges" dot={false} />
+                </>
+              )}
+              {metric === 'revenue' && (
+                <Area type="monotone" dataKey="revenue" stroke={SUCCESS} fill="url(#ovGrad2)" strokeWidth={2.5} name="Revenue (₹K)" dot={false} />
+              )}
+              {metric === 'inventory' && (
+                <Area type="monotone" dataKey="inventory" stroke={WARNING} fill="url(#ovGrad3)" strokeWidth={2.5} name="PO Orders" dot={false} />
+              )}
+              {metric === 'diagnostics' && diagRows.length > 0 && (
+                <Area type="monotone" dataKey={diagCategories[0] ?? 'count'} stroke={PURPLE} fill="url(#ovGrad4)" strokeWidth={2.5} name="Diagnostics" dot={false} />
+              )}
+              {metric === 'diagnostics' && diagRows.length === 0 && (
+                <Area type="monotone" dataKey="admissions" stroke="hsl(220,13%,80%)" fill="url(#ovGrad0)" strokeWidth={1} name="No data" dot={false} />
+              )}
+            </ComposedChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        )}
+      </ChartCard>
+
+      {/* ── Billing + Diagnostics row ──────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ChartCard title="Billing Collection Trend" subtitle="Weekly collected vs outstanding (₹K)">
+          {loading ? <LoadingChart h={220} /> : weeklyBilling.length === 0 ? (
+            <EmptyChart h={220} msg="No billing data yet" />
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={weeklyBilling} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <Tooltip content={<ChartTooltip suffix="K" />} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="collected"   stackId="a" fill={SUCCESS} name="Collected (₹K)" />
+                <Bar dataKey="outstanding" stackId="a" fill={WARNING} name="Outstanding (₹K)" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Diagnostics Volume by Category" subtitle="Test bookings by category — last 6 months">
+          {loading ? <LoadingChart h={220} /> : diagRows.length === 0 ? (
+            <EmptyChart h={220} msg="No diagnostic booking data yet" />
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={diagRows} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+                <defs>
+                  {diagCategories.map((_, i) => (
+                    <linearGradient key={i} id={`dGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} stopOpacity={0.22} />
+                      <stop offset="95%" stopColor={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} stopOpacity={0} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <Tooltip content={<ChartTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {diagCategories.map((cat, i) => (
+                  <Area key={cat} type="monotone" dataKey={cat}
+                    stroke={CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
+                    fill={`url(#dGrad${i})`} strokeWidth={2} name={cat}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+      </div>
+
+      {/* ── Admissions vs Discharges ───────────────────────────────────── */}
+      <ChartCard title="Admissions vs Discharges" subtitle="12-month patient flow trend" badge="Patient Flow">
+        {loading ? <LoadingChart h={220} /> : monthlyOverview.every(d => d.admissions === 0 && d.discharges === 0) ? (
+          <EmptyChart h={220} msg="No admissions data yet" />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={monthlyOverview} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+              <Tooltip content={<ChartTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="admissions" fill={PRIMARY}  name="Admissions" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="discharges" fill={SUCCESS}  name="Discharges" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </ChartCard>
+
     </div>
   );
 };

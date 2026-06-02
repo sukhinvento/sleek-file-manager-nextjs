@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
 interface BarcodeQRManagerProps {
   itemId: string;
@@ -46,11 +46,7 @@ export const BarcodeQRManager = ({
   const generateBarcode = () => {
     // Don't regenerate if already exists
     if (barcode && !disabled) {
-      toast({
-        title: "Barcode Already Exists",
-        description: `This item already has barcode: ${barcode}. Delete it first to generate a new one.`,
-        variant: "destructive"
-      });
+      toast({ title: 'Barcode Already Exists', description: `This item already has barcode: ${barcode}. Delete it first to generate a new one.`, variant: 'destructive' });
       return;
     }
 
@@ -72,20 +68,13 @@ export const BarcodeQRManager = ({
       onUpdate({ barcode: newBarcode, barcodeType });
     }
     
-    toast({
-      title: "Barcode Generated",
-      description: `Generated ${barcodeType} barcode: ${newBarcode}`,
-    });
+    toast({ title: 'Barcode Generated', description: `Generated ${barcodeType} barcode: ${newBarcode}`, variant: 'success' });
   };
 
   const generateQRCode = () => {
     // Don't regenerate if already exists
     if (qrCode && !disabled) {
-      toast({
-        title: "QR Code Already Exists",
-        description: "This item already has a QR code. Delete it first to generate a new one.",
-        variant: "destructive"
-      });
+      toast({ title: 'QR Code Already Exists', description: 'This item already has a QR code. Delete it first to generate a new one.', variant: 'destructive' });
       return;
     }
 
@@ -106,20 +95,13 @@ export const BarcodeQRManager = ({
       onUpdate({ qrCode: encodedQR });
     }
     
-    toast({
-      title: "QR Code Generated",
-      description: "QR code generated with item information",
-    });
+    toast({ title: 'QR Code Generated', description: 'QR code generated with item information', variant: 'success' });
   };
 
   const generateRFID = () => {
     // Don't regenerate if already exists
     if (rfidTag && !disabled) {
-      toast({
-        title: "RFID Tag Already Exists",
-        description: `This item already has RFID tag: ${rfidTag}. Delete it first to generate a new one.`,
-        variant: "destructive"
-      });
+      toast({ title: 'RFID Tag Already Exists', description: `This item already has RFID tag: ${rfidTag}. Delete it first to generate a new one.`, variant: 'destructive' });
       return;
     }
 
@@ -136,10 +118,7 @@ export const BarcodeQRManager = ({
       onUpdate({ rfidTag: rfid });
     }
     
-    toast({
-      title: "RFID Tag Generated",
-      description: `Generated RFID tag: ${rfid}`,
-    });
+    toast({ title: 'RFID Tag Generated', description: `Generated RFID tag: ${rfid}`, variant: 'success' });
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -150,10 +129,7 @@ export const BarcodeQRManager = ({
       setCopiedField(null);
     }, 2000);
     
-    toast({
-      title: "Copied to Clipboard",
-      description: `${field} copied successfully`,
-    });
+    toast({ title: 'Copied to Clipboard', description: `${field} copied successfully`, variant: 'success' });
   };
 
   const handleDeleteBarcode = () => {
@@ -164,10 +140,7 @@ export const BarcodeQRManager = ({
       onUpdate({ barcode: undefined, barcodeType: undefined });
     }
     
-    toast({
-      title: "Barcode Deleted",
-      description: "You can now generate a new barcode",
-    });
+    toast({ title: 'Barcode Deleted', description: 'You can now generate a new barcode', variant: 'success' });
   };
 
   const handleDeleteQRCode = () => {
@@ -177,10 +150,7 @@ export const BarcodeQRManager = ({
       onUpdate({ qrCode: undefined });
     }
     
-    toast({
-      title: "QR Code Deleted",
-      description: "You can now generate a new QR code",
-    });
+    toast({ title: 'QR Code Deleted', description: 'You can now generate a new QR code', variant: 'success' });
   };
 
   const handleDeleteRFID = () => {
@@ -190,33 +160,21 @@ export const BarcodeQRManager = ({
       onUpdate({ rfidTag: undefined });
     }
     
-    toast({
-      title: "RFID Tag Deleted",
-      description: "You can now generate a new RFID tag",
-    });
+    toast({ title: 'RFID Tag Deleted', description: 'You can now generate a new RFID tag', variant: 'success' });
   };
 
   const downloadBarcode = () => {
     // In a real implementation, this would generate and download an actual barcode image
-    toast({
-      title: "Download Barcode",
-      description: "Barcode download functionality would be implemented here using a library like JsBarcode",
-    });
+    toast({ title: 'Download Barcode', description: 'Barcode download functionality would be implemented here using a library like JsBarcode', variant: 'success' });
   };
 
   const downloadQRCode = () => {
     // In a real implementation, this would generate and download an actual QR code image
-    toast({
-      title: "Download QR Code",
-      description: "QR code download functionality would be implemented here using a library like qrcode.react",
-    });
+    toast({ title: 'Download QR Code', description: 'QR code download functionality would be implemented here using a library like qrcode.react', variant: 'success' });
   };
 
   const printLabel = () => {
-    toast({
-      title: "Print Label",
-      description: "Label printing functionality would connect to a thermal printer",
-    });
+    toast({ title: 'Print Label', description: 'Label printing functionality would connect to a thermal printer', variant: 'success' });
   };
 
   return (

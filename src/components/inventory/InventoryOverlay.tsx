@@ -30,7 +30,7 @@ export const InventoryOverlay = ({
   size = 'lg' 
 }: InventoryOverlayProps) => {
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className={`${sizeClasses[size]} overflow-y-auto overlay-content`}>
         <SheetHeader className="border-b border-border/50 pb-4 mb-4">
           <div className="flex items-center justify-between">

@@ -355,12 +355,16 @@ export const DischargeModal = ({ patient, isOpen, onClose }: DischargeModalProps
     } : prev);
   };
 
-  const grandTotal = state ? [
+  const subtotalBeforeTax = state ? [
     ...state.roomCharges,
     ...state.medicationCharges,
     ...state.doctorCharges,
     ...state.diagnosticCharges,
   ].reduce((s, i) => s + i.total, 0) : 0;
+
+  const GST_RATE = 0.18;
+  const taxAmount = Math.round(subtotalBeforeTax * GST_RATE * 100) / 100;
+  const grandTotal = subtotalBeforeTax + taxAmount;
 
   const sectionTotals = {
     room: state?.roomCharges.reduce((s, i) => s + i.total, 0) ?? 0,
@@ -521,8 +525,18 @@ export const DischargeModal = ({ patient, isOpen, onClose }: DischargeModalProps
                 </div>
               ))}
 
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm font-semibold text-foreground">Subtotal</span>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(subtotalBeforeTax)}</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">GST (18%)</span>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(taxAmount)}</span>
+              </div>
+
               <div className="rounded-lg bg-primary/8 border border-primary/20 px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-foreground">Grand Total</span>
+                <span className="text-sm font-bold text-foreground">Grand Total (incl. GST)</span>
                 <span className="text-xl font-bold text-primary">{formatCurrency(grandTotal)}</span>
               </div>
 

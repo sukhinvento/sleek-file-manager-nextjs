@@ -1,7 +1,7 @@
 
 import { Upload } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -36,14 +36,14 @@ export const UploadFiles = () => {
     if (!selectedCategory || !selectedSubCategory) {
       const error = "Please select both category and subcategory";
       setUploadError(error);
-      toast.error(error);
+      toast({ title: error, variant: 'destructive' });
       return;
     }
 
     if (files && files.length > 0) {
       setSelectedFiles(files);
       console.log("Files selected:", files);
-      toast.success(`${files.length} file(s) selected successfully`);
+      toast({ title: `${files.length} file(s) selected successfully`, variant: 'success' });
     }
   };
 
@@ -53,7 +53,7 @@ export const UploadFiles = () => {
     if (!selectedFiles || !selectedCategory || !selectedSubCategory) {
       const error = "Please select files and categories before submitting";
       setUploadError(error);
-      toast.error(error);
+      toast({ title: error, variant: 'destructive' });
       return;
     }
 
@@ -62,11 +62,11 @@ export const UploadFiles = () => {
       console.log("Category:", selectedCategory);
       console.log("SubCategory:", selectedSubCategory);
       // Handle final upload submission logic here
-      toast.success("Files uploaded successfully!");
+      toast({ title: "Files uploaded successfully!", variant: 'success' });
     } catch (error) {
       const errorMessage = "Failed to upload files. Please try again.";
       setUploadError(errorMessage);
-      toast.error(errorMessage);
+      toast({ title: errorMessage, variant: 'destructive' });
     }
   };
 

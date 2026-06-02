@@ -3,21 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Filter, 
-  ArrowUpDown, 
-  FileText, 
-  DollarSign, 
-  Clock, 
-  CheckCircle, 
+import {
+  Search,
+  Filter,
+  ArrowUpDown,
+  FileText,
+  DollarSign,
+  Clock,
+  CheckCircle,
   TrendingUp,
   Eye,
   Edit,
   Trash2,
   AlertTriangle,
   User,
-  Plus
+  Plus,
+  Calendar
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
@@ -28,9 +29,11 @@ import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import * as billingService from '@/services/billingService';
+import { formatIndianCurrency } from '@/lib/utils';
 import { BillingRecord } from '@/services/billingService';
 import { ModernBillingOverlay } from '@/components/billing/ModernBillingOverlay';
 import { countActiveFilters } from '@/lib/filterUtils';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -47,6 +50,49 @@ const StatusBadge = ({ status }: { status: string }) => {
     <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
       {status}
     </Badge>
+  );
+};
+
+const BillingMobileCard = ({ invoice, onClick }: { invoice: BillingRecord; onClick?: () => void }) => {
+  const PRIMARY = 'hsl(220,48%,42%)';
+  const BORDER = 'hsl(220,16%,90%)';
+  const TEXT_MAIN = 'hsl(215,28%,14%)';
+  const TEXT_MUTE = 'hsl(220,12%,54%)';
+  return (
+    <Card className="w-full cursor-pointer active:scale-[0.99] transition-all duration-150 hover:shadow-md" style={{ borderColor: BORDER }} onClick={onClick}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: `${PRIMARY}15` }}>
+              <FileText size={15} style={{ color: PRIMARY }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: TEXT_MAIN }}>{invoice.invoiceNumber}</p>
+              <p className="text-xs truncate leading-tight mt-0.5" style={{ color: TEXT_MUTE }}>{invoice.patientName} • {invoice.department}</p>
+            </div>
+          </div>
+          <StatusBadge status={invoice.status} />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Patient ID</p>
+            <p className="text-xs font-medium truncate" style={{ color: TEXT_MAIN }}>{invoice.patientId || '—'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Amount</p>
+            <p className="text-sm font-bold" style={{ color: TEXT_MAIN }}>${invoice.amount?.toLocaleString() ?? '—'}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-1">
+            <Calendar size={11} style={{ color: TEXT_MUTE }} />
+            <span className="text-xs" style={{ color: TEXT_MUTE }}>{invoice.date || '—'}</span>
+          </div>
+          {invoice.paidAmount > 0 && <span className="text-xs font-medium" style={{ color: 'hsl(158,70%,36%)' }}>Paid: ${invoice.paidAmount?.toLocaleString()}</span>}
+          {(invoice as any).actor && <span className="text-[10px]" style={{ color: TEXT_MUTE }}>· {(invoice as any).actor}</span>}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -94,11 +140,7 @@ export const Billing = () => {
       setInvoices(records);
     } catch (error) {
       console.error('Failed to load billing records:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load billing records. Please try again.",
-      });
+      toast({ title: 'Error', description: 'Failed to load billing records. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoadingData(false);
     }
@@ -244,16 +286,9 @@ export const Billing = () => {
       await billingService.deleteBillingRecord(invoiceId);
       setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
       await loadStats();
-      toast({
-        title: "Invoice Deleted",
-        description: "Invoice has been successfully deleted.",
-      });
+      toast({ title: 'Invoice Deleted', description: 'Invoice has been successfully deleted.', variant: 'success' });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete invoice. Please try again.",
-      });
+      toast({ title: 'Error', description: 'Failed to delete invoice. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -284,131 +319,18 @@ export const Billing = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
-        <div className="stat-cards-scroll">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {/* Total Invoices Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus('All')}
-              title="Show all invoices"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Invoices</p>
-                    <div className="text-2xl font-bold text-primary">{stats.totalInvoices}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                    <span className="text-primary">This month</span>
-                  </div>
-                </div>
-              </CardContent>
-
-              <FileText className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Pending Payments Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Pending' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')}
-              title="Filter by Pending"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.pendingInvoices}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
-                      <Clock className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-                    <span className="text-amber-600">Needs attention</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <Clock className="absolute bottom-0 right-0 h-12 w-12 text-amber-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Collected Amount Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Paid' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Paid' ? 'All' : 'Paid')}
-              title="Filter by Paid"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Collected</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                      ${(stats.totalPaid / 1000).toFixed(0)}K
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs text-green-700 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+8%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <CheckCircle className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-
-            {/* Total Amount Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Amount</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      ${(stats.totalRevenue / 1000).toFixed(0)}K
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-emerald-600">Collection</span>
-                    <span className="text-xs font-bold text-emerald-700">{stats.totalRevenue > 0 ? Math.round((stats.totalPaid / stats.totalRevenue) * 100) : 0}%</span>
-                  </div>
-                </div>
-              </CardContent>
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total" value={stats.totalInvoices || 0} icon={FileText} accent={STAT_ACCENTS.PRIMARY}
+            active={selectedStatus === 'All'} onClick={() => setSelectedStatus('All')} />
+          <StatCard label="Pending" value={stats.pendingInvoices || 0} icon={Clock} accent={STAT_ACCENTS.WARNING}
+            active={selectedStatus === 'Pending'} onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')} />
+          <StatCard label="Paid" value={stats.paidInvoices || 0} icon={CheckCircle} accent={STAT_ACCENTS.SUCCESS}
+            active={selectedStatus === 'Paid'} onClick={() => setSelectedStatus(selectedStatus === 'Paid' ? 'All' : 'Paid')} />
+          <StatCard label="Collected" value={formatIndianCurrency(stats.totalPaid || 0)} icon={DollarSign} accent={STAT_ACCENTS.CYAN} />
+          <StatCard label="Revenue" value={formatIndianCurrency(stats.totalRevenue || 0)} icon={TrendingUp} accent={STAT_ACCENTS.PURPLE} />
         </div>
-      </section>
-
-      {/* Active card filter indicator */}
+      </div>
 
       {/* Filters Section - Sticky */}
       <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
@@ -567,6 +489,9 @@ export const Billing = () => {
                   <div className="font-medium">{value}</div>
                   <div className="text-sm text-muted-foreground">{invoice.patientId}</div>
                   <div className="text-sm text-muted-foreground">{invoice.department}</div>
+                  {(invoice as any).actor && (
+                    <div className="text-xs text-muted-foreground mt-0.5">via {(invoice as any).actor}</div>
+                  )}
                 </div>
               )
             },
@@ -594,18 +519,8 @@ export const Billing = () => {
               )
             }
           ]}
-          getTitle={(invoice) => invoice.invoiceNumber}
-          getSubtitle={(invoice) => `${invoice.patientName} • ${invoice.department}`}
-          getStatus={(invoice) => invoice.status}
-          getStatusColor={(invoice) => {
-            switch (invoice.status.toLowerCase()) {
-              case 'paid': return 'green';
-              case 'partial': return 'yellow';
-              case 'pending': return 'red';
-              case 'overdue': return 'red';
-              default: return 'gray';
-            }
-          }}
+          stickyHeader={true}
+          renderMobileItem={(invoice, onView) => <BillingMobileCard invoice={invoice as BillingRecord} onClick={onView} />}
           getActions={(invoice) => [
             { label: 'View', onClick: () => handleViewInvoice(invoice), icon: Eye },
             { label: 'Edit', onClick: () => handleEditInvoice(invoice), icon: Edit },
@@ -716,6 +631,10 @@ export const Billing = () => {
         billing={editingInvoice || undefined}
         isEditMode={isEditMode}
         onSave={handleSaveInvoice}
+        onRefresh={async () => {
+          await loadBillingRecords();
+          await loadStats();
+        }}
       />
     </div>
   );

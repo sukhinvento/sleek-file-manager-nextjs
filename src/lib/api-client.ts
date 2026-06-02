@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = (import.meta.env as any)?.VITE_API_URL || 'http://localhost:3000';
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -59,7 +59,7 @@ apiClient.interceptors.response.use(
       
       // Only redirect if not already on login page
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        toast.error('Session expired. Please login again.');
+        toast({ title: 'Session expired. Please login again.', variant: 'destructive' });
         window.location.href = '/login';
       }
       return Promise.reject(error);
@@ -67,21 +67,20 @@ apiClient.interceptors.response.use(
 
     // Handle 403 Forbidden errors
     if (error.response?.status === 403) {
-      toast.error('You do not have permission to perform this action.');
+      toast({ title: 'You do not have permission to perform this action.', variant: 'destructive' });
       return Promise.reject(error);
     }
 
-    // Handle network errors
-    if (error.message === 'Network Error') {
-      toast.error('Unable to connect to server. Please check your connection.');
+    // Network errors (no response) — let the caller show the appropriate message
+    if (!error.response) {
       return Promise.reject(error);
     }
 
-    // Handle other errors
+    // Handle other errors with a message from the backend
     if (error.response?.data) {
       const errorData = error.response.data as any;
       if (errorData?.message) {
-        toast.error(errorData.message);
+        toast({ title: errorData.message, variant: 'destructive' });
       }
     }
 
@@ -90,4 +89,29 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+export const getTenantId = (): string => {
+  if (typeof window !== 'undefined') {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      try { return JSON.parse(userData).tenantId || 'default'; } catch { /* */ }
+    }
+  }
+  return 'default';
+};
+
+// Helper to map paginated backend response to array + meta
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export const extractPaginated = <T>(response: any): PaginatedResponse<T> => ({
+  data: response.data,
+  total: parseInt(response.headers?.['x-total-count'] || '0', 10),
+  page: parseInt(response.headers?.['x-page'] || '1', 10),
+  perPage: parseInt(response.headers?.['x-per-page'] || '10', 10),
+});
 

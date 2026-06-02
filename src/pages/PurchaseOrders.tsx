@@ -3,22 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Filter, 
-  ArrowUpDown, 
-  Package, 
-  Clock, 
-  CheckCircle, 
-  TrendingUp, 
+import {
+  Search,
+  Filter,
+  ArrowUpDown,
+  Package,
+  Clock,
+  CheckCircle,
+  TrendingUp,
   DollarSign,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Calendar
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
-import { ModernPOOverlay } from '@/components/purchase-orders/ModernPOOverlay';
+import PurchaseOrderSheet from '@/components/purchase-orders/PurchaseOrderSheet';
 import { PurchaseOrderFilterModal } from '@/components/purchase-orders/PurchaseOrderFilterModal';
 import { PurchaseOrderSortModal } from '@/components/purchase-orders/PurchaseOrderSortModal';
 import { PurchaseOrder } from '@/types/purchaseOrder';
@@ -28,6 +29,28 @@ import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
 import { countActiveFilters } from '@/lib/filterUtils';
 import { toast } from '@/hooks/use-toast';
 import * as purchaseOrderService from '@/services/purchaseOrderService';
+import * as vendorService from '@/services/vendorService';
+import { EntityOption } from '@/types/shared';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const PRIMARY   = STAT_ACCENTS.PRIMARY;
+const SUCCESS   = STAT_ACCENTS.SUCCESS;
+const WARNING   = STAT_ACCENTS.WARNING;
+const DANGER    = STAT_ACCENTS.DANGER;
+const TEXT_MAIN = 'hsl(215,28%,14%)';
+const TEXT_MUTE = 'hsl(220,12%,54%)';
+const BORDER    = 'hsl(220,16%,90%)';
+
+const PO_STAGE: Record<string, { label: string; color: string }> = {
+  'Pending':            { label: '→ Awaiting Approval', color: 'hsl(33,92%,48%)' },
+  'Approved':           { label: '→ Pending Delivery',  color: STAT_ACCENTS.PRIMARY },
+  'Partial':            { label: '→ Partial Receipt',   color: 'hsl(33,92%,48%)' },
+  'Partially Received': { label: '→ More Expected',     color: 'hsl(33,92%,48%)' },
+  'Received':           { label: '✓ Received',           color: 'hsl(158,70%,36%)' },
+  'Delivered':          { label: '✓ Fulfilled',          color: 'hsl(158,70%,36%)' },
+  'Cancelled':          { label: '✗ Cancelled',          color: 'hsl(354,70%,50%)' },
+};
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -41,9 +64,51 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
+    <Badge className={`${getStatusColor(status)} border text-[11px] pointer-events-none`}>
       {status}
     </Badge>
+  );
+};
+
+const POMobileCard = ({ order, onClick }: { order: PurchaseOrder; onClick?: () => void }) => {
+  return (
+    <Card className="w-full cursor-pointer active:scale-[0.99] transition-all duration-150 hover:shadow-md" style={{ borderColor: BORDER }} onClick={onClick}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: `${PRIMARY}15` }}>
+              <Package size={15} style={{ color: PRIMARY }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: TEXT_MAIN }}>{order.poNumber}</p>
+              <p className="text-xs truncate leading-tight mt-0.5" style={{ color: TEXT_MUTE }}>{order.vendorName} • {order.items.length} items</p>
+            </div>
+          </div>
+          <StatusBadge status={order.status} />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Created By</p>
+            <p className="text-xs font-medium truncate" style={{ color: TEXT_MAIN }}>{order.createdBy || '—'}</p>
+            {(order as any).actor && (
+              <p className="text-[10px] truncate mt-0.5" style={{ color: TEXT_MUTE }}>actor: {(order as any).actor}</p>
+            )}
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Total</p>
+            <p className="text-sm font-bold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(order.total)}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-1">
+            <Calendar size={11} style={{ color: TEXT_MUTE }} />
+            <span className="text-xs" style={{ color: TEXT_MUTE }}>{order.orderDate || '—'}</span>
+            {order.deliveryDate && <><span className="text-xs mx-0.5" style={{ color: TEXT_MUTE }}>→</span><span className="text-xs" style={{ color: TEXT_MUTE }}>{order.deliveryDate}</span></>}
+          </div>
+          {order.paidAmount > 0 && <span className="text-xs font-medium" style={{ color: 'hsl(158,70%,36%)' }}>Paid: {formatIndianCurrency(order.paidAmount)}</span>}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -52,6 +117,7 @@ export const PurchaseOrders = () => {
   
   // Data state
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [vendorOptions, setVendorOptions] = useState<EntityOption[]>([]);
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
@@ -70,7 +136,7 @@ export const PurchaseOrders = () => {
   // Modal states
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'view' | 'edit' | 'add'>('view');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   
@@ -104,11 +170,7 @@ export const PurchaseOrders = () => {
       setPurchaseOrders(data);
     } catch (error) {
       console.error('Error loading purchase orders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load purchase orders. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to load purchase orders. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoadingData(false);
     }
@@ -124,10 +186,31 @@ export const PurchaseOrders = () => {
     }
   };
 
+  // Load vendors for the PO sheet autosuggest
+  const loadVendors = async () => {
+    try {
+      const { vendors: list } = await vendorService.fetchVendors({ limit: 200 });
+      setVendorOptions(
+        list.map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          phone: v.phone || '',
+          email: v.email || '',
+          address: v.address || v.city || '',
+          contactPerson: v.contactPerson || '',
+          category: v.category || '',
+        }))
+      );
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     loadPurchaseOrders();
     loadStats();
+    loadVendors();
   }, []);
 
   // Listen for global create modal events
@@ -192,15 +275,25 @@ export const PurchaseOrders = () => {
   }, [purchaseOrders, searchTerm, selectedStatus, selectedFilters]);
 
   const sortedOrders = useMemo(() => {
-    return [...filteredOrders].sort((a, b) => {
+    const arr = [...filteredOrders];
+    if (sortConfig.field === 'orderDate') {
+      // Newest-first by order date, then Mongo id as a creation-time tiebreaker
+      arr.sort((a, b) => {
+        const dateCmp = (b.orderDate || '').localeCompare(a.orderDate || '');
+        const cmp = dateCmp !== 0 ? dateCmp : (b.id || '').localeCompare(a.id || '');
+        return sortConfig.direction === 'desc' ? cmp : -cmp;
+      });
+    } else {
       const field = sortConfig.field as keyof PurchaseOrder;
-      const aValue = a[field];
-      const bValue = b[field];
-      
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
+      arr.sort((a, b) => {
+        const aValue = a[field] as any;
+        const bValue = b[field] as any;
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return arr;
   }, [filteredOrders, sortConfig]);
 
   // Infinite scroll for mobile
@@ -222,14 +315,18 @@ export const PurchaseOrders = () => {
   }, [searchTerm, selectedStatus, selectedFilters, sortConfig]);
 
   // Event handlers
-  const handleViewOrder = (order: PurchaseOrder) => {
+  const handleViewOrder = async (order: PurchaseOrder) => {
     setEditingOrder(order);
-    setIsEditMode(false);
+    setSheetMode('view');
+    const detail = await purchaseOrderService.fetchPurchaseOrderById(order.id);
+    if (detail) setEditingOrder(detail);
   };
 
-  const handleEditOrder = (order: PurchaseOrder) => {
+  const handleEditOrder = async (order: PurchaseOrder) => {
     setEditingOrder(order);
-    setIsEditMode(true);
+    setSheetMode('edit');
+    const detail = await purchaseOrderService.fetchPurchaseOrderById(order.id);
+    if (detail) setEditingOrder(detail);
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -237,36 +334,23 @@ export const PurchaseOrders = () => {
       await purchaseOrderService.deletePurchaseOrder(orderId);
       await loadPurchaseOrders();
       await loadStats();
-      toast({
-        title: "Success",
-        description: "Purchase order deleted successfully.",
-      });
+      toast({ title: 'Success', description: 'Purchase order deleted successfully.', variant: 'success' });
     } catch (error) {
       console.error('Error deleting purchase order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete purchase order. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to delete purchase order. Please try again.', variant: 'destructive' });
     }
   };
 
   const handleSaveOrder = async (orderData: PurchaseOrder) => {
     try {
-      if (orderData.id && orderData.id.startsWith('po-')) {
-        // Update existing order
+      // A real MongoDB ObjectId is 24 hex chars; frontend-generated ids like "po-<timestamp>" are not
+      const isRealId = /^[0-9a-f]{24}$/i.test(orderData.id);
+      if (isRealId) {
         await purchaseOrderService.updatePurchaseOrder(orderData.id, orderData);
-        toast({
-          title: "Success",
-          description: "Purchase order updated successfully.",
-        });
+        toast({ title: 'Success', description: 'Purchase order updated successfully.', variant: 'success' });
       } else {
-        // Create new order
         await purchaseOrderService.createPurchaseOrder(orderData);
-        toast({
-          title: "Success",
-          description: "Purchase order created successfully.",
-        });
+        toast({ title: 'Success', description: 'Purchase order created successfully.', variant: 'success' });
       }
       await loadPurchaseOrders();
       await loadStats();
@@ -274,11 +358,7 @@ export const PurchaseOrders = () => {
       setEditingOrder(null);
     } catch (error) {
       console.error('Error saving purchase order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save purchase order. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save purchase order. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -295,373 +375,97 @@ export const PurchaseOrders = () => {
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 sm:mx-0">
-        <div className="stat-cards-scroll">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {/* Total Orders Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden stat-card-clickable ${selectedStatus === 'All' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus('All')}
-              title="Show all orders"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total</p>
-                    <div className="text-2xl font-bold text-primary">{stats.totalOrders}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mini Chart */}
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1">
-                    <div className="flex items-end gap-px h-4">
-                      {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div
-                          key={i}
-                          className="bg-primary/60 rounded-sm flex-1 opacity-70"
-                          style={{ height: `${height * 2}px` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    +12%
-                  </div>
-                </div>
-              </CardContent>
-
-              {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-primary/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Pending Orders Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Pending' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')}
-              title="Filter by Pending"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.pendingOrders}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
-                      <Clock className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Progress Circle */}
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="relative w-8 h-8 flex items-center justify-center">
-                    <svg className="w-8 h-8 transform -rotate-90">
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        className="text-amber-200"
-                      />
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        strokeDasharray={`${(stats.pendingOrders / stats.totalOrders) * 75.4} 75.4`}
-                        className="text-amber-500"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-amber-700 leading-none">
-                        {Math.round((stats.pendingOrders / stats.totalOrders) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-amber-800">{formatIndianCurrency(stats.pendingValue)}</p>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <Clock className="absolute bottom-0 right-0 h-12 w-12 text-amber-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Approved Orders Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Approved' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Approved' ? 'All' : 'Approved')}
-              title="Filter by Approved"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Approved</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.approvedOrders}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <CheckCircle className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Status Indicators */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-emerald-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: '85%' }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-emerald-700">85%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <CheckCircle className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Delivered Orders Card */}
-            <Card
-              className={`flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in shadow-lg border-none bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 relative overflow-hidden stat-card-clickable ${selectedStatus === 'Delivered' ? 'stat-card-active' : ''}`}
-              onClick={() => setSelectedStatus(selectedStatus === 'Delivered' ? 'All' : 'Delivered')}
-              title="Filter by Delivered"
-            >
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Delivered</p>
-                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.deliveredOrders}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center z-10">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Performance Metrics */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-green-600">On-time</span>
-                    <span className="text-xs font-bold text-green-700">95%</span>
-                  </div>
-                  <div className="grid grid-cols-6 gap-px">
-                    {[8, 6, 9, 7, 8, 9].map((height, i) => (
-                      <div 
-                        key={i} 
-                        className="bg-green-400 rounded-sm h-1"
-                        style={{ opacity: height / 10 }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <TrendingUp className="absolute bottom-0 right-0 h-12 w-12 text-green-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Total Value Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Value</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      {formatIndianCurrency(stats.totalValue)}
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Value Breakdown */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Paid: {formatIndianCurrency(stats.totalValue - stats.pendingValue)}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+8%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Average Order Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Avg Order</p>
-                    <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                      {stats.totalOrders > 0 ? formatIndianCurrency(stats.averageOrderValue) : formatIndianCurrency(0)}
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-orange-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-orange-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Trend Analysis */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1">
-                    <div className="flex-1 h-1 bg-orange-200 rounded">
-                      <div className="w-3/4 h-1 bg-orange-500 rounded"></div>
-                    </div>
-                    <span className="text-xs text-green-600 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      +5%
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-orange-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total" value={stats.totalOrders} icon={Package} accent={STAT_ACCENTS.PRIMARY}
+            active={selectedStatus === 'All'} onClick={() => setSelectedStatus('All')} />
+          <StatCard label="Pending" value={stats.pendingOrders} icon={Clock} accent={STAT_ACCENTS.WARNING}
+            active={selectedStatus === 'Pending'} onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')} />
+          <StatCard label="Approved" value={stats.approvedOrders} icon={CheckCircle} accent={STAT_ACCENTS.SUCCESS}
+            active={selectedStatus === 'Approved'} onClick={() => setSelectedStatus(selectedStatus === 'Approved' ? 'All' : 'Approved')} />
+          <StatCard label="Delivered" value={stats.deliveredOrders} icon={TrendingUp} accent={STAT_ACCENTS.CYAN}
+            active={selectedStatus === 'Delivered'} onClick={() => setSelectedStatus(selectedStatus === 'Delivered' ? 'All' : 'Delivered')} />
+          <StatCard label="Value" value={formatIndianCurrency(stats.totalValue)} icon={DollarSign} accent={STAT_ACCENTS.PURPLE} />
+          <StatCard label="Avg Order" value={stats.totalOrders > 0 ? formatIndianCurrency(stats.averageOrderValue) : formatIndianCurrency(0)} icon={Package} accent={STAT_ACCENTS.WARNING} />
         </div>
-      </section>
+      </div>
 
 
       {/* Filters Section - Sticky */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
-        {/* Desktop Layout - All in one line */}
-        <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
-          {/* Status Filter Pills */}
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-3 overflow-hidden">
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-3">
           <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-0">
+            <div className="flex gap-1.5 w-max">
               {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={status}
                   onClick={() => setSelectedStatus(status)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedStatus === status ? PRIMARY : 'transparent',
+                    color: selectedStatus === status ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedStatus === status ? PRIMARY : BORDER,
+                  }}>
                   {status}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
-          
-          {/* Search and Action Buttons */}
-          <div className="flex gap-3 flex-shrink-0 min-w-0">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search PO, vendor, or address..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="relative w-60">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search PO, vendor…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsFilterModalOpen(true)}
-              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-            >
-              <Filter className="mr-1 h-4 w-4" /> 
-              Filters
-              {hasFilters && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasFilters ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsFilterModalOpen(true)}>
+              <Filter size={13} /> Filters
+              {hasFilters && <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: PRIMARY, color: '#fff' }}>{activeFilterCount}</span>}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsSortModalOpen(true)}
-              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-            >
-              <ArrowUpDown className="mr-1 h-4 w-4" /> 
-              Sort
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasSort ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown size={13} /> Sort
             </Button>
           </div>
         </div>
 
-        {/* Mobile/Tablet Layout - Stacked */}
-        <div className="lg:hidden space-y-3">
-          {/* Search and Action Buttons */}
-          <div className="flex gap-2 flex-wrap">
+        {/* Mobile */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search orders..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search orders…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsFilterModalOpen(true)}
-                className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-              >
-                <Filter className="mr-1 h-4 w-4" /> 
-                <span className="hidden sm:inline">Filters</span>
-                {hasFilters && (
-                  <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsSortModalOpen(true)}
-                className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-              >
-                <ArrowUpDown className="mr-1 h-4 w-4" /> 
-                <span className="hidden sm:inline">Sort</span>
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasFilters ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsFilterModalOpen(true)}>
+              <Filter size={13} />
+              {hasFilters && <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: PRIMARY, color: '#fff' }}>{activeFilterCount}</span>}
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasSort ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown size={13} />
+            </Button>
           </div>
-
-          {/* Status Filter Pills */}
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
+            <div className="flex gap-1.5 w-max">
               {statuses.map(status => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={status}
                   onClick={() => setSelectedStatus(status)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedStatus === status ? PRIMARY : 'transparent',
+                    color: selectedStatus === status ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedStatus === status ? PRIMARY : BORDER,
+                  }}>
                   {status}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -693,19 +497,16 @@ export const PurchaseOrders = () => {
         columns={[
           {
             key: 'poNumber',
-            label: 'PO Number',
-            width: 'w-[20%]',
+            label: 'PO Details',
+            width: 'w-[18%]',
             render: (value, order) => (
               <div>
-                <div className="font-medium">{value}</div>
-                <div className="text-sm text-muted-foreground">
-                  {order.items.length} items
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Created by: {order.createdBy}
-                </div>
+                <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{value as string}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>
+                  {(order as any).items?.length ?? 0} items{(order as any).createdBy ? ` · ${(order as any).createdBy}` : ''}
+                </p>
               </div>
-            )
+            ),
           },
           {
             key: 'vendorName',
@@ -713,80 +514,90 @@ export const PurchaseOrders = () => {
             width: 'w-[20%]',
             render: (value, order) => (
               <div>
-                <div className="font-medium">{value}</div>
-                <div className="text-sm text-muted-foreground">{order.vendorContact}</div>
-                <div className="text-sm text-muted-foreground">{order.vendorPhone}</div>
+                <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{value as string}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>{(order as any).vendorPhone}</p>
+                {(order as any).actor && (
+                  <p className="text-[10px] mt-0.5 font-medium" style={{ color: TEXT_MUTE }}>via {(order as any).actor}</p>
+                )}
               </div>
-            )
+            ),
           },
           {
             key: 'status',
-            label: 'Status',
+            label: 'Workflow',
             width: 'w-[15%]',
-             render: (value, order) => (
-               <div className="space-y-1">
-                 <div><StatusBadge status={value} /></div>
-                 {order.approvedBy && (
-                   <div className="text-xs text-muted-foreground">
-                     Approved by: {order.approvedBy}
-                   </div>
-                 )}
-               </div>
-             )
+            render: (value, order) => {
+              const o = order as PurchaseOrder;
+              const stage = PO_STAGE[value as string];
+              return (
+                <div>
+                  <StatusBadge status={value as string} />
+                  {stage && (
+                    <p className="text-[10px] mt-1 font-semibold" style={{ color: stage.color }}>{stage.label}</p>
+                  )}
+                  {o.approvedBy && (
+                    <p className="text-[10px] mt-0.5" style={{ color: TEXT_MUTE }}>by {o.approvedBy}</p>
+                  )}
+                  {o.createdBy && !o.approvedBy && value === 'Pending' && (
+                    <p className="text-[10px] mt-0.5" style={{ color: TEXT_MUTE }}>by {o.createdBy}</p>
+                  )}
+                </div>
+              );
+            },
           },
           {
             key: 'orderDate',
             label: 'Timeline',
             width: 'w-[20%]',
             render: (value, order) => (
-              <div className="space-y-1">
-                <div className="text-sm">
-                  <span className="font-medium">Ordered:</span> {value}
+              <div>
+                <div className="flex items-center gap-1">
+                  <Calendar size={11} style={{ color: TEXT_MUTE }} />
+                  <p className="text-sm" style={{ color: TEXT_MAIN }}>{value as string}</p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-medium">Due:</span> {order.deliveryDate}
-                </div>
-                {order.fulfilmentDate && (
-                  <div className="text-sm text-green-600">
-                    <span className="font-medium">Delivered:</span> {order.fulfilmentDate}
-                  </div>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>Due: {(order as any).deliveryDate}</p>
+                {(order as any).fulfilmentDate && (
+                  <p className="text-[11px] mt-0.5" style={{ color: SUCCESS }}>Delivered: {(order as any).fulfilmentDate}</p>
                 )}
               </div>
-            )
+            ),
           },
           {
             key: 'total',
-            label: 'Amount',
-            width: 'w-[20%]',
-            render: (value, order) => (
-              <div>
-                <div className="font-semibold text-lg">
-                  {formatIndianCurrency(value)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {order.paymentMethod}
-                </div>
-                {order.paidAmount > 0 && (
-                  <div className="text-xs text-green-600">
-                    Paid: {formatIndianCurrency(order.paidAmount)}
+            label: 'Payment',
+            width: 'w-[17%]',
+            render: (value, order) => {
+              const o = order as PurchaseOrder;
+              const total = value as number;
+              const paid = o.paidAmount || 0;
+              const balance = Math.max(0, total - paid);
+              const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+              return (
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(total)}</p>
+                  {total > 0 && (
+                    <div className="mt-1.5 h-1.5 rounded-full overflow-hidden w-20" style={{ background: 'hsl(158,70%,36%,0.15)' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? 'hsl(158,70%,36%)' : 'hsl(33,92%,48%)' }} />
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-0.5 flex-wrap">
+                    {paid > 0 ? (
+                      <>
+                        <span className="text-[10px] font-medium" style={{ color: 'hsl(158,70%,36%)' }}>Pd {formatIndianCurrency(paid)}</span>
+                        {balance > 0 && <span className="text-[10px] font-medium" style={{ color: 'hsl(33,92%,48%)' }}>Due {formatIndianCurrency(balance)}</span>}
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-medium" style={{ color: 'hsl(33,92%,48%)' }}>Due {formatIndianCurrency(total)}</span>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          }
+                  {o.paymentMethod && <p className="text-[10px] mt-0.5" style={{ color: TEXT_MUTE }}>{o.paymentMethod}</p>}
+                </div>
+              );
+            },
+          },
         ]}
-        getTitle={(order) => order.poNumber}
-        getSubtitle={(order) => `${order.vendorName} • ${order.items.length} items`}
-        getStatus={(order) => order.status}
-        getStatusColor={(order) => {
-          switch (order.status.toLowerCase()) {
-            case 'pending': return 'yellow';
-            case 'approved': return 'blue';
-            case 'delivered': return 'green';
-            case 'cancelled': return 'red';
-            default: return 'gray';
-          }
-        }}
+        stickyHeader={true}
+        renderMobileItem={(order, onView) => <POMobileCard order={order as PurchaseOrder} onClick={onView} />}
         getActions={(order) => [
           { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
           { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
@@ -872,20 +683,35 @@ export const PurchaseOrders = () => {
         </div>
       )}
 
-      {/* Modals */}
-      <ModernPOOverlay
-        order={editingOrder}
-        isOpen={isNewOrderOpen || !!editingOrder}
-        onClose={() => {
-          setIsNewOrderOpen(false);
-          setEditingOrder(null);
-          setIsEditMode(false);
-        }}
-        isEdit={isEditMode}
-        onSave={handleSaveOrder}
-        onUpdate={handleSaveOrder}
-        onDelete={handleDeleteOrder}
-      />
+      {/* Purchase Order Sheet (view / edit / add) */}
+      {(isNewOrderOpen || editingOrder) && (
+        <PurchaseOrderSheet
+          key={editingOrder?.id ?? 'new'}
+          order={editingOrder}
+          vendors={vendorOptions}
+          mode={isNewOrderOpen ? 'add' : sheetMode}
+          onClose={() => {
+            setIsNewOrderOpen(false);
+            setEditingOrder(null);
+            setSheetMode('view');
+          }}
+          onSave={(savedOrder) => {
+            if (sheetMode === 'view' && editingOrder) {
+              setSheetMode('edit');
+              return;
+            }
+            handleSaveOrder(savedOrder);
+          }}
+          onUpdate={async (updatedOrder) => {
+            await handleSaveOrder(updatedOrder);
+          }}
+          onDelete={handleDeleteOrder}
+          onRefresh={async () => {
+            await loadPurchaseOrders();
+            await loadStats();
+          }}
+        />
+      )}
 
       {/* Filter Modal */}
       <PurchaseOrderFilterModal

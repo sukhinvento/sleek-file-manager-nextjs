@@ -167,7 +167,10 @@ export const MobileResponsiveCard = ({
 
   // Fallback to simple card
   return (
-    <Card className="w-full mb-4 animate-fade-in">
+    <Card
+      className={`w-full mb-4 animate-fade-in transition-all duration-150 ${onViewClick ? 'cursor-pointer active:scale-[0.99] hover:shadow-md' : ''}`}
+      onClick={onViewClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -184,19 +187,19 @@ export const MobileResponsiveCard = ({
              )}
              {actions.length > 0 && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onViewClick && (
-                    <DropdownMenuItem onClick={onViewClick}>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onViewClick(); }}>
                       View Details
                     </DropdownMenuItem>
                   )}
                   {actions.map((action, index) => (
-                    <DropdownMenuItem key={index} onClick={action.onClick}>
+                    <DropdownMenuItem key={index} onClick={(e) => { e.stopPropagation(); action.onClick(); }}>
                       {action.label}
                     </DropdownMenuItem>
                   ))}

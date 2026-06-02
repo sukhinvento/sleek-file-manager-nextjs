@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ModernInventoryOverlay } from './ModernInventoryOverlay';
 import { VendorAutosuggestInput } from './VendorAutosuggestInput';
 import { BarcodeQRManager } from './BarcodeQRManager';
@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Save, X, Edit3, Trash2, Package, FileText, Printer, Box, Tag, TrendingUp, Barcode, Building2, MapPin, AlignLeft, FlaskConical, ShoppingCart, AlertCircle } from 'lucide-react';
 import { InventoryItem } from '../../types/inventory';
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface InventoryFormOverlayProps {
   isOpen: boolean;
@@ -31,59 +32,19 @@ export const InventoryFormOverlay = ({
   onUpdate,
   onDelete
 }: InventoryFormOverlayProps) => {
-  const [formData, setFormData] = useState<Partial<InventoryItem>>({
-    name: '',
-    category: '',
-    sku: '',
-    currentStock: 0,
-    minStock: 0,
-    maxStock: 0,
-    unitPrice: 0,
-    supplier: '',
-    location: '',
-    description: '',
-    batchNumber: '',
-    saleUnit: 'Single Unit',
-    barcode: '',
-    barcodeType: 'EAN-13',
-    qrCode: '',
-    rfidTag: '',
-    rfidEnabled: false,
-    trackingEnabled: false
-  });
-  
-  const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const emptyForm: Partial<InventoryItem> = {
+    name: '', category: '', sku: '', currentStock: 0, minStock: 0, maxStock: 0,
+    unitPrice: 0, supplier: '', location: '', description: '', batchNumber: '',
+    saleUnit: 'Single Unit', barcode: '', barcodeType: 'EAN-13', qrCode: '', rfidTag: '',
+  };
 
-  useEffect(() => {
-    if (item) {
-      setFormData(item);
-      setIsEditMode(isEdit);
-    } else {
-      // Reset form for new item
-      setFormData({
-        name: '',
-        category: '',
-        sku: '',
-        currentStock: 0,
-        minStock: 0,
-        maxStock: 0,
-        unitPrice: 0,
-        supplier: '',
-        location: '',
-        description: '',
-        batchNumber: '',
-        saleUnit: 'Single Unit'
-      });
-      setIsEditMode(true); // Always in edit mode for new items
-    }
-  }, [item, isEdit]);
+  const [formData, setFormData] = useState<Partial<InventoryItem>>(item ?? emptyForm);
+  const [isEditMode, setIsEditMode] = useState<boolean>(item ? isEdit : true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setIsSaving(true);
-    
     try {
       const inventoryItem: InventoryItem = {
         id: item?.id || Date.now().toString(),
@@ -95,48 +56,39 @@ export const InventoryFormOverlay = ({
         maxStock: formData.maxStock || 0,
         unitPrice: formData.unitPrice || 0,
         supplier: formData.supplier || '',
+        manufacturer: formData.manufacturer || '',
         location: formData.location || '',
         description: formData.description || '',
         batchNumber: formData.batchNumber || '',
-        saleUnit: formData.saleUnit
+        expiryDate: formData.expiryDate,
+        saleUnit: formData.saleUnit,
+        barcode: formData.barcode || '',
+        barcodeType: formData.barcodeType,
+        qrCode: formData.qrCode,
+        rfidTag: formData.rfidTag || '',
+        rfidEnabled: formData.rfidEnabled,
+        trackingEnabled: formData.trackingEnabled,
+        serialNumbers: formData.serialNumbers,
       };
-
       if (item && onUpdate) {
         await onUpdate(inventoryItem);
-        toast({
-          title: "Item Updated",
-          description: `${inventoryItem.name} has been updated successfully.`,
-        });
       } else if (onSave) {
         await onSave(inventoryItem);
-        toast({
-          title: "Item Created",
-          description: `${inventoryItem.name} has been added to inventory.`,
-        });
       }
-      
-      onClose();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save item. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save item. Please try again.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleDelete = () => {
     if (item && onDelete) {
-      if (confirm(`Are you sure you want to delete ${item.name}?`)) {
-        onDelete(item.id);
-        toast({
-          title: "Item Deleted",
-          description: `${item.name} has been removed from inventory.`,
-        });
-        onClose();
-      }
+      onDelete(item.id);
+      toast({ title: 'Item Deleted', description: `${item.name} has been removed from inventory.`, variant: 'success' });
+      onClose();
     }
   };
 
@@ -189,7 +141,7 @@ export const InventoryFormOverlay = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1" />
@@ -210,6 +162,7 @@ export const InventoryFormOverlay = ({
   );
 
   return (
+    <>
     <ModernInventoryOverlay
       isOpen={isOpen}
       onClose={onClose}
@@ -498,5 +451,16 @@ export const InventoryFormOverlay = ({
         </form>
       </div>
     </ModernInventoryOverlay>
+
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title={`Delete ${item?.name ?? 'item'}?`}
+      description="This will permanently remove this item from inventory. This action cannot be undone."
+      confirmLabel="Delete"
+      variant="destructive"
+      onConfirm={handleDelete}
+    />
+    </>
   );
 };

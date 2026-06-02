@@ -1,9 +1,9 @@
 import { useState, useCallback, memo } from 'react';
-import { 
-  ResponsiveDialog, 
-  ResponsiveDialogContent, 
-  ResponsiveDialogFooter, 
-  ResponsiveDialogHeader, 
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
   ResponsiveDialogTitle,
   ResponsiveDialogBody
 } from "@/components/ui/responsive-dialog";
@@ -22,9 +22,9 @@ interface InventoryFilterModalProps {
   categories: string[];
 }
 
-const InventoryFilterModalComponent = ({ 
-  isOpen, 
-  onClose, 
+const InventoryFilterModalComponent = ({
+  isOpen,
+  onClose,
   onApplyFilters,
   categories
 }: InventoryFilterModalProps) => {
@@ -70,181 +70,102 @@ const InventoryFilterModalComponent = ({
   }, []);
 
   const handleRangeChange = useCallback((rangeField: string, field: 'min' | 'max', value: string) => {
-    setFilters(prev => ({ 
-      ...prev, 
+    setFilters(prev => ({
+      ...prev,
       [rangeField]: { ...(prev[rangeField as keyof typeof prev] as any), [field]: value }
     }));
   }, []);
 
   return (
     <ResponsiveDialog open={isOpen} onOpenChange={onClose}>
-      <ResponsiveDialogContent className="!max-w-[700px] max-w-[700px]">
+      <ResponsiveDialogContent className="sm:max-w-[520px]">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
-            <Package className="h-5 w-5 text-white" />
+            <Package className="h-4 w-4 text-white" />
             Filter Inventory Items
           </ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
         <ResponsiveDialogBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-            {/* SKU */}
-            <div className="space-y-2">
-              <Label htmlFor="sku">SKU</Label>
-              <Input
-                id="sku"
-                placeholder="Enter SKU..."
-                value={filters.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 py-3">
+            <div className="space-y-1">
+              <Label htmlFor="sku" className="text-xs font-medium">SKU</Label>
+              <Input id="sku" placeholder="Enter SKU..." className="h-8 text-xs" value={filters.sku} onChange={(e) => handleInputChange('sku', e.target.value)} />
             </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select 
-                value={filters.category} 
-                onValueChange={(value) => handleInputChange('category', value === 'all' ? '' : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
+            <div className="space-y-1">
+              <Label htmlFor="category" className="text-xs font-medium">Category</Label>
+              <Select value={filters.category} onValueChange={(value) => handleInputChange('category', value === 'all' ? '' : value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.filter(c => c !== 'All').map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
+                  <SelectItem className="text-xs" value="all">All Categories</SelectItem>
+                  {categories.filter(c => c !== 'All').map(category => <SelectItem className="text-xs" key={category} value={category}>{category}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Supplier */}
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Supplier</Label>
-              <Input
-                id="supplier"
-                placeholder="Enter supplier name..."
-                value={filters.supplier}
-                onChange={(e) => handleInputChange('supplier', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="supplier" className="text-xs font-medium">Supplier</Label>
+              <Input id="supplier" placeholder="Enter supplier name..." className="h-8 text-xs" value={filters.supplier} onChange={(e) => handleInputChange('supplier', e.target.value)} />
             </div>
 
-            {/* Manufacturer */}
-            <div className="space-y-2">
-              <Label htmlFor="manufacturer">Manufacturer</Label>
-              <Input
-                id="manufacturer"
-                placeholder="Enter manufacturer..."
-                value={filters.manufacturer}
-                onChange={(e) => handleInputChange('manufacturer', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="manufacturer" className="text-xs font-medium">Manufacturer</Label>
+              <Input id="manufacturer" placeholder="Enter manufacturer..." className="h-8 text-xs" value={filters.manufacturer} onChange={(e) => handleInputChange('manufacturer', e.target.value)} />
             </div>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                placeholder="Enter location..."
-                value={filters.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="location" className="text-xs font-medium">Location</Label>
+              <Input id="location" placeholder="Enter location..." className="h-8 text-xs" value={filters.location} onChange={(e) => handleInputChange('location', e.target.value)} />
             </div>
 
-            {/* Batch Number */}
-            <div className="space-y-2">
-              <Label htmlFor="batchNumber">Batch Number</Label>
-              <Input
-                id="batchNumber"
-                placeholder="Enter batch number..."
-                value={filters.batchNumber}
-                onChange={(e) => handleInputChange('batchNumber', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="batchNumber" className="text-xs font-medium">Batch Number</Label>
+              <Input id="batchNumber" placeholder="Enter batch number..." className="h-8 text-xs" value={filters.batchNumber} onChange={(e) => handleInputChange('batchNumber', e.target.value)} />
             </div>
 
-            {/* Status */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="status">Stock Status</Label>
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => handleInputChange('status', value === 'all' ? '' : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+            <div className="space-y-1 md:col-span-2">
+              <Label htmlFor="status" className="text-xs font-medium">Stock Status</Label>
+              <Select value={filters.status} onValueChange={(value) => handleInputChange('status', value === 'all' ? '' : value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Normal">Normal</SelectItem>
-                  <SelectItem value="Low">Low Stock</SelectItem>
-                  <SelectItem value="Critical">Critical</SelectItem>
-                  <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+                  <SelectItem className="text-xs" value="all">All Statuses</SelectItem>
+                  {['Normal','Low','Critical','Out of Stock'].map(s => <SelectItem className="text-xs" key={s} value={s}>{s === 'Low' ? 'Low Stock' : s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Expiry Date Range */}
-            <div className="space-y-2 md:col-span-2">
-              <Label>Expiry Date Range</Label>
-              <DatePickerWithRange
-                date={filters.expiryDateRange}
-                onDateChange={(range) => handleDateChange('expiryDateRange', range)}
-              />
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs font-medium">Expiry Date Range</Label>
+              <DatePickerWithRange date={filters.expiryDateRange} onDateChange={(range) => handleDateChange('expiryDateRange', range)} />
             </div>
 
-            {/* Quantity Range */}
-            <div className="space-y-2">
-              <Label htmlFor="minQuantity">Min Quantity</Label>
-              <Input
-                id="minQuantity"
-                type="number"
-                placeholder="0"
-                value={filters.quantityRange.min}
-                onChange={(e) => handleRangeChange('quantityRange', 'min', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="minQuantity" className="text-xs font-medium">Min Quantity</Label>
+              <Input id="minQuantity" type="number" placeholder="0" className="h-8 text-xs" value={filters.quantityRange.min} onChange={(e) => handleRangeChange('quantityRange', 'min', e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="maxQuantity" className="text-xs font-medium">Max Quantity</Label>
+              <Input id="maxQuantity" type="number" placeholder="999999" className="h-8 text-xs" value={filters.quantityRange.max} onChange={(e) => handleRangeChange('quantityRange', 'max', e.target.value)} />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="maxQuantity">Max Quantity</Label>
-              <Input
-                id="maxQuantity"
-                type="number"
-                placeholder="999999"
-                value={filters.quantityRange.max}
-                onChange={(e) => handleRangeChange('quantityRange', 'max', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="minPrice" className="text-xs font-medium">Min Unit Price (₹)</Label>
+              <Input id="minPrice" type="number" placeholder="0" className="h-8 text-xs" value={filters.priceRange.min} onChange={(e) => handleRangeChange('priceRange', 'min', e.target.value)} />
             </div>
-
-            {/* Price Range */}
-            <div className="space-y-2">
-              <Label htmlFor="minPrice">Min Unit Price (₹)</Label>
-              <Input
-                id="minPrice"
-                type="number"
-                placeholder="0"
-                value={filters.priceRange.min}
-                onChange={(e) => handleRangeChange('priceRange', 'min', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maxPrice">Max Unit Price (₹)</Label>
-              <Input
-                id="maxPrice"
-                type="number"
-                placeholder="999999"
-                value={filters.priceRange.max}
-                onChange={(e) => handleRangeChange('priceRange', 'max', e.target.value)}
-              />
+            <div className="space-y-1">
+              <Label htmlFor="maxPrice" className="text-xs font-medium">Max Unit Price (₹)</Label>
+              <Input id="maxPrice" type="number" placeholder="999999" className="h-8 text-xs" value={filters.priceRange.max} onChange={(e) => handleRangeChange('priceRange', 'max', e.target.value)} />
             </div>
           </div>
         </ResponsiveDialogBody>
 
         <ResponsiveDialogFooter className="justify-between">
-          <Button variant="outline" onClick={handleClear} className="flex-1 sm:flex-initial">
-            <X className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleClear} className="h-8 text-xs flex-1 sm:flex-initial">
+            <X className="h-3 w-3 mr-1.5" />
             Clear All
           </Button>
-          <Button onClick={handleApply} className="flex-1 sm:flex-initial">
+          <Button size="sm" onClick={handleApply} className="h-8 text-xs flex-1 sm:flex-initial">
             Apply Filters
           </Button>
         </ResponsiveDialogFooter>

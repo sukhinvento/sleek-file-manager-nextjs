@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, Box, TrendingUp, FileText, Send, Smartphone, CheckCircle } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, Box, TrendingUp, FileText, Send, Smartphone, CheckCircle, ArrowRightLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// Card components removed — using tinted section headers pattern
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { ItemScanner } from '../scanner/ItemScanner';
 import { StockTransfer, StockTransferItem, InventoryItem } from '@/types/inventory';
@@ -16,6 +17,9 @@ import { OrderStatusDialog, StatusUpdateData } from '../orders/OrderStatusDialog
 import { AutosuggestInput } from '../purchase-orders/AutosuggestInput';
 import { DatePicker } from "@/components/ui/date-picker";
 import { StockItem } from '@/types/purchaseOrder';
+import { fetchRooms } from '@/services/roomService';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { fetchInventoryItems } from '@/services/inventoryService';
 
 interface ModernStockTransferOverlayProps {
   transfer: StockTransfer | null;
@@ -34,88 +38,6 @@ const statusColors = {
   'Cancelled': 'cancelled' as const
 };
 
-const locations = [
-  'Main Warehouse',
-  'Eastern Warehouse', 
-  'Western Warehouse',
-  'Emergency Room',
-  'ICU',
-  'Pharmacy',
-  'Surgery Department'
-];
-
-const sampleItems = [
-  { name: 'Bandages', availableStock: 500, saleUnit: 'Box' },
-  { name: 'Syringes', availableStock: 1000, saleUnit: 'Pack' },
-  { name: 'IV Fluids', availableStock: 250, saleUnit: 'Bottle' },
-  { name: 'Oxygen Masks', availableStock: 150, saleUnit: 'Single Unit' },
-  { name: 'Antibiotics', availableStock: 300, saleUnit: 'Strip' },
-  { name: 'Pain Relievers', availableStock: 200, saleUnit: 'Strip' }
-];
-
-// Mock inventory database for scanner
-const mockInventory: InventoryItem[] = [
-  {
-    id: 'INV-001',
-    name: 'Paracetamol 500mg',
-    category: 'Medicines',
-    sku: 'MED-PAR-500',
-    currentStock: 150,
-    minStock: 50,
-    maxStock: 500,
-    unitPrice: 5.99,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-12',
-    description: 'Pain relief medication',
-    batchNumber: 'BATCH-2025-001',
-    saleUnit: 'Strip',
-    barcode: '1234567890128',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-001',
-    rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-002',
-    name: 'Amoxicillin 250mg',
-    category: 'Antibiotics',
-    sku: 'MED-AMX-250',
-    currentStock: 200,
-    minStock: 75,
-    maxStock: 600,
-    unitPrice: 12.50,
-    supplier: 'MediSupply Co',
-    location: 'Shelf B-05',
-    description: 'Antibiotic medication',
-    batchNumber: 'BATCH-2025-002',
-    saleUnit: 'Strip',
-    barcode: '9876543210987',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-002',
-    rfidTag: 'B2C3D4E5F6G78901BCDEF123',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-003',
-    name: 'Ibuprofen 400mg',
-    category: 'Medicines',
-    sku: 'MED-IBU-400',
-    currentStock: 300,
-    minStock: 100,
-    maxStock: 800,
-    unitPrice: 8.75,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-15',
-    description: 'Anti-inflammatory medication',
-    batchNumber: 'BATCH-2025-003',
-    saleUnit: 'Strip',
-    barcode: '5555666677778',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-003',
-    rfidTag: 'C3D4E5F6G7H89012CDEF1234',
-    trackingEnabled: true
-  }
-];
 
 export const ModernStockTransferOverlay = ({ 
   transfer, 
@@ -126,40 +48,23 @@ export const ModernStockTransferOverlay = ({
   onUpdate, 
   onDelete 
 }: ModernStockTransferOverlayProps) => {
-  const [items, setItems] = useState<StockTransferItem[]>([]);
-  const [fromLocation, setFromLocation] = useState<string>('');
-  const [toLocation, setToLocation] = useState<string>('');
-  const [requestedBy, setRequestedBy] = useState<string>('');
-  const [priority, setPriority] = useState<string>('Medium');
-  const [reason, setReason] = useState<string>('');
-  const [expectedDate, setExpectedDate] = useState<string>('');
-  const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
+  const { displayName } = useCurrentUser();
+  const [items, setItems] = useState<StockTransferItem[]>(transfer?.items || []);
+  const [fromLocation, setFromLocation] = useState<string>(transfer?.fromLocation || '');
+  const [toLocation, setToLocation] = useState<string>(transfer?.toLocation || '');
+  const [requestedBy, setRequestedBy] = useState<string>(transfer?.requestedBy || displayName);
+  const [priority, setPriority] = useState<string>(transfer?.priority || 'Medium');
+  const [reason, setReason] = useState<string>(transfer?.reason || '');
+  const [expectedDate, setExpectedDate] = useState<string>(transfer?.expectedDate || '');
+  const [isEditMode, setIsEditMode] = useState<boolean>(isEdit || !transfer);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (transfer) {
-      setItems(transfer.items || []);
-      setFromLocation(transfer.fromLocation || '');
-      setToLocation(transfer.toLocation || '');
-      setRequestedBy(transfer.requestedBy || '');
-      setPriority(transfer.priority || 'Medium');
-      setReason(transfer.reason || '');
-      setExpectedDate(transfer.expectedDate || '');
-    } else {
-      setItems([]);
-      setFromLocation('');
-      setToLocation('');
-      setRequestedBy('');
-      setPriority('Medium');
-      setReason('');
-      setExpectedDate('');
-    }
-    setIsEditMode(isEdit || !transfer);
-  }, [transfer, isEdit]);
 
   // Responsive layout detection
   useEffect(() => {
@@ -192,6 +97,26 @@ export const ModernStockTransferOverlay = ({
     };
   }, [isOpen]);
 
+  // Load locations (from rooms) and inventory items from API
+  useEffect(() => {
+    fetchRooms().then(rooms => {
+      const seen = new Set<string>();
+      const locs: string[] = [];
+      for (const r of rooms) {
+        const key = r.department || `Room ${r.roomNumber}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          locs.push(key);
+        }
+      }
+      setLocations(locs.length ? locs : ['Main Warehouse', 'Pharmacy', 'ICU', 'Emergency Room']);
+    }).catch(() => {
+      setLocations(['Main Warehouse', 'Pharmacy', 'ICU', 'Emergency Room']);
+    });
+
+    fetchInventoryItems().then(setInventoryItems).catch(() => {});
+  }, []);
+
   const isReadOnly = transfer?.status === 'Completed' || transfer?.status === 'Cancelled';
 
   const addItem = (stockItem?: StockItem) => {
@@ -212,10 +137,7 @@ export const ModernStockTransferOverlay = ({
     // Add new item at the beginning to push existing items down
     setItems([newItem, ...items]);
     
-    toast({
-      title: "Item Added",
-      description: "New item has been added to the transfer.",
-    });
+    toast({ title: 'Item Added', description: 'New item has been added to the transfer.', variant: 'success' });
   };
 
   const handleItemScanned = (item: InventoryItem, quantity?: number) => {
@@ -230,20 +152,14 @@ export const ModernStockTransferOverlay = ({
     
     setItems([...items, newItem]);
     
-    toast({
-      title: "Item Added via Scanner",
-      description: `${item.name} - Qty: ${quantity || 1}`,
-    });
+    toast({ title: 'Item Added via Scanner', description: `${item.name} - Qty: ${quantity || 1}`, variant: 'success' });
   };
 
   const removeItem = (index: number) => {
     if (isReadOnly) return;
     setItems(items.filter((_, i: number) => i !== index));
     
-    toast({
-      title: "Item Removed",
-      description: "Item has been removed from the transfer.",
-    });
+    toast({ title: 'Item Removed', description: 'Item has been removed from the transfer.', variant: 'success' });
   };
 
   const updateItem = (index: number, field: string, value: any) => {
@@ -252,11 +168,11 @@ export const ModernStockTransferOverlay = ({
     const updatedItems = [...items];
     (updatedItems[index] as any)[field] = value;
     
-    // If item name is selected, update available stock and sale unit
+    // If item name is selected, update available stock and sale unit from loaded inventory
     if (field === 'name') {
-      const selectedItem = sampleItems.find(item => item.name === value);
+      const selectedItem = inventoryItems.find(item => item.name === value);
       if (selectedItem) {
-        updatedItems[index].availableStock = selectedItem.availableStock;
+        updatedItems[index].availableStock = selectedItem.currentStock;
         updatedItems[index].saleUnit = selectedItem.saleUnit as any;
       }
     }
@@ -266,29 +182,17 @@ export const ModernStockTransferOverlay = ({
 
   const handleSaveTransfer = async () => {
     if (!items.length) {
-      toast({
-        title: "Validation Error",
-        description: "Please add at least one item to the transfer.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please add at least one item to the transfer.', variant: 'destructive' });
       return;
     }
 
     if (!fromLocation || !toLocation) {
-      toast({
-        title: "Validation Error",
-        description: "Please select both source and destination locations.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please select both source and destination locations.', variant: 'destructive' });
       return;
     }
 
     if (!requestedBy.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter the requester name.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please enter the requester name.', variant: 'destructive' });
       return;
     }
 
@@ -311,25 +215,15 @@ export const ModernStockTransferOverlay = ({
 
       if (transfer && onUpdate) {
         await onUpdate(transferData);
-        toast({
-          title: "Transfer Updated",
-          description: `Stock transfer ${transferData.transferId} has been updated successfully.`,
-        });
+        toast({ title: 'Transfer Updated', description: `Stock transfer ${transferData.transferId} has been updated successfully.`, variant: 'success' });
       } else if (onSave) {
         await onSave(transferData);
-        toast({
-          title: "Transfer Created",
-          description: `Stock transfer ${transferData.transferId} has been created successfully.`,
-        });
+        toast({ title: 'Transfer Created', description: `Stock transfer ${transferData.transferId} has been created successfully.`, variant: 'success' });
       }
-      
+
       onClose();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save transfer. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save transfer. Please try again.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -348,16 +242,13 @@ export const ModernStockTransferOverlay = ({
     </div>
   );
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleDeleteTransfer = () => {
     if (transfer && onDelete) {
-      if (confirm(`Are you sure you want to delete stock transfer ${transfer.transferId}?\n\nThis action cannot be undone.`)) {
-        onDelete(transfer.transferId);
-        toast({
-          title: "Transfer Deleted",
-          description: `Stock transfer ${transfer.transferId} has been removed.`,
-        });
-        onClose();
-      }
+      onDelete(transfer.transferId);
+      toast({ title: 'Transfer Deleted', description: `Stock transfer ${transfer.transferId} has been removed.`, variant: 'success' });
+      onClose();
     }
   };
 
@@ -371,9 +262,11 @@ export const ModernStockTransferOverlay = ({
       : 'Pending';
 
     // Update the transfer with new status and item fulfillment data
+    const isProcessed = mappedStatus === 'In Transit' || mappedStatus === 'Completed';
     const updatedTransfer: StockTransfer = {
       ...transfer,
       status: mappedStatus,
+      ...(isProcessed && displayName ? { approvedBy: displayName } : {}),
     };
 
     // Update items with fulfillment data if provided
@@ -401,32 +294,26 @@ export const ModernStockTransferOverlay = ({
     try {
       onUpdate(updatedTransfer);
       
-      toast({
-        title: "Status Updated",
-        description: `Transfer ${transfer.transferId} status changed to ${statusData.status}`,
-      });
+      toast({ title: 'Status Updated', description: `Transfer ${transfer.transferId} status changed to ${statusData.status}`, variant: 'success' });
 
       // If there are damaged or returned items, show additional info
       if (statusData.items) {
         const damagedTotal = statusData.items.reduce((sum, item) => sum + (item.damagedQty || 0), 0);
         const returnedTotal = statusData.items.reduce((sum, item) => sum + (item.returnedQty || 0), 0);
-        
+
         if (damagedTotal > 0 || returnedTotal > 0) {
           setTimeout(() => {
-            toast({
-              title: "Transfer Summary",
-              description: `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`,
-              variant: damagedTotal > 0 ? "destructive" : "default",
-            });
+            const msg = `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`;
+            if (damagedTotal > 0) {
+              toast({ title: 'Transfer Summary', description: msg, variant: 'destructive' });
+            } else {
+              toast({ title: 'Transfer Summary', description: msg, variant: 'success' });
+            }
           }, 1000);
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to update status. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -473,7 +360,7 @@ export const ModernStockTransferOverlay = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDeleteTransfer}
+              onClick={() => setShowDeleteConfirm(true)}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1" />
@@ -506,10 +393,122 @@ export const ModernStockTransferOverlay = ({
       quickActions={quickActions}
       size="wide"
     >
-      {/* Responsive Layout */}
-      <div 
-        ref={containerRef}
-        className={isNarrowLayout ? "flex flex-col gap-4 overflow-y-auto" : "grid h-full"} 
+      <div ref={containerRef}>
+
+      {/* ── VIEW MODE ── Clean read-only display ── */}
+      {transfer && !isEditMode ? (
+        <div className="flex flex-col gap-5 p-6">
+
+          {/* Stat cards row */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Items', value: `${items.length}`, icon: Package },
+              { label: 'Priority', value: priority || '—', icon: AlertCircle },
+              { label: 'Est. Value', value: `₹${items.reduce((s, i) => s + (i.quantity * (i.unitPrice || 0)), 0).toLocaleString('en-IN') || '—'}`, icon: TrendingUp },
+            ].map(s => (
+              <div key={s.label} className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                <s.icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="text-base font-bold text-foreground">{s.value}</p>
+                <p className="text-[10px] text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Transfer Route */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+              <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Transfer Route</span>
+            </div>
+            <div className="flex items-center px-4 py-4 bg-card">
+              <div className="flex-1 text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 mb-1.5">
+                  <Send className="h-4 w-4 text-blue-600" />
+                </div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">From</p>
+                <p className="text-sm font-semibold text-foreground">{fromLocation || '—'}</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-primary mx-4 flex-shrink-0" />
+              <div className="flex-1 text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 mb-1.5">
+                  <MapPin className="h-4 w-4 text-emerald-600" />
+                </div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">To</p>
+                <p className="text-sm font-semibold text-foreground">{toLocation || '—'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Request Details */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+              <User className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Request Details</span>
+            </div>
+            {[
+              ['Requested By', requestedBy],
+              ['Priority', priority],
+              ['Request Date', transfer.requestDate],
+              ['Expected Date', expectedDate || '—'],
+              ['Status', transfer.status],
+              ...(transfer.approvedBy ? [['Approved By', transfer.approvedBy]] : []),
+            ].map(([label, value], i) => (
+              <div key={label} className={`flex px-4 py-2.5 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                <span className="text-xs text-muted-foreground w-32 flex-shrink-0">{label}</span>
+                <span className="text-xs font-semibold text-foreground">{value || '—'}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Transfer Items */}
+          {items.length > 0 && (
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-primary/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Package className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Transfer Items</span>
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+              </div>
+              {/* Table header */}
+              <div className="grid grid-cols-[1fr_auto_auto] px-4 py-2 bg-primary/[0.03] border-b border-border/50">
+                <span className="text-[10px] text-primary font-semibold uppercase tracking-wider">Item</span>
+                <span className="text-[10px] text-primary font-semibold uppercase tracking-wider w-24 text-center">Qty</span>
+                <span className="text-[10px] text-primary font-semibold uppercase tracking-wider w-24 text-right">Available</span>
+              </div>
+              {items.map((item, i) => (
+                <div key={i} className={`grid grid-cols-[1fr_auto_auto] px-4 py-2.5 items-center ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                  <span className="text-xs font-semibold text-foreground">{item.name}</span>
+                  <div className="w-24 flex items-center justify-center gap-1">
+                    <span className="text-xs font-semibold text-foreground">{item.quantity}</span>
+                    <Badge variant="outline" className="text-[10px] py-0 px-1.5">{item.saleUnit || 'Unit'}</Badge>
+                  </div>
+                  <div className="w-24 text-right">
+                    <Badge variant="outline" className="text-[10px] bg-muted">{item.availableStock || 0} units</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Reason */}
+          {reason && (
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/[0.06]">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[11px] text-primary uppercase tracking-wider font-semibold">Reason for Transfer</span>
+              </div>
+              <div className="px-4 py-3 bg-card">
+                <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{reason}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+      ) : (
+      /* ── EDIT/ADD MODE ── */
+      <div
+        className={isNarrowLayout ? "flex flex-col gap-4 overflow-y-auto" : "grid h-full"}
         style={isNarrowLayout ? {} : { gridTemplateColumns: '30% 70%' }}
       >
 
@@ -517,20 +516,18 @@ export const ModernStockTransferOverlay = ({
         <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 overflow-y-auto"}>
 
           {/* Location Information */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Transfer Locations
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Transfer Locations</span>
+            </div>
+            <div className="p-4 space-y-4">
               <div>
                 <Label htmlFor="from-location" className="text-xs font-medium flex items-center gap-1">
                   <Send className="h-3 w-3 text-blue-600" />
                   From Location
                 </Label>
-                <Select value={fromLocation} onValueChange={setFromLocation} disabled={!isEditMode}>
+                <Select value={fromLocation} onValueChange={setFromLocation}>
                   <SelectTrigger className="h-8 text-sm mt-1">
                     <SelectValue placeholder="Select source location" />
                   </SelectTrigger>
@@ -541,17 +538,17 @@ export const ModernStockTransferOverlay = ({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="flex items-center justify-center py-2">
                 <ArrowRight className="h-5 w-5 text-green-600" />
               </div>
-              
+
               <div>
                 <Label htmlFor="to-location" className="text-xs font-medium flex items-center gap-1">
                   <MapPin className="h-3 w-3 text-green-600" />
                   To Location
                 </Label>
-                <Select value={toLocation} onValueChange={setToLocation} disabled={!isEditMode}>
+                <Select value={toLocation} onValueChange={setToLocation}>
                   <SelectTrigger className="h-8 text-sm mt-1">
                     <SelectValue placeholder="Select destination location" />
                   </SelectTrigger>
@@ -562,18 +559,16 @@ export const ModernStockTransferOverlay = ({
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Request Information */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Request Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <User className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Request Details</span>
+            </div>
+            <div className="p-4 space-y-3">
               <div>
                 <Label htmlFor="requested-by" className="text-xs font-medium flex items-center gap-1">
                   <User className="h-3 w-3 text-muted-foreground" />
@@ -583,7 +578,6 @@ export const ModernStockTransferOverlay = ({
                   id="requested-by"
                   value={requestedBy}
                   onChange={(e) => setRequestedBy(e.target.value)}
-                  disabled={!isEditMode}
                   className="h-8 text-sm mt-1"
                   placeholder="Enter requester name"
                 />
@@ -593,7 +587,7 @@ export const ModernStockTransferOverlay = ({
                   <AlertCircle className="h-3 w-3 text-muted-foreground" />
                   Priority
                 </Label>
-                <Select value={priority} onValueChange={setPriority} disabled={!isEditMode}>
+                <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger className="h-8 text-sm mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -635,110 +629,97 @@ export const ModernStockTransferOverlay = ({
                     date={expectedDate ? new Date(expectedDate) : undefined}
                     onDateChange={(date) => setExpectedDate(date ? date.toISOString().split('T')[0] : '')}
                     placeholder="Select expected date"
-                    disabled={!isEditMode}
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Reason for Transfer */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Reason for Transfer
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Reason for Transfer</span>
+            </div>
+            <div className="p-4">
               <Textarea
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                disabled={!isEditMode}
                 className="text-sm resize-none"
                 placeholder="Enter reason for transfer..."
                 rows={4}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Right Column / Bottom Section - Transfer Items Table */}
         <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 h-full"}>
 
           {/* Items Table */}
-          <Card className={isNarrowLayout ? "flex flex-col border-border/50 shadow-sm" : "flex flex-col border-border/50 shadow-sm"} style={isNarrowLayout ? {} : { height: '75vh' }}>
-            <CardHeader className="pb-3 flex-shrink-0">
+          <div className={`flex flex-col rounded-lg border border-border overflow-hidden`} style={isNarrowLayout ? {} : { minHeight: '300px', maxHeight: '75vh' }}>
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex-shrink-0">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
-                  Transfer Items ({items.length})
-                </CardTitle>
-                {(isEditMode || !transfer) && (
-                  <div className="flex gap-2">
-                    <ItemScanner 
-                      onItemScanned={handleItemScanned}
-                      existingItems={[]}
-                      disabled={isReadOnly}
-                    />
-                    <Button onClick={() => addItem()} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Package className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">Transfer Items ({items.length})</span>
+                </div>
+                <div className="flex gap-2">
+                  <ItemScanner
+                    onItemScanned={handleItemScanned}
+                    existingItems={[]}
+                    disabled={isReadOnly}
+                  />
+                  <Button onClick={() => addItem()} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className={isNarrowLayout ? "py-4" : "flex-1 overflow-hidden"}>
+            </div>
+            <div className={isNarrowLayout ? "p-4" : "flex-1 overflow-y-auto p-4"}>
               {items.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
                   No items added yet. Click "Add Item" to get started.
                 </div>
               ) : isNarrowLayout ? (
                 // Mobile/Narrow Layout: Card-based view
-                <div className="space-y-3 overflow-auto max-h-96">
+                <div className="space-y-3 overflow-auto">
                   {items.map((item, index) => (
-                    <Card key={index} className="border">
-                      <CardContent className="p-4 space-y-3">
+                    <div key={index} className="rounded-lg border border-border bg-card">
+                      <div className="p-4 space-y-3">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 space-y-3">
                             <div>
                               <Label className="text-xs font-medium text-muted-foreground">Item Name</Label>
-                              {(isEditMode || !transfer) ? (
-                                <AutosuggestInput
-                                  value={item.name}
-                                  onChange={(value) => updateItem(index, 'name', value)}
-                                  onSelect={(stockItem) => {
-                                    updateItem(index, 'name', stockItem.name);
-                                    updateItem(index, 'availableStock', stockItem.stock || 0);
-                                    updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
-                                    updateItem(index, 'quantity', 1);
-                                    if (index === items.length - 1) {
-                                      addItem();
-                                    }
-                                  }}
-                                  placeholder="Search items..."
-                                />
-                              ) : (
-                                <div className="font-medium mt-1">{item.name}</div>
-                              )}
+                              <AutosuggestInput
+                                value={item.name}
+                                onChange={(value) => updateItem(index, 'name', value)}
+                                onSelect={(stockItem) => {
+                                  updateItem(index, 'name', stockItem.name);
+                                  updateItem(index, 'availableStock', stockItem.stock || 0);
+                                  updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
+                                  updateItem(index, 'quantity', 1);
+                                  if (index === items.length - 1) {
+                                    addItem();
+                                  }
+                                }}
+                                placeholder="Search items..."
+                              />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <Label className="text-xs font-medium text-muted-foreground">Transfer Quantity</Label>
-                                {(isEditMode || !transfer) ? (
-                                  <Input
-                                    type="number"
-                                    value={item.quantity}
-                                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                    className="mt-1 min-w-[60px]"
-                                    min={1}
-                                  />
-                                ) : (
-                                  <div className="mt-1 font-medium">{item.quantity}</div>
-                                )}
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                                  className="mt-1 min-w-[60px]"
+                                  min={1}
+                                />
                               </div>
 
                               <div>
@@ -761,71 +742,62 @@ export const ModernStockTransferOverlay = ({
                             </div>
                           </div>
 
-                          {(isEditMode || !transfer) && (
-                            <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItem(index)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
                 // Desktop/Wide Layout: Table view
                 <div className="h-full overflow-auto" style={{ height: '60vh' }}>
                   <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        <TableHead className="w-[45%]">Item Name</TableHead>
-                        <TableHead className="w-[20%]">Transfer Quantity</TableHead>
-                        <TableHead className="w-[20%]">Available Stock</TableHead>
-                        {(isEditMode || !transfer) && <TableHead className="w-[15%]"></TableHead>}
+                    <TableHeader className="sticky top-0 z-10">
+                      <TableRow className="bg-primary/[0.06] border-b border-border">
+                        <TableHead className="w-[45%] text-primary font-semibold uppercase tracking-wider text-xs">Item Name</TableHead>
+                        <TableHead className="w-[20%] text-primary font-semibold uppercase tracking-wider text-xs">Transfer Qty</TableHead>
+                        <TableHead className="w-[20%] text-primary font-semibold uppercase tracking-wider text-xs">Available</TableHead>
+                        <TableHead className="w-[15%]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {items.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell className="relative overflow-visible p-2 break-words">
-                            {(isEditMode || !transfer) ? (
-                              <AutosuggestInput
-                                value={item.name}
-                                onChange={(value) => updateItem(index, 'name', value)}
-                                onSelect={(stockItem) => {
-                                  updateItem(index, 'name', stockItem.name);
-                                  updateItem(index, 'availableStock', stockItem.stock || 0);
-                                  updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
-                                  updateItem(index, 'quantity', 1);
-                                  if (index === items.length - 1) {
-                                    addItem();
-                                  }
-                                }}
-                                placeholder="Search items..."
-                              />
-                            ) : (
-                              <span className="font-medium whitespace-normal break-words leading-tight">{item.name}</span>
-                            )}
+                            <AutosuggestInput
+                              value={item.name}
+                              onChange={(value) => updateItem(index, 'name', value)}
+                              onSelect={(stockItem) => {
+                                updateItem(index, 'name', stockItem.name);
+                                updateItem(index, 'availableStock', stockItem.stock || 0);
+                                updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
+                                updateItem(index, 'quantity', 1);
+                                if (index === items.length - 1) {
+                                  addItem();
+                                }
+                              }}
+                              placeholder="Search items..."
+                            />
                           </TableCell>
                           <TableCell className="p-2">
                             <div className="flex items-center gap-2">
-                              {(isEditMode || !transfer) ? (
-                                <Input
-                                  type="number"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                  className="w-20 min-w-[5rem] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  min={1}
-                                />
-                              ) : (
-                                <span>{item.quantity}</span>
-                              )}
+                              <Input
+                                type="number"
+                                value={item.quantity}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                                className="w-20 min-w-[5rem] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                min={1}
+                              />
                               <Badge variant="outline" className="text-xs whitespace-nowrap">
                                 {item.saleUnit || 'Unit'}
                               </Badge>
@@ -836,27 +808,27 @@ export const ModernStockTransferOverlay = ({
                               {item.availableStock || 0} units
                             </Badge>
                           </TableCell>
-                          {(isEditMode || !transfer) && (
-                            <TableCell className="p-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          )}
+                          <TableCell className="p-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItem(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
+      </div>
+      )}
       </div>
     </ModernInventoryOverlay>
 
@@ -879,6 +851,16 @@ export const ModernStockTransferOverlay = ({
         onStatusUpdate={handleStatusUpdate}
       />
     )}
+
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title={`Delete stock transfer ${transfer?.transferId ?? ''}?`}
+      description="This will permanently remove this stock transfer. This action cannot be undone."
+      confirmLabel="Delete"
+      variant="destructive"
+      onConfirm={handleDeleteTransfer}
+    />
     </>
   );
 };

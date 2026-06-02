@@ -1,6 +1,7 @@
 // Sales Order Types
 export interface SalesOrderItem {
   id?: string;
+  item_id?: string;
   name: string;
   qty: number;
   unitPrice: number;
@@ -16,6 +17,7 @@ export interface SalesOrderItem {
 export interface SalesOrder {
   id: string;
   orderNumber: string;
+  customerId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -31,6 +33,9 @@ export interface SalesOrder {
   shippingAddress: string;
   billingAddress: string;
   notes: string;
+  paidAmount: number;
+  createdBy: string;
+  actor?: string;
 }
 
 // Stock Transfer Types

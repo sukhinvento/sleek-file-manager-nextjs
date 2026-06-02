@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { X, Save, FileText, User, Calendar, DollarSign, CreditCard, Plus, Trash2, AlertCircle, Check, Download } from 'lucide-react';
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+// Card removed — using tinted section headers pattern
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 import { BillingRecord } from '@/services/billingService';
+import * as billingService from '@/services/billingService';
+import RecordPaymentDialog from '@/components/shared/RecordPaymentDialog';
+import { PaymentRecord } from '@/types/shared';
 import * as medicationService from '@/services/medicationService';
 import * as diagnosticService from '@/services/diagnosticService';
 import * as roomService from '@/services/roomService';
@@ -30,9 +32,10 @@ interface ModernBillingOverlayProps {
   billing?: BillingRecord | null;
   isEditMode?: boolean;
   onSave?: (billing: BillingRecord) => void;
+  onRefresh?: () => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   Paid: 'bg-green-100 text-green-800 border-green-200',
   Partial: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   Pending: 'bg-red-100 text-red-800 border-red-200',
@@ -40,20 +43,9 @@ const statusColors = {
 };
 
 const commonServices = [
-  'Consultation',
-  'X-Ray',
-  'CT Scan',
-  'MRI',
-  'Blood Test',
-  'ECG',
-  'Ultrasound',
-  'Surgery',
-  'Emergency Care',
-  'Physical Therapy',
-  'Medication',
-  'Lab Test',
-  'Room Charges',
-  'ICU Charges'
+  'Consultation', 'X-Ray', 'CT Scan', 'MRI', 'Blood Test', 'ECG',
+  'Ultrasound', 'Surgery', 'Emergency Care', 'Physical Therapy',
+  'Medication', 'Lab Test', 'Room Charges', 'ICU Charges'
 ];
 
 export const ModernBillingOverlay = ({
@@ -61,8 +53,11 @@ export const ModernBillingOverlay = ({
   onClose,
   billing,
   isEditMode = false,
-  onSave
+  onSave,
+  onRefresh,
 }: ModernBillingOverlayProps) => {
+  const { displayName: billingDisplayName, username: billingUsername } = useCurrentUser();
+  const actor = billing?.actor || billingUsername || billingDisplayName || '';
   const [formData, setFormData] = useState<Partial<BillingRecord>>({
     invoiceNumber: '',
     patientName: '',
@@ -80,6 +75,7 @@ export const ModernBillingOverlay = ({
   const [billingServices, setBillingServices] = useState<BillingService[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
@@ -88,7 +84,6 @@ export const ModernBillingOverlay = ({
       setFormData(billing);
       setInvoiceDate(billing.date ? new Date(billing.date) : undefined);
       setDueDate(billing.dueDate ? new Date(billing.dueDate) : undefined);
-      // Convert services array to billing services format
       if (billing.services && billing.services.length > 0) {
         const services = billing.services.map((service, index) => ({
           id: `service-${index}`,
@@ -100,7 +95,6 @@ export const ModernBillingOverlay = ({
         setBillingServices(services);
       }
     } else if (!isEditMode) {
-      // Generate new invoice number
       const newInvoiceNumber = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000).padStart(4, '0')}`;
       setFormData({
         invoiceNumber: newInvoiceNumber,
@@ -121,210 +115,94 @@ export const ModernBillingOverlay = ({
     }
   }, [billing, isEditMode, isOpen]);
 
-  // Calculate total amount when services change
   useEffect(() => {
-    const totalAmount = billingServices.reduce((sum, service) => sum + service.total, 0);
+    const totalAmount = billingServices.reduce((sum, s) => sum + s.total, 0);
     setFormData(prev => ({ ...prev, amount: totalAmount }));
   }, [billingServices]);
 
-  // Update status based on paid amount
   useEffect(() => {
     if (formData.amount && formData.paidAmount !== undefined) {
       let newStatus = 'Pending';
-      if (formData.paidAmount >= formData.amount) {
-        newStatus = 'Paid';
-      } else if (formData.paidAmount > 0) {
-        newStatus = 'Partial';
-      }
+      if (formData.paidAmount >= formData.amount) newStatus = 'Paid';
+      else if (formData.paidAmount > 0) newStatus = 'Partial';
       setFormData(prev => ({ ...prev, status: newStatus }));
     }
   }, [formData.paidAmount, formData.amount]);
 
   const handleInputChange = (field: keyof BillingRecord, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      setErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     }
   };
 
   const addService = () => {
-    const newService: BillingService = {
-      id: `service-${Date.now()}`,
-      name: '',
-      quantity: 1,
-      unitPrice: 0,
-      total: 0
-    };
-    setBillingServices([...billingServices, newService]);
+    setBillingServices([...billingServices, { id: `service-${Date.now()}`, name: '', quantity: 1, unitPrice: 0, total: 0 }]);
   };
 
-  const removeService = (id: string) => {
-    setBillingServices(billingServices.filter(service => service.id !== id));
-  };
+  const removeService = (id: string) => setBillingServices(billingServices.filter(s => s.id !== id));
 
   const updateService = (id: string, field: keyof BillingService, value: any) => {
-    setBillingServices(billingServices.map(service => {
-      if (service.id === id) {
-        const updated = { ...service, [field]: value };
-        if (field === 'quantity' || field === 'unitPrice') {
-          updated.total = updated.quantity * updated.unitPrice;
-        }
+    setBillingServices(billingServices.map(s => {
+      if (s.id === id) {
+        const updated = { ...s, [field]: value };
+        if (field === 'quantity' || field === 'unitPrice') updated.total = updated.quantity * updated.unitPrice;
         return updated;
       }
-      return service;
+      return s;
     }));
   };
 
   const handleLoadPatientData = async () => {
     if (!formData.patientId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter a Patient ID first.",
-      });
+      toast({ title: 'Error', description: 'Please enter a Patient ID first.', variant: 'destructive' });
       return;
     }
-
     try {
       const services: BillingService[] = [];
-
-      // Load medications
       const medications = await medicationService.fetchPatientMedications(formData.patientId);
-      medications.forEach((med) => {
-        services.push({
-          id: `med-${med.id}`,
-          name: `Medication: ${med.medicationName}`,
-          quantity: med.quantity,
-          unitPrice: med.price,
-          total: med.totalCost
-        });
-      });
-
-      // Load diagnostics
+      medications.forEach(med => services.push({ id: `med-${med.id}`, name: `Medication: ${med.medicationName}`, quantity: med.quantity, unitPrice: med.price, total: med.totalCost }));
       const diagnostics = await diagnosticService.fetchPatientDiagnostics(formData.patientId);
-      diagnostics.forEach((diag) => {
-        services.push({
-          id: `diag-${diag.id}`,
-          name: `Test: ${diag.testName}`,
-          quantity: 1,
-          unitPrice: diag.price,
-          total: diag.price
-        });
-      });
-
-      // Load room charges
+      diagnostics.forEach(diag => services.push({ id: `diag-${diag.id}`, name: `Test: ${diag.testName}`, quantity: 1, unitPrice: diag.price, total: diag.price }));
       const roomAssignments = await roomService.fetchPatientRoomAssignments(formData.patientId);
-      roomAssignments.filter(ra => ra.status === 'Active').forEach((room) => {
-        services.push({
-          id: `room-${room.id}`,
-          name: `Room: ${room.roomNumber} (${room.roomType})`,
-          quantity: room.totalDays || 1,
-          unitPrice: room.dailyRate,
-          total: room.totalCharges || room.dailyRate
-        });
-      });
-
+      roomAssignments.filter(ra => ra.status === 'Active').forEach(room => services.push({ id: `room-${room.id}`, name: `Room: ${room.roomNumber} (${room.roomType})`, quantity: room.totalDays || 1, unitPrice: room.dailyRate, total: room.totalCharges || room.dailyRate }));
       if (services.length === 0) {
-        toast({
-          title: "No Data Found",
-          description: "No medications, diagnostics, or room charges found for this patient.",
-        });
+        toast({ title: 'No Data Found', description: 'No medications, diagnostics, or room charges found.', variant: 'success' });
       } else {
         setBillingServices(services);
-        toast({
-          title: "Data Loaded",
-          description: `${services.length} service(s) loaded from patient records.`,
-        });
+        toast({ title: 'Data Loaded', description: `${services.length} service(s) loaded.`, variant: 'success' });
       }
-    } catch (error) {
-      console.error('Failed to load patient data:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load patient data. Please try again.",
-      });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to load patient data.', variant: 'destructive' });
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.patientName?.trim()) {
-      newErrors.patientName = 'Patient name is required';
-    }
-
-    if (!formData.patientId?.trim()) {
-      newErrors.patientId = 'Patient ID is required';
-    }
-
-    if (!formData.department?.trim()) {
-      newErrors.department = 'Department is required';
-    }
-
-    if (!formData.doctor?.trim()) {
-      newErrors.doctor = 'Doctor name is required';
-    }
-
-    if (billingServices.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please add at least one service.",
-      });
-      return false;
-    }
-
-    const hasEmptyServices = billingServices.some(service => !service.name.trim());
-    if (hasEmptyServices) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "All services must have a name.",
-      });
-      return false;
-    }
-
+    if (!formData.patientName?.trim()) newErrors.patientName = 'Patient name is required';
+    if (!formData.patientId?.trim()) newErrors.patientId = 'Patient ID is required';
+    if (!formData.department?.trim()) newErrors.department = 'Department is required';
+    if (!formData.doctor?.trim()) newErrors.doctor = 'Doctor name is required';
+    if (billingServices.length === 0) { toast({ title: 'Validation Error', description: 'Add at least one service.', variant: 'destructive' }); return false; }
+    if (billingServices.some(s => !s.name.trim())) { toast({ title: 'Validation Error', description: 'All services must have a name.', variant: 'destructive' }); return false; }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please fill in all required fields correctly.",
-      });
-      return;
-    }
-
+    if (!validateForm()) { toast({ title: 'Validation Error', description: 'Please fill required fields.', variant: 'destructive' }); return; }
     setIsSaving(true);
     try {
-      const serviceNames = billingServices.map(service => service.name);
       const billingData: BillingRecord = {
         ...formData as BillingRecord,
-        services: serviceNames
+        services: billingServices.map(s => s.name),
+        actor: billing?.actor || billingUsername || billingDisplayName || '',
       };
-
-      if (onSave) {
-        await onSave(billingData);
-      }
-      toast({
-        title: isEditMode ? "Invoice Updated" : "Invoice Created",
-        description: `Invoice ${formData.invoiceNumber} has been successfully ${isEditMode ? 'updated' : 'created'}.`,
-      });
+      if (onSave) await onSave(billingData);
+      toast({ title: isEditMode ? 'Invoice Updated' : 'Invoice Created', description: `Invoice ${formData.invoiceNumber} saved.`, variant: 'success' });
       onClose();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save invoice. Please try again.",
-      });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save invoice.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -333,390 +211,294 @@ export const ModernBillingOverlay = ({
   const outstandingAmount = (formData.amount || 0) - (formData.paidAmount || 0);
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent 
-        className="w-full sm:w-[90vw] sm:max-w-[1200px] p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20"
+    <>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        className="w-full sm:w-[90vw] sm:max-w-[900px] p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20"
         side="right"
       >
-        {/* Modern Header */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 p-3 sm:p-6">
-          <div className="flex items-start justify-between mb-2 sm:mb-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                <FileText className="h-6 w-6 text-primary" />
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight truncate">
-                  {isEditMode ? 'Edit Invoice' : 'Create New Invoice'}
-                </h1>
-                {formData.status && (
-                  <Badge 
-                    variant="outline" 
-                    className={`${statusColors[formData.status as keyof typeof statusColors]} text-xs shrink-0`}
-                  >
-                    {formData.status}
-                  </Badge>
+        {/* Header */}
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 px-5 py-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-foreground tracking-tight truncate">
+                    {isEditMode ? 'Edit Invoice' : 'Create New Invoice'}
+                  </h1>
+                  {formData.status && (
+                    <Badge variant="outline" className={`${statusColors[formData.status as string] || ''} text-[10px] shrink-0`}>
+                      {formData.status}
+                    </Badge>
+                  )}
+                </div>
+                {formData.invoiceNumber && (
+                  <p className="text-xs text-muted-foreground font-medium">{formData.invoiceNumber}</p>
                 )}
               </div>
-              {formData.invoiceNumber && (
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium">
-                  Invoice: {formData.invoiceNumber}
-                </p>
-              )}
             </div>
-            
-            <div className="flex items-center gap-1 sm:gap-2 ml-2">
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={handleSave}
-                disabled={isSaving}
-                className="h-9 px-3 bg-primary hover:bg-primary/90"
-              >
-                <Save className="h-4 w-4 mr-1" />
-                <span className="text-sm font-medium">{isSaving ? 'Saving...' : 'Save'}</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onClose} 
-                className="h-9 px-3 bg-background/90 hover:bg-destructive hover:text-destructive-foreground border-border/70"
-              >
-                <X className="h-4 w-4 mr-1" />
-                <span className="text-sm font-medium">Close</span>
-              </Button>
-            </div>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          {/* Patient & Invoice Information */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Patient & Invoice Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Patient & Invoice Details */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <User className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Patient & Invoice Details</span>
+            </div>
+            <div className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Invoice Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="invoiceNumber" className="text-sm font-medium">
-                    Invoice Number
-                  </Label>
-                  <Input
-                    id="invoiceNumber"
-                    value={formData.invoiceNumber}
-                    disabled
-                    className="bg-muted/50 font-mono"
-                  />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Invoice Number</Label>
+                  <Input value={formData.invoiceNumber} disabled className="bg-muted/50 h-9 text-sm font-mono" />
                 </div>
-
-                {/* Patient ID */}
-                <div className="space-y-2">
-                  <Label htmlFor="patientId" className="text-sm font-medium">
-                    Patient ID <span className="text-destructive">*</span>
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Patient ID <span className="text-destructive">*</span></Label>
                   <Input
-                    id="patientId"
                     value={formData.patientId}
-                    onChange={(e) => handleInputChange('patientId', e.target.value)}
+                    onChange={e => handleInputChange('patientId', e.target.value)}
                     placeholder="P001"
-                    className={errors.patientId ? 'border-destructive' : ''}
+                    className={`h-9 text-sm ${errors.patientId ? 'border-destructive' : ''}`}
                   />
-                  {errors.patientId && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.patientId}
-                    </p>
-                  )}
+                  {errors.patientId && <p className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.patientId}</p>}
                 </div>
-
-                {/* Patient Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="patientName" className="text-sm font-medium">
-                    Patient Name <span className="text-destructive">*</span>
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Patient Name <span className="text-destructive">*</span></Label>
                   <Input
-                    id="patientName"
                     value={formData.patientName}
-                    onChange={(e) => handleInputChange('patientName', e.target.value)}
+                    onChange={e => handleInputChange('patientName', e.target.value)}
                     placeholder="John Smith"
-                    className={errors.patientName ? 'border-destructive' : ''}
+                    className={`h-9 text-sm ${errors.patientName ? 'border-destructive' : ''}`}
                   />
-                  {errors.patientName && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.patientName}
-                    </p>
-                  )}
+                  {errors.patientName && <p className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.patientName}</p>}
                 </div>
-
-                {/* Load Patient Data Button */}
-                <div className="md:col-span-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleLoadPatientData}
-                    className="w-full"
-                    disabled={!formData.patientId}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Load Patient Data (Medications, Tests, Room Charges)
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically populate services from patient records
-                  </p>
-                </div>
-
-                {/* Department */}
-                <div className="space-y-2">
-                  <Label htmlFor="department" className="text-sm font-medium">
-                    Department <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => handleInputChange('department', e.target.value)}
-                    placeholder="Cardiology"
-                    className={errors.department ? 'border-destructive' : ''}
-                  />
-                  {errors.department && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.department}
-                    </p>
-                  )}
-                </div>
-
-                {/* Doctor */}
-                <div className="space-y-2">
-                  <Label htmlFor="doctor" className="text-sm font-medium">
-                    Doctor <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="doctor"
-                    value={formData.doctor}
-                    onChange={(e) => handleInputChange('doctor', e.target.value)}
-                    placeholder="Dr. John Doe"
-                    className={errors.doctor ? 'border-destructive' : ''}
-                  />
-                  {errors.doctor && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.doctor}
-                    </p>
-                  )}
-                </div>
-
-                {/* Invoice Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="date" className="text-sm font-medium flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    Invoice Date
-                  </Label>
-                  <div className="mt-1">
-                    <DatePicker
-                      date={invoiceDate}
-                      onDateChange={(date) => {
-                        setInvoiceDate(date);
-                        handleInputChange('date', date ? date.toISOString().split('T')[0] : '');
-                      }}
-                      placeholder="Select invoice date"
-                    />
-                  </div>
-                </div>
-
-                {/* Due Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate" className="text-sm font-medium flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    Due Date
-                  </Label>
-                  <div className="mt-1">
-                    <DatePicker
-                      date={dueDate}
-                      onDateChange={(date) => {
-                        setDueDate(date);
-                        handleInputChange('dueDate', date ? date.toISOString().split('T')[0] : '');
-                      }}
-                      placeholder="Select due date"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Services Section */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  Services & Charges
-                </CardTitle>
-                <Button onClick={addService} size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Service
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">Service</TableHead>
-                      <TableHead className="font-semibold w-24">Qty</TableHead>
-                      <TableHead className="font-semibold w-32">Unit Price</TableHead>
-                      <TableHead className="font-semibold w-32">Total</TableHead>
-                      <TableHead className="font-semibold w-16">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {billingServices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No services added yet. Click "Add Service" to get started.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      billingServices.map((service) => (
-                        <TableRow key={service.id}>
-                          <TableCell>
-                            <Select
-                              value={service.name}
-                              onValueChange={(value) => updateService(service.id, 'name', value)}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select service" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {commonServices.map((serviceName) => (
-                                  <SelectItem key={serviceName} value={serviceName}>
-                                    {serviceName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={service.quantity}
-                              onChange={(e) => updateService(service.id, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-20"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="relative">
-                              <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={service.unitPrice}
-                                onChange={(e) => updateService(service.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                className="pl-8"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            ${service.total.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeService(service.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment Summary */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
-                Payment Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {/* Paid Amount */}
-                  <div className="space-y-2">
-                    <Label htmlFor="paidAmount" className="text-sm font-medium">
-                      Amount Paid
-                    </Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="paidAmount"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.paidAmount}
-                        onChange={(e) => handleInputChange('paidAmount', parseFloat(e.target.value) || 0)}
-                        className="pl-10 text-lg font-semibold"
-                      />
+                {actor && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Processed By</Label>
+                    <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-md bg-muted/50 border border-border/40 h-9">
+                      <span className="text-sm font-medium text-foreground">{actor}</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground bg-background border border-border/50 rounded px-1 py-0.5">system user</span>
                     </div>
                   </div>
+                )}
+                <div className="md:col-span-2">
+                  <Button type="button" variant="outline" onClick={handleLoadPatientData} className="w-full h-9 text-xs" disabled={!formData.patientId}>
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Load Patient Data (Medications, Tests, Room Charges)
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground mt-1">Auto-populate services from patient records</p>
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Department <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={formData.department}
+                    onChange={e => handleInputChange('department', e.target.value)}
+                    placeholder="Cardiology"
+                    className={`h-9 text-sm ${errors.department ? 'border-destructive' : ''}`}
+                  />
+                  {errors.department && <p className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.department}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Doctor <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={formData.doctor}
+                    onChange={e => handleInputChange('doctor', e.target.value)}
+                    placeholder="Dr. John Doe"
+                    className={`h-9 text-sm ${errors.doctor ? 'border-destructive' : ''}`}
+                  />
+                  {errors.doctor && <p className="text-[11px] text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.doctor}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Invoice Date</Label>
+                  <DatePicker
+                    date={invoiceDate}
+                    onDateChange={date => { setInvoiceDate(date); handleInputChange('date', date ? date.toISOString().split('T')[0] : ''); }}
+                    placeholder="Select date"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Due Date</Label>
+                  <DatePicker
+                    date={dueDate}
+                    onDateChange={date => { setDueDate(date); handleInputChange('dueDate', date ? date.toISOString().split('T')[0] : ''); }}
+                    placeholder="Select due date"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          {/* Services & Charges */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">Services & Charges</span>
+              </div>
+              <Button onClick={addService} size="sm" variant="ghost" className="h-7 px-2 text-xs text-primary hover:text-primary">
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-primary/[0.03] border-b border-border">
+                    <th className="text-left px-4 py-2 font-semibold text-primary uppercase tracking-wider">Service</th>
+                    <th className="text-center px-2 py-2 font-semibold text-primary uppercase tracking-wider w-20">Qty</th>
+                    <th className="text-right px-2 py-2 font-semibold text-primary uppercase tracking-wider w-28">Unit ₹</th>
+                    <th className="text-right px-3 py-2 font-semibold text-primary uppercase tracking-wider w-28">Total</th>
+                    <th className="px-2 py-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billingServices.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center text-muted-foreground py-8 text-xs">
+                        No services added. Click "Add" to begin.
+                      </td>
+                    </tr>
+                  ) : (
+                    billingServices.map((service, i) => (
+                      <tr key={service.id} className={i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}>
+                        <td className="px-4 py-2">
+                          <Select value={service.name} onValueChange={v => updateService(service.id, 'name', v)}>
+                            <SelectTrigger className="h-8 text-xs border-border/50"><SelectValue placeholder="Select service" /></SelectTrigger>
+                            <SelectContent>
+                              {commonServices.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          <Input type="number" min="1" value={service.quantity} onChange={e => updateService(service.id, 'quantity', parseInt(e.target.value) || 1)} className="h-8 w-16 text-xs text-center" />
+                        </td>
+                        <td className="px-2 py-2 text-right">
+                          <Input type="number" min="0" step="0.01" value={service.unitPrice} onChange={e => updateService(service.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="h-8 w-24 text-xs text-right" />
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold text-foreground">
+                          ₹{service.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-2 py-2">
+                          <Button variant="ghost" size="icon" onClick={() => removeService(service.id)} className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Payment Summary */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Payment Summary</span>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Amount Paid</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.paidAmount}
+                      onChange={e => handleInputChange('paidAmount', parseFloat(e.target.value) || 0)}
+                      className="h-9 text-sm font-semibold"
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg bg-primary/[0.03] border border-border/50 p-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Amount:</span>
-                    <span className="text-lg font-bold">${(formData.amount || 0).toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground">Total Amount</span>
+                    <span className="text-sm font-bold text-foreground">₹{(formData.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Paid Amount:</span>
-                    <span className="text-lg font-semibold text-green-600">${(formData.paidAmount || 0).toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground">Paid</span>
+                    <span className="text-sm font-semibold text-green-600">₹{(formData.paidAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div className="border-t pt-3">
+                  <div className="border-t border-border/50 pt-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Outstanding:</span>
-                      <span className={`text-xl font-bold ${outstandingAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        ${outstandingAmount.toFixed(2)}
+                      <span className="text-xs font-medium text-foreground">Outstanding</span>
+                      <span className={`text-lg font-bold ${outstandingAmount > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                        ₹{outstandingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Information Notice */}
-          <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
-            <CardContent className="p-4">
-              <div className="flex gap-3">
-                <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                    Billing Information
-                  </p>
-                  <p className="text-xs text-green-700 dark:text-green-300">
-                    All billing records are stored securely. Payment status is automatically updated based on the paid amount.
-                  </p>
-                </div>
+          {/* Record Payment */}
+          {isEditMode && billing && outstandingAmount > 0 && (
+            <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-foreground">Outstanding Balance</p>
+                <p className="text-lg font-bold text-amber-600">₹{outstandingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Button variant="outline" className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/5" onClick={() => setShowPaymentDialog(true)}>
+                <CreditCard className="h-3.5 w-3.5" /> Record Payment
+              </Button>
+            </div>
+          )}
+
+          {/* Info notice */}
+          <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3 flex gap-3">
+            <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-foreground">Billing Information</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                All billing records are stored securely. Payment status updates automatically based on paid amount.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 border-t border-border/50 px-5 py-3 bg-background/95 flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} className="h-8 px-3 text-xs">Cancel</Button>
+          <Button size="sm" onClick={handleSave} disabled={isSaving} className="h-8 px-4 text-xs">
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
+
+    {billing && (
+      <RecordPaymentDialog
+        isOpen={showPaymentDialog}
+        onClose={() => setShowPaymentDialog(false)}
+        totalAmount={formData.amount || 0}
+        paidAmount={formData.paidAmount || 0}
+        onRecordPayment={async (payment: PaymentRecord) => {
+          const newPaidAmount = (formData.paidAmount || 0) + payment.amount;
+          const newStatus = newPaidAmount >= (formData.amount || 0) ? 'Paid' : 'Partial';
+          try {
+            await billingService.updateBillingRecord(billing.id, { paidAmount: newPaidAmount, status: newStatus });
+            setFormData(prev => ({ ...prev, paidAmount: newPaidAmount, status: newStatus }));
+            toast({ title: 'Payment Recorded', description: `₹${payment.amount.toFixed(2)} recorded.`, variant: 'success' });
+            onRefresh?.();
+          } catch {
+            throw new Error('Failed to record payment');
+          }
+        }}
+        entityLabel={formData.invoiceNumber || billing.id}
+      />
+    )}
+    </>
   );
 };
 

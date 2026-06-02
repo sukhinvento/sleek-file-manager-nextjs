@@ -1,5 +1,6 @@
-import { useState, Dispatch, SetStateAction } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState, useMemo, Dispatch, SetStateAction } from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
   LineChart,
@@ -21,8 +22,72 @@ import {
   Users,
   Activity,
   BedDouble,
-  Stethoscope
+  Stethoscope,
+  LucideIcon
 } from 'lucide-react';
+
+// --- Scope-to-nav mapping ---
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  /** Scopes required to see this item (any match = visible). Empty/undefined = always visible. */
+  scopes?: string[];
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Main',
+    items: [
+      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // always visible
+      { path: '/patients', label: 'Patients', icon: Users, scopes: ['patients'] },
+      { path: '/rooms', label: 'Rooms', icon: BedDouble, scopes: ['rooms'] },
+      { path: '/doctors', label: 'Doctors', icon: Stethoscope, scopes: ['doctors'] },
+    ],
+  },
+  {
+    title: 'Inventory & Orders',
+    items: [
+      { path: '/inventory-dashboard', label: 'Inventory Dashboard', icon: LayoutDashboard, scopes: ['inventory'] },
+      { path: '/inventory', label: 'Inventory', icon: Package, scopes: ['inventory'] },
+      { path: '/purchase-orders', label: 'Purchase Orders', icon: ShoppingCart, scopes: ['purchase-orders'] },
+      { path: '/sales-orders', label: 'Sales Orders', icon: Receipt, scopes: ['sales-orders'] },
+      { path: '/vendors', label: 'Vendors', icon: Users, scopes: ['vendors'] },
+      { path: '/stock-transfer', label: 'Stock Transfer', icon: TrendingUp, scopes: ['inventory'] },
+    ],
+  },
+  {
+    title: 'Billing & Finance',
+    items: [
+      { path: '/invoices', label: 'Invoices', icon: FileText, scopes: ['invoices'] },
+      { path: '/diagnostics', label: 'Diagnostics', icon: Activity, scopes: ['diagnostics'] },
+    ],
+  },
+  {
+    title: 'File Management',
+    items: [
+      { path: '/files-dashboard', label: 'File Dashboard', icon: LayoutDashboard },
+      { path: '/upload', label: 'Upload Files', icon: FileUp },
+      { path: '/files', label: 'View Files', icon: FileText },
+      { path: '/edit', label: 'Edit Files', icon: Edit },
+      { path: '/consolidated', label: 'Consolidated Data', icon: Database },
+    ],
+  },
+  {
+    title: 'Analytics',
+    items: [
+      { path: '/analytics/usage', label: 'Usage Stats', icon: BarChart3 },
+      { path: '/analytics/trends', label: 'Trends', icon: TrendingUp },
+      { path: '/analytics/distribution', label: 'Distribution', icon: PieChart },
+    ],
+  },
+];
 
 interface SidebarProps {
   isMobileMenuOpen: boolean;
@@ -31,27 +96,41 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-export const Sidebar = ({ 
-  isMobileMenuOpen, 
-  setIsMobileMenuOpen, 
+export const Sidebar = ({
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
   isCollapsed = false,
-  toggleSidebar 
+  toggleSidebar
 }: SidebarProps) => {
-  const navigate = useNavigate();
   const location = useLocation();
+  const { hasScope, hasRole, logout } = useAuth();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const isSubmenuActive = (basePath: string) => {
-    return location.pathname.startsWith(basePath);
-  };
+  // Filter nav items based on user scopes.
+  // Items without scopes are always visible.
+  // Items with scopes are visible if the user has ANY of the listed scopes.
+  // Admin role bypasses scope checks and sees everything.
+  const isAdmin = hasRole('admin');
 
-  const toggleSubmenu = (menu: string) => {
-    setOpenSubmenu(openSubmenu === menu ? null : menu);
-  };
+  const visibleSections = useMemo(() => {
+    return NAV_SECTIONS
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (!item.scopes || item.scopes.length === 0) return true; // no scope required
+          if (isAdmin) return true; // admin sees all
+          return item.scopes.some((scope) => hasScope(scope));
+        }),
+      }))
+      .filter((section) => section.items.length > 0); // hide empty sections
+  }, [isAdmin, hasScope]);
+
+  // Settings visible to admin or users with settings/system-admin scope
+  const canSeeSettings = isAdmin || hasScope('settings') || hasScope('system-admin');
 
   return (
     <div
@@ -115,245 +194,50 @@ export const Sidebar = ({
       </div>
 
       <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3.25rem)]">
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Main</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link
-              to="/dashboard"
-              className={`nav-item ${isActive('/dashboard') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <LayoutDashboard className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Dashboard</span>}
-            </Link>
-
-            <Link
-              to="/patients"
-              className={`nav-item ${isActive('/patients') && location.pathname === '/patients' ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Patients"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Users className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Patients</span>}
-            </Link>
-            <Link
-              to="/rooms"
-              className={`nav-item ${isActive('/rooms') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Room Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <BedDouble className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Rooms</span>}
-            </Link>
-            <Link
-              to="/doctors"
-              className={`nav-item ${isActive('/doctors') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Doctor Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Stethoscope className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Doctors</span>}
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link
-              to="/inventory-dashboard"
-              className={`nav-item ${isActive('/inventory-dashboard') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Inventory Dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <LayoutDashboard className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Inventory Dashboard</span>}
-            </Link>
-
-            <Link
-              to="/inventory"
-              className={`nav-item ${isActive('/inventory') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Inventory Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Package className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Inventory</span>}
-            </Link>
-
-            <Link
-              to="/purchase-orders"
-              className={`nav-item ${isActive('/purchase-orders') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Purchase Orders"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <ShoppingCart className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Purchase Orders</span>}
-            </Link>
-
-            <Link
-              to="/sales-orders"
-              className={`nav-item ${isActive('/sales-orders') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Sales Orders"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Receipt className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Sales Orders</span>}
-            </Link>
-
-            <Link
-              to="/vendors"
-              className={`nav-item ${isActive('/vendors') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Vendor Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Users className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Vendors</span>}
-            </Link>
-
-            <Link
-              to="/stock-transfer"
-              className={`nav-item ${isActive('/stock-transfer') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Stock Transfer"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <TrendingUp className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Stock Transfer</span>}
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Billing & Finance</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link
-              to="/billing"
-              className={`nav-item ${isActive('/billing') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Billing"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Receipt className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Billing</span>}
-            </Link>
-            <Link
-              to="/diagnostics"
-              className={`nav-item ${isActive('/diagnostics') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Diagnostics"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Activity className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Diagnostics</span>}
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">File Management</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link
-              to="/files-dashboard"
-              className={`nav-item ${isActive('/files-dashboard') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="File Dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <LayoutDashboard className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">File Dashboard</span>}
-            </Link>
-            <Link
-              to="/upload"
-              className={`nav-item ${isActive('/upload') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Upload Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <FileUp className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Upload Files</span>}
-            </Link>
-            <Link
-              to="/files"
-              className={`nav-item ${isActive('/files') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="View Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <FileText className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">View Files</span>}
-            </Link>
-            <Link
-              to="/edit"
-              className={`nav-item ${isActive('/edit') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Edit Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Edit className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Edit Files</span>}
-            </Link>
-            <Link
-              to="/consolidated"
-              className={`nav-item ${isActive('/consolidated') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Consolidated Data View"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Database className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Consolidated Data</span>}
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Analytics</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link
-              to="/analytics/usage"
-              className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Usage Stats"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <BarChart3 className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Usage Stats</span>}
-            </Link>
-            <Link
-              to="/analytics/trends"
-              className={`nav-item ${isActive('/analytics/trends') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Trends"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <TrendingUp className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Trends</span>}
-            </Link>
-            <Link
-              to="/analytics/distribution"
-              className={`nav-item ${isActive('/analytics/distribution') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-              title="Distribution"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <PieChart className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-              {!isCollapsed && <span className="nav-text truncate">Distribution</span>}
-            </Link>
-          </nav>
-        </div>
+        {visibleSections.map((section) => (
+          <div className="nav-section" key={section.title}>
+            {!isCollapsed && <p className="nav-section-title">{section.title}</p>}
+            <nav className="mt-1 space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`nav-item ${isActive(item.path) ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+                    title={item.label}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+                    {!isCollapsed && <span className="nav-text truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
 
         <div className="mt-4 pt-3" style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
-          <Link
-            to="/settings"
-            className={`nav-item ${isActive('/settings') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-            title="Settings"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Settings className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
-            {!isCollapsed && <span className="nav-text truncate">Settings</span>}
-          </Link>
+          {canSeeSettings && (
+            <Link
+              to="/settings"
+              className={`nav-item ${isActive('/settings') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+              title="Settings"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Settings className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              {!isCollapsed && <span className="nav-text truncate">Settings</span>}
+            </Link>
+          )}
 
-          <Link
-            to="/login"
-            className={`nav-item ${isCollapsed ? 'justify-center' : ''}`}
+          <button
+            className={`nav-item w-full ${isCollapsed ? 'justify-center' : ''}`}
             title="Logout"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/login');
-            }}
+            onClick={() => logout()}
           >
             <LogOut className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
             {!isCollapsed && <span className="nav-text truncate">Logout</span>}
-          </Link>
+          </button>
         </div>
       </div>
     </div>

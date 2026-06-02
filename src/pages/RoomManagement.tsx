@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
-  Search, Filter, BedDouble, Wrench, CheckCircle, AlertTriangle,
-  Plus, Eye, Edit, X, Save, Wifi, Tv, Wind, Droplets, Zap, Star
+  Search, BedDouble, Wrench, CheckCircle, AlertTriangle,
+  Plus, Eye, Edit, X, Save, Wifi, Tv, Wind, Droplets, Zap, Users
 } from 'lucide-react';
 import * as roomService from '@/services/roomService';
 import { Room } from '@/services/roomService';
 import { toast } from '@/hooks/use-toast';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const PRIMARY   = STAT_ACCENTS.PRIMARY;
+const TEXT_MUTE = 'hsl(220,12%,54%)';
+const BORDER    = 'hsl(220,16%,90%)';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -45,107 +51,32 @@ const AMENITY_ICONS: Record<string, React.ElementType> = {
   'Ventilator': Zap,
 };
 
-const ROOM_TYPE_GRADIENT: Record<Room['type'], string> = {
-  'General':      'from-slate-500 via-slate-600 to-slate-700',
-  'Semi-Private': 'from-teal-500 via-teal-600 to-cyan-700',
-  'Private':      'from-emerald-500 via-emerald-600 to-green-700',
-  'ICU':          'from-red-500 via-red-600 to-rose-700',
-  'Deluxe':       'from-amber-400 via-amber-500 to-orange-500',
-  'Suite':        'from-pink-400 via-pink-500 to-rose-600',
+const ROOM_TYPE_PHOTO: Record<Room['type'], string> = {
+  'General':      'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&h=200&fit=crop&auto=format',
+  'Semi-Private': 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&h=200&fit=crop&auto=format',
+  'Private':      'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&h=200&fit=crop&auto=format',
+  'ICU':          'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=200&fit=crop&auto=format',
+  'Deluxe':       'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=600&h=200&fit=crop&auto=format',
+  'Suite':        'https://images.unsplash.com/photo-1629909615184-74f495363b67?w=600&h=200&fit=crop&auto=format',
 };
 
 const RoomTypeHeader = ({ type, status }: { type: Room['type']; status: Room['status'] }) => {
   const statusDot = status === 'Available' ? '#86efac' : status === 'Occupied' ? '#93c5fd' : status === 'Maintenance' ? '#fcd34d' : '#c4b5fd';
 
-  const illustration = () => {
-    if (type === 'ICU') return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        <polyline points="15,36 42,36 55,14 65,58 75,36 105,36 115,24 125,48 135,36 188,36"
-          stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <rect x="156" y="14" width="5" height="22" rx="2.5" fill="rgba(255,255,255,0.4)"/>
-        <rect x="147" y="23" width="22" height="5" rx="2.5" fill="rgba(255,255,255,0.4)"/>
-        <circle cx="169" cy="57" r="4" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-      </svg>
-    );
-    if (type === 'Suite') return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        <path d="M80,50 L80,24 L95,38 L100,20 L105,38 L120,24 L120,50 Z"
-          fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinejoin="round"/>
-        <circle cx="80" cy="24" r="4" fill="rgba(255,255,255,0.55)"/>
-        <circle cx="100" cy="19" r="4.5" fill="rgba(255,255,255,0.6)"/>
-        <circle cx="120" cy="24" r="4" fill="rgba(255,255,255,0.55)"/>
-        <path d="M72,50 L128,50" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round"/>
-        <text x="28" y="30" fontSize="11" fill="rgba(255,255,255,0.45)">✦</text>
-        <text x="153" y="34" fontSize="9" fill="rgba(255,255,255,0.4)">✦</text>
-        <text x="38" y="56" fontSize="8" fill="rgba(255,255,255,0.3)">✦</text>
-        <text x="148" y="56" fontSize="7" fill="rgba(255,255,255,0.25)">✦</text>
-      </svg>
-    );
-    if (type === 'Deluxe') return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        <rect x="38" y="30" width="124" height="28" rx="5" fill="rgba(255,255,255,0.25)"/>
-        <rect x="36" y="17" width="13" height="41" rx="4" fill="rgba(255,255,255,0.35)"/>
-        <circle cx="42" cy="21" r="4.5" fill="rgba(255,255,255,0.5)"/>
-        <rect x="53" y="32" width="36" height="16" rx="4" fill="rgba(255,255,255,0.4)"/>
-        <rect x="95" y="32" width="36" height="16" rx="4" fill="rgba(255,255,255,0.4)"/>
-        <rect x="38" y="58" width="5" height="8" rx="2" fill="rgba(255,255,255,0.2)"/>
-        <rect x="157" y="58" width="5" height="8" rx="2" fill="rgba(255,255,255,0.2)"/>
-        <text x="152" y="24" fontSize="13" fill="rgba(255,255,255,0.5)">✦</text>
-        <text x="22" y="50" fontSize="9" fill="rgba(255,255,255,0.3)">✦</text>
-        <text x="172" y="50" fontSize="8" fill="rgba(255,255,255,0.25)">✦</text>
-      </svg>
-    );
-    if (type === 'Private') return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        <rect x="28" y="31" width="144" height="27" rx="5" fill="rgba(255,255,255,0.25)"/>
-        <rect x="26" y="18" width="14" height="40" rx="4" fill="rgba(255,255,255,0.35)"/>
-        <rect x="46" y="33" width="40" height="15" rx="4" fill="rgba(255,255,255,0.4)"/>
-        <rect x="92" y="33" width="40" height="15" rx="4" fill="rgba(255,255,255,0.4)"/>
-        <rect x="28" y="58" width="5" height="8" rx="2" fill="rgba(255,255,255,0.2)"/>
-        <rect x="167" y="58" width="5" height="8" rx="2" fill="rgba(255,255,255,0.2)"/>
-        <line x1="174" y1="10" x2="174" y2="68" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="4,3"/>
-      </svg>
-    );
-    if (type === 'Semi-Private') return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        {([14, 106] as number[]).map((x, i) => (
-          <g key={i}>
-            <rect x={x} y="32" width="80" height="25" rx="4" fill="rgba(255,255,255,0.25)"/>
-            <rect x={x} y="20" width="11" height="37" rx="3" fill="rgba(255,255,255,0.35)"/>
-            <rect x={x + 14} y="34" width="26" height="13" rx="3" fill="rgba(255,255,255,0.4)"/>
-            <rect x={x} y="57" width="4" height="7" rx="2" fill="rgba(255,255,255,0.18)"/>
-            <rect x={x + 76} y="57" width="4" height="7" rx="2" fill="rgba(255,255,255,0.18)"/>
-          </g>
-        ))}
-        <line x1="100" y1="10" x2="100" y2="68" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" strokeDasharray="5,3"/>
-      </svg>
-    );
-    // General — 3 beds
-    return (
-      <svg viewBox="0 0 200 72" fill="none" className="w-full h-full">
-        {([10, 72, 134] as number[]).map((x, i) => (
-          <g key={i}>
-            <rect x={x} y="34" width="54" height="22" rx="3" fill="rgba(255,255,255,0.22)"/>
-            <rect x={x} y="22" width="9" height="14" rx="2" fill="rgba(255,255,255,0.32)"/>
-            <rect x={x + 11} y="35" width="20" height="11" rx="2" fill="rgba(255,255,255,0.38)"/>
-            <rect x={x} y="56" width="4" height="7" rx="2" fill="rgba(255,255,255,0.16)"/>
-            <rect x={x + 50} y="56" width="4" height="7" rx="2" fill="rgba(255,255,255,0.16)"/>
-          </g>
-        ))}
-      </svg>
-    );
-  };
-
   return (
-    <div className={`relative h-[76px] bg-gradient-to-r ${ROOM_TYPE_GRADIENT[type]} overflow-hidden`}>
-      {illustration()}
-      <div className="absolute inset-0"
-        style={{ backgroundImage: 'radial-gradient(circle at 15% 85%, rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(circle at 85% 15%, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+    <div className="relative h-[76px] overflow-hidden">
+      <img
+        src={ROOM_TYPE_PHOTO[type]}
+        alt={type}
+        className="w-full h-full object-cover"
+        loading="lazy"
+      />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 55%, rgba(0,0,0,0.1) 100%)' }} />
       <div className="absolute bottom-2 left-3">
-        <span className="text-[9px] font-bold text-white/70 uppercase tracking-[0.15em]">{type}</span>
+        <span className="text-[9px] font-bold text-white/90 uppercase tracking-[0.15em] drop-shadow">{type}</span>
       </div>
       <div className="absolute top-2.5 right-2.5">
-        <div className="w-2 h-2 rounded-full" style={{ background: statusDot, boxShadow: `0 0 0 2px rgba(255,255,255,0.25)` }} />
+        <div className="w-2 h-2 rounded-full" style={{ background: statusDot, boxShadow: `0 0 0 2px rgba(255,255,255,0.3)` }} />
       </div>
     </div>
   );
@@ -225,7 +156,7 @@ const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
 
   const handleSave = async () => {
     if (!form.roomNumber || !form.dailyRate) {
-      toast({ variant: 'destructive', title: 'Missing fields', description: 'Room number and daily rate are required.' });
+      toast({ title: 'Missing fields', description: 'Room number and daily rate are required.', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -233,14 +164,14 @@ const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
       let saved: Room;
       if (mode === 'add') {
         saved = await roomService.addRoom(form);
-        toast({ title: 'Room Added', description: `Room ${saved.roomNumber} has been added.` });
+        toast({ title: 'Room Added', description: `Room ${saved.roomNumber} has been added.`, variant: 'success' });
       } else {
         saved = await roomService.updateRoom(room!.id, form);
-        toast({ title: 'Room Updated', description: `Room ${saved.roomNumber} has been updated.` });
+        toast({ title: 'Room Updated', description: `Room ${saved.roomNumber} has been updated.`, variant: 'success' });
       }
       onSave(saved);
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save room. Please try again.' });
+      toast({ title: 'Error', description: 'Failed to save room. Please try again.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -448,18 +379,30 @@ export const RoomManagement = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [sheetMode, setSheetMode] = useState<'view' | 'edit' | 'add' | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
+
+  const computeStats = (roomList: Room[]) => {
+    const totalBeds = roomList.reduce((sum, r) => sum + r.bedCapacity, 0);
+    const occupiedBeds = roomList.reduce((sum, r) => sum + r.occupiedBeds, 0);
+    return {
+      totalRooms: roomList.length,
+      availableRooms: roomList.filter(r => r.status === 'Available').length,
+      occupiedRooms: roomList.filter(r => r.status === 'Occupied').length,
+      maintenanceRooms: roomList.filter(r => r.status === 'Maintenance').length,
+      totalBeds,
+      occupiedBeds,
+      occupancyRate: totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0,
+    };
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [roomData, statsData] = await Promise.all([roomService.fetchRooms(), roomService.getRoomStats()]);
+      const roomData = await roomService.fetchRooms();
       setRooms(roomData);
-      setStats(statsData);
+      setStats(computeStats(roomData));
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load room data.' });
+      toast({ title: 'Error', description: 'Failed to load room data.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -492,110 +435,87 @@ export const RoomManagement = () => {
       const updated = await roomService.updateRoom(room.id, { status });
       setRooms(prev => prev.map(r => r.id === updated.id ? updated : r));
       roomService.getRoomStats().then(setStats);
-      toast({ title: 'Status Updated', description: `Room ${room.roomNumber} is now ${status}.` });
+      toast({ title: 'Status Updated', description: `Room ${room.roomNumber} is now ${status}.`, variant: 'success' });
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+      toast({ title: 'Error', description: 'Failed to update status.', variant: 'destructive' });
     }
   };
-
-  const statusCards = [
-    { label: 'Total Rooms', value: stats.totalRooms, status: 'All', color: 'text-primary', bg: 'from-primary/5 to-primary/10', icon: BedDouble },
-    { label: 'Available', value: stats.availableRooms, status: 'Available', color: 'text-green-600', bg: 'from-green-50 to-lime-50', icon: CheckCircle },
-    { label: 'Occupied', value: stats.occupiedRooms, status: 'Occupied', color: 'text-blue-600', bg: 'from-blue-50 to-indigo-50', icon: BedDouble },
-    { label: 'Maintenance', value: stats.maintenanceRooms, status: 'Maintenance', color: 'text-amber-600', bg: 'from-amber-50 to-orange-50', icon: Wrench },
-  ];
 
   return (
     <div className="space-y-4">
       {/* Stat Cards */}
-      <section className="bg-card sm:mx-0">
-        <div className="stat-cards-scroll">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {statusCards.map(card => (
-              <Card
-                key={card.status}
-                onClick={() => handleStatusToggle(card.status)}
-                className={`flex-shrink-0 w-40 sm:w-44 md:w-48 shadow-lg border-none bg-gradient-to-br ${card.bg} relative overflow-hidden stat-card-clickable ${filterStatus === card.status ? 'stat-card-active' : ''}`}
-                title={card.status === 'All' ? 'Show all rooms' : `Filter by ${card.status}`}
-              >
-                <CardContent className="p-3 relative z-10">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${card.color}`}>{card.label}</p>
-                      <p className={`text-2xl font-bold mt-0.5 ${card.color}`}>{card.value}</p>
-                    </div>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center`} style={{ background: 'rgba(0,0,0,0.06)' }}>
-                      <card.icon className={`h-4 w-4 ${card.color}`} />
-                    </div>
-                  </div>
-                  {card.status === 'All' && (
-                    <p className="text-xs text-muted-foreground">{stats.occupancyRate}% occupancy</p>
-                  )}
-                  {card.status === 'Available' && (
-                    <p className="text-xs text-green-600">{stats.totalBeds - stats.occupiedBeds} beds free</p>
-                  )}
-                  {card.status === 'Occupied' && (
-                    <p className="text-xs text-blue-600">{stats.occupiedBeds} of {stats.totalBeds} beds</p>
-                  )}
-                  {card.status === 'Maintenance' && (
-                    <p className="text-xs text-amber-600">Hidden from booking</p>
-                  )}
-                </CardContent>
-                <card.icon className={`absolute bottom-0 right-0 h-12 w-12 opacity-[0.05] transform translate-x-3 translate-y-3 ${card.color}`} />
-              </Card>
-            ))}
-
-            {/* Occupancy Rate Card */}
-            <Card className="flex-shrink-0 w-40 sm:w-44 md:w-48 shadow-lg border-none bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <p className="text-xs font-semibold uppercase tracking-wider text-purple-600 mb-1">Bed Occupancy</p>
-                <p className="text-2xl font-bold text-purple-700">{stats.occupancyRate}%</p>
-                <div className="mt-2 w-full bg-purple-100 rounded-full h-2">
-                  <div className="bg-purple-500 h-2 rounded-full transition-all" style={{ width: `${stats.occupancyRate}%` }} />
-                </div>
-                <p className="text-xs text-purple-600 mt-1">{stats.occupiedBeds}/{stats.totalBeds} beds in use</p>
-              </CardContent>
-              <BedDouble className="absolute bottom-0 right-0 h-12 w-12 text-purple-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total Rooms" value={stats.totalRooms} icon={BedDouble} accent={STAT_ACCENTS.PRIMARY}
+            active={filterStatus === 'All'} onClick={() => setFilterStatus('All')} />
+          <StatCard label="Available" value={stats.availableRooms} icon={CheckCircle} accent={STAT_ACCENTS.SUCCESS}
+            active={filterStatus === 'Available'} onClick={() => setFilterStatus(s => s === 'Available' ? 'All' : 'Available')} />
+          <StatCard label="Occupied" value={stats.occupiedRooms} icon={BedDouble} accent={STAT_ACCENTS.CYAN}
+            active={filterStatus === 'Occupied'} onClick={() => setFilterStatus(s => s === 'Occupied' ? 'All' : 'Occupied')} />
+          <StatCard label="Maintenance" value={stats.maintenanceRooms} icon={Wrench} accent={STAT_ACCENTS.WARNING}
+            active={filterStatus === 'Maintenance'} onClick={() => setFilterStatus(s => s === 'Maintenance' ? 'All' : 'Maintenance')} />
+          <StatCard label="Total Beds" value={stats.totalBeds} icon={Users} accent={STAT_ACCENTS.PURPLE} />
         </div>
-      </section>
-
-      {/* Active filter indicator */}
+      </div>
 
       {/* Filter Bar */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 sm:mx-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          {/* Type filter pills */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {['All', ...ROOM_TYPES].map(t => (
-              <button
-                key={t}
-                onClick={() => setFilterType(t)}
-                className={`flex-shrink-0 px-3 h-8 rounded-full text-xs font-semibold transition-colors border ${
-                  filterType === t
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'text-muted-foreground border-border hover:border-primary/40'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2 lg:ml-auto">
-            <div className="relative flex-1 lg:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Room number, department…"
-                className="pl-8 h-9 text-sm"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-3 overflow-hidden">
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-3">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-1.5 w-max">
+              {['All', ...ROOM_TYPES].map(t => (
+                <button key={t} onClick={() => setFilterType(t)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: filterType === t ? PRIMARY : 'transparent',
+                    color: filterType === t ? '#fff' : TEXT_MUTE,
+                    borderColor: filterType === t ? PRIMARY : BORDER,
+                  }}>
+                  {t}
+                </button>
+              ))}
             </div>
-            <Button onClick={() => { setSelectedRoom(null); setSheetMode('add'); }} className="gap-2 flex-shrink-0">
-              <Plus className="h-4 w-4" /> Add Room
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="relative w-60">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Room number, department…" className="pl-8 text-xs h-8"
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <Button size="sm" className="h-8 text-xs gap-1.5 flex-shrink-0"
+              onClick={() => { setSelectedRoom(null); setSheetMode('add'); }}>
+              <Plus size={13} /> Add Room
             </Button>
+          </div>
+        </div>
+        {/* Mobile */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Room number…" className="pl-8 text-xs h-8"
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <Button size="sm" className="h-8 text-xs gap-1.5 flex-shrink-0"
+              onClick={() => { setSelectedRoom(null); setSheetMode('add'); }}>
+              <Plus size={13} /> Add
+            </Button>
+          </div>
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="flex gap-1.5 w-max">
+              {['All', ...ROOM_TYPES].map(t => (
+                <button key={t} onClick={() => setFilterType(t)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: filterType === t ? PRIMARY : 'transparent',
+                    color: filterType === t ? '#fff' : TEXT_MUTE,
+                    borderColor: filterType === t ? PRIMARY : BORDER,
+                  }}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Login } from "./pages/Login";
@@ -14,7 +13,7 @@ import { Settings } from "./pages/Settings";
 import { PurchaseOrders } from "./pages/PurchaseOrders";
 import { Inventory } from "./pages/Inventory";
 import { InventoryDashboard } from "./pages/InventoryDashboard";
-import { Billing } from "./pages/Billing";
+// Billing page removed — replaced by Invoices
 import { Diagnostics } from "./pages/Diagnostics";
 import { Patients } from "./pages/Patients";
 import { VendorManagement } from "./pages/VendorManagement";
@@ -26,8 +25,10 @@ import { DistributionAnalytics } from "./pages/DistributionAnalytics";
 import { PatientAdmission } from "./pages/PatientAdmission";
 import { RoomManagement } from "./pages/RoomManagement";
 import { DoctorManagement } from "./pages/DoctorManagement";
+import { Invoices } from "./pages/Invoices";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -36,8 +37,8 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -101,9 +102,11 @@ const App = () => (
               <StockTransfer />
             </AppLayout>
           } />
-          <Route path="/billing" element={
+          {/* Billing route removed — redirects to Invoices */}
+          <Route path="/billing" element={<Navigate to="/invoices" replace />} />
+          <Route path="/invoices" element={
             <AppLayout>
-              <Billing />
+              <Invoices />
             </AppLayout>
           } />
           <Route path="/diagnostics" element={
@@ -153,6 +156,7 @@ const App = () => (
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

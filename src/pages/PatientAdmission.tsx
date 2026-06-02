@@ -18,7 +18,12 @@ import {
 } from 'lucide-react';
 import * as roomService from '@/services/roomService';
 import { Room } from '@/services/roomService';
+import * as doctorService from '@/services/doctorService';
+import { Doctor } from '@/services/doctorService';
+import * as patientService from '@/services/patientService';
+import * as admissionService from '@/services/admissionService';
 import { toast } from '@/hooks/use-toast';
+import apiClient from '@/lib/api-client';
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -49,16 +54,6 @@ const INITIAL_FORM: AdmissionForm = {
   insuranceValidity: '', corporateAccount: '',
 };
 
-const MOCK_DOCTORS = [
-  { id: 'D001', name: 'Dr. Sarah Johnson', department: 'Cardiology', available: true },
-  { id: 'D002', name: 'Dr. Michael Brown', department: 'Orthopaedics', available: true },
-  { id: 'D003', name: 'Dr. Lisa Anderson', department: 'Neurology', available: false },
-  { id: 'D004', name: 'Dr. James Wilson', department: 'General Medicine', available: true },
-  { id: 'D005', name: 'Dr. Emma Thompson', department: 'Paediatrics', available: true },
-  { id: 'D006', name: 'Dr. Raj Patel', department: 'Oncology', available: true },
-  { id: 'D007', name: 'Dr. Priya Sharma', department: 'Emergency', available: true },
-];
-
 // ─── Existing Patients (for returning patient lookup) ─────────────────────────
 
 interface ExistingPatient {
@@ -68,14 +63,21 @@ interface ExistingPatient {
   allergies: string; existingConditions: string;
 }
 
-const EXISTING_PATIENTS: ExistingPatient[] = [
-  { id: 'P001', name: 'Ananya Sharma', phone: '+91 98765 43210', dob: '1990-03-15', gender: 'Female', bloodGroup: 'B+', address: '12 MG Road, Bengaluru', emergencyContact: 'Ravi Sharma', emergencyPhone: '+91 98765 43211', allergies: 'Penicillin', existingConditions: 'Hypertension' },
-  { id: 'P002', name: 'Rohan Mehta', phone: '+91 87654 32109', dob: '1985-07-22', gender: 'Male', bloodGroup: 'O+', address: '45 Anna Nagar, Chennai', emergencyContact: 'Priya Mehta', emergencyPhone: '+91 87654 32108', allergies: '', existingConditions: 'Diabetes' },
-  { id: 'P003', name: 'Suresh Patel', phone: '+91 76543 21098', dob: '1972-11-05', gender: 'Male', bloodGroup: 'A+', address: '8 FC Road, Pune', emergencyContact: 'Meena Patel', emergencyPhone: '+91 76543 21097', allergies: 'Aspirin', existingConditions: 'Diabetes, Hypertension' },
-  { id: 'P004', name: 'Kavya Iyer', phone: '+91 65432 10987', dob: '2002-01-30', gender: 'Female', bloodGroup: 'AB-', address: '22 T Nagar, Chennai', emergencyContact: 'Suresh Iyer', emergencyPhone: '+91 65432 10986', allergies: '', existingConditions: '' },
-  { id: 'P005', name: 'Vikram Singh', phone: '+91 54321 09876', dob: '1968-09-18', gender: 'Male', bloodGroup: 'O-', address: '3 Civil Lines, Jaipur', emergencyContact: 'Sunita Singh', emergencyPhone: '+91 54321 09875', allergies: 'Sulfa drugs', existingConditions: 'Asthma' },
-  { id: 'P006', name: 'Deepa Rao', phone: '+91 43210 98765', dob: '1995-05-12', gender: 'Female', bloodGroup: 'A-', address: '67 Banjara Hills, Hyderabad', emergencyContact: 'Mohan Rao', emergencyPhone: '+91 43210 98764', allergies: '', existingConditions: '' },
-];
+function mapRawToExistingPatient(p: any): ExistingPatient {
+  return {
+    id: p._id || p.id || '',
+    name: [p.first_name, p.last_name].filter(Boolean).join(' '),
+    phone: p.phone || '',
+    dob: p.dob || '',
+    gender: p.gender || '',
+    bloodGroup: p.blood_group || '',
+    address: p.address || '',
+    emergencyContact: p.emergency_contact_name || p.emergency_contact || '',
+    emergencyPhone: p.emergency_contact_phone || p.emergency_phone || '',
+    allergies: Array.isArray(p.allergies) ? p.allergies.join(', ') : (p.allergies || ''),
+    existingConditions: Array.isArray(p.existing_conditions) ? p.existing_conditions.join(', ') : (p.existing_conditions || p.medical_history || ''),
+  };
+}
 
 // ─── Existing Patient Auto-suggest ───────────────────────────────────────────
 
@@ -160,20 +162,29 @@ const StepperHeader = ({ current }: { current: number }) => (
 // ─── Step 1: Patient Registration ────────────────────────────────────────────
 
 const StepRegistration = ({ form, update }: { form: AdmissionForm; update: (k: keyof AdmissionForm, v: string) => void }) => {
+  const [allPatients, setAllPatients] = useState<ExistingPatient[]>([]);
   const [suggestions, setSuggestions] = useState<ExistingPatient[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [matchedPatient, setMatchedPatient] = useState<ExistingPatient | null>(null);
   const [loadExisting, setLoadExisting] = useState(false);
 
+  useEffect(() => {
+    apiClient.get('/patients', { params: { limit: 500 } })
+      .then(res => {
+        const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setAllPatients(raw.map(mapRawToExistingPatient));
+      })
+      .catch(() => {});
+  }, []);
+
   const handleFirstNameChange = (value: string) => {
     update('firstName', value);
-    // Clear matched patient if user edits the name after selection
     if (matchedPatient && value !== matchedPatient.name.split(' ')[0]) {
       setMatchedPatient(null);
       setLoadExisting(false);
     }
     if (value.trim().length >= 2) {
-      const matches = EXISTING_PATIENTS.filter(p =>
+      const matches = allPatients.filter(p =>
         p.name.toLowerCase().includes(value.toLowerCase()) ||
         p.phone.includes(value)
       );
@@ -465,9 +476,9 @@ const StepRoomBooking = ({ form, update, rooms, loadingRooms }: {
 
 // ─── Step 3: Doctor Assignment ────────────────────────────────────────────────
 
-const StepDoctor = ({ form, update }: { form: AdmissionForm; update: (k: keyof AdmissionForm, v: string) => void }) => {
+const StepDoctor = ({ form, update, doctors: allDoctors }: { form: AdmissionForm; update: (k: keyof AdmissionForm, v: string) => void; doctors: Doctor[] }) => {
   const [search, setSearch] = useState('');
-  const doctors = MOCK_DOCTORS.filter(d =>
+  const doctors = allDoctors.filter(d =>
     !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.department.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -500,13 +511,14 @@ const StepDoctor = ({ form, update }: { form: AdmissionForm; update: (k: keyof A
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {doctors.map(doc => {
             const selected = form.selectedDoctor === doc.id;
+            const available = doc.status === 'Active';
             return (
               <div
                 key={doc.id}
-                onClick={() => doc.available && update('selectedDoctor', doc.id)}
+                onClick={() => available && update('selectedDoctor', doc.id)}
                 className={`rounded-lg border p-3 transition-all flex items-center gap-3 ${
                   selected ? 'border-primary bg-primary/5 shadow-sm' :
-                  doc.available ? 'border-border bg-card hover:border-primary/40 cursor-pointer' :
+                  available ? 'border-border bg-card hover:border-primary/40 cursor-pointer' :
                   'border-border bg-muted/40 opacity-60 cursor-not-allowed'
                 }`}
               >
@@ -515,12 +527,12 @@ const StepDoctor = ({ form, update }: { form: AdmissionForm; update: (k: keyof A
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">{doc.department}</p>
+                  <p className="text-xs text-muted-foreground">{doc.specialisation || doc.department}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                   {selected && <Check className="h-4 w-4 text-primary" />}
-                  <Badge className={`${doc.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} border-0 text-[10px] pointer-events-none`}>
-                    {doc.available ? 'Available' : 'On Leave'}
+                  <Badge className={`${available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} border-0 text-[10px] pointer-events-none`}>
+                    {doc.status}
                   </Badge>
                 </div>
               </div>
@@ -614,9 +626,9 @@ const StepInsurance = ({ form, update }: { form: AdmissionForm; update: (k: keyo
 
 // ─── Step 5: Confirmation ─────────────────────────────────────────────────────
 
-const StepConfirmation = ({ form, rooms }: { form: AdmissionForm; rooms: Room[] }) => {
+const StepConfirmation = ({ form, rooms, doctors }: { form: AdmissionForm; rooms: Room[]; doctors: Doctor[] }) => {
   const room = rooms.find(r => r.id === form.selectedRoomId);
-  const doctor = MOCK_DOCTORS.find(d => d.id === form.selectedDoctor);
+  const doctor = doctors.find(d => d.id === form.selectedDoctor);
 
   const sections = [
     {
@@ -695,6 +707,7 @@ export const PatientAdmission = () => {
   const [form, setForm] = useState<AdmissionForm>(INITIAL_FORM);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -702,6 +715,9 @@ export const PatientAdmission = () => {
       .then(r => setRooms(r))
       .catch(() => {})
       .finally(() => setLoadingRooms(false));
+    doctorService.fetchDoctors()
+      .then(d => setDoctors(d))
+      .catch(() => {});
   }, []);
 
   const update = (key: keyof AdmissionForm, value: string) =>
@@ -710,20 +726,20 @@ export const PatientAdmission = () => {
   const validateStep = (): boolean => {
     if (step === 1) {
       if (!form.firstName || !form.lastName || !form.dob || !form.gender || !form.phone || !form.emergencyContact || !form.emergencyPhone) {
-        toast({ variant: 'destructive', title: 'Missing fields', description: 'Please fill all required fields in Patient Registration.' });
+        toast({ title: 'Missing fields', description: 'Please fill all required fields in Patient Registration.', variant: 'destructive' });
         return false;
       }
     }
     if (step === 2 && !form.selectedRoomId) {
-      toast({ variant: 'destructive', title: 'No room selected', description: 'Please select an available room.' });
+      toast({ title: 'No room selected', description: 'Please select an available room.', variant: 'destructive' });
       return false;
     }
     if (step === 3 && (!form.selectedDoctor || !form.admissionReason || !form.department)) {
-      toast({ variant: 'destructive', title: 'Missing fields', description: 'Please select a doctor and provide the admission reason.' });
+      toast({ title: 'Missing fields', description: 'Please select a doctor and provide the admission reason.', variant: 'destructive' });
       return false;
     }
     if (step === 4 && !form.paymentMode) {
-      toast({ variant: 'destructive', title: 'Missing payment mode', description: 'Please select how the patient will pay.' });
+      toast({ title: 'Missing payment mode', description: 'Please select how the patient will pay.', variant: 'destructive' });
       return false;
     }
     return true;
@@ -732,14 +748,51 @@ export const PatientAdmission = () => {
   const next = () => { if (validateStep()) setStep(s => Math.min(5, s + 1)); };
   const prev = () => setStep(s => Math.max(1, s - 1));
 
+  const ADMISSION_TYPE_MAP: Record<string, admissionService.AdmissionType> = {
+    Planned: 'planned', Emergency: 'emergency', Transfer: 'transfer', 'Day Care': 'day_care',
+  };
+  const PAYMENT_MODE_MAP: Record<string, admissionService.PaymentMode> = {
+    Cash: 'cash', Insurance: 'insurance', Card: 'card', Corporate: 'corporate', Government: 'government',
+  };
+
   const confirm = async () => {
     setSubmitting(true);
     try {
-      await new Promise(res => setTimeout(res, 1200));
-      toast({ title: 'Patient Admitted', description: `${form.firstName} ${form.lastName} has been successfully admitted.` });
+      // 1. Create patient record
+      const newPatient = await patientService.createPatient({
+        patientId: '',
+        name: `${form.firstName} ${form.lastName}`,
+        age: 0,
+        gender: form.gender,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        bloodGroup: form.bloodGroup,
+        lastVisit: '',
+        status: 'Admitted',
+        doctor: form.selectedDoctor,
+        department: form.department,
+      });
+
+      // 2. Create admission record
+      await admissionService.createAdmission({
+        patientId: newPatient.id,
+        roomId: form.selectedRoomId,
+        doctorId: form.selectedDoctor,
+        admissionDate: form.admissionDate,
+        expectedDischargeDate: form.expectedDischarge || undefined,
+        admissionType: ADMISSION_TYPE_MAP[form.admissionType] || 'planned',
+        notes: form.notes || undefined,
+        paymentMode: PAYMENT_MODE_MAP[form.paymentMode] as admissionService.PaymentMode | undefined,
+        insuranceProvider: form.insuranceProvider || undefined,
+        insurancePolicyNo: form.insurancePolicyNo || undefined,
+        corporateAccount: form.corporateAccount || undefined,
+      });
+
+      toast({ title: 'Patient Admitted', description: `${form.firstName} ${form.lastName} has been successfully admitted.`, variant: 'success' });
       navigate('/patients');
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to complete admission. Please try again.' });
+      toast({ title: 'Error', description: 'Failed to complete admission. Please try again.', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -775,9 +828,9 @@ export const PatientAdmission = () => {
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
         {step === 1 && <StepRegistration form={form} update={update} />}
         {step === 2 && <StepRoomBooking form={form} update={update} rooms={rooms} loadingRooms={loadingRooms} />}
-        {step === 3 && <StepDoctor form={form} update={update} />}
+        {step === 3 && <StepDoctor form={form} update={update} doctors={doctors} />}
         {step === 4 && <StepInsurance form={form} update={update} />}
-        {step === 5 && <StepConfirmation form={form} rooms={rooms} />}
+        {step === 5 && <StepConfirmation form={form} rooms={rooms} doctors={doctors} />}
       </div>
 
       {/* ── Static Footer ── */}

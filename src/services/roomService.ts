@@ -1,4 +1,5 @@
 // Room Service - Handles hospital room management and assignments
+import apiClient from '@/lib/api-client';
 
 export interface Room {
   id: string;
@@ -30,338 +31,155 @@ export interface RoomAssignment {
   bedNumber?: number;
 }
 
-// Mock room data
-const mockRooms: Room[] = [
-  {
-    id: 'R001',
-    roomNumber: '101',
-    floor: 1,
-    type: 'General',
-    status: 'Available',
-    bedCapacity: 4,
-    occupiedBeds: 0,
-    dailyRate: 100,
-    amenities: ['AC', 'TV', 'Shared Bathroom'],
-    department: 'General Medicine'
-  },
-  {
-    id: 'R002',
-    roomNumber: '102',
-    floor: 1,
-    type: 'General',
-    status: 'Occupied',
-    bedCapacity: 4,
-    occupiedBeds: 2,
-    dailyRate: 100,
-    amenities: ['AC', 'TV', 'Shared Bathroom'],
-    department: 'General Medicine'
-  },
-  {
-    id: 'R003',
-    roomNumber: '201',
-    floor: 2,
-    type: 'Private',
-    status: 'Available',
-    bedCapacity: 1,
-    occupiedBeds: 0,
-    dailyRate: 250,
-    amenities: ['AC', 'TV', 'Private Bathroom', 'Wi-Fi', 'Refrigerator'],
-    department: 'General Medicine'
-  },
-  {
-    id: 'R004',
-    roomNumber: '202',
-    floor: 2,
-    type: 'Private',
-    status: 'Occupied',
-    bedCapacity: 1,
-    occupiedBeds: 1,
-    dailyRate: 250,
-    amenities: ['AC', 'TV', 'Private Bathroom', 'Wi-Fi', 'Refrigerator'],
-    department: 'Cardiology'
-  },
-  {
-    id: 'R005',
-    roomNumber: '301',
-    floor: 3,
-    type: 'ICU',
-    status: 'Available',
-    bedCapacity: 1,
-    occupiedBeds: 0,
-    dailyRate: 500,
-    amenities: ['Ventilator', 'Monitoring Equipment', 'Private Bathroom', 'ICU Bed'],
-    department: 'ICU'
-  },
-  {
-    id: 'R006',
-    roomNumber: '302',
-    floor: 3,
-    type: 'ICU',
-    status: 'Occupied',
-    bedCapacity: 1,
-    occupiedBeds: 1,
-    dailyRate: 500,
-    amenities: ['Ventilator', 'Monitoring Equipment', 'Private Bathroom', 'ICU Bed'],
-    department: 'ICU'
-  },
-  {
-    id: 'R007',
-    roomNumber: '103',
-    floor: 1,
-    type: 'Semi-Private',
-    status: 'Available',
-    bedCapacity: 2,
-    occupiedBeds: 0,
-    dailyRate: 150,
-    amenities: ['AC', 'TV', 'Shared Bathroom', 'Wi-Fi'],
-    department: 'Orthopedics'
-  },
-  {
-    id: 'R008',
-    roomNumber: '104',
-    floor: 1,
-    type: 'Semi-Private',
-    status: 'Occupied',
-    bedCapacity: 2,
-    occupiedBeds: 1,
-    dailyRate: 150,
-    amenities: ['AC', 'TV', 'Shared Bathroom', 'Wi-Fi'],
-    department: 'General Medicine'
-  },
-  {
-    id: 'R009',
-    roomNumber: '401',
-    floor: 4,
-    type: 'Deluxe',
-    status: 'Available',
-    bedCapacity: 1,
-    occupiedBeds: 0,
-    dailyRate: 350,
-    amenities: ['AC', 'Smart TV', 'Private Bathroom', 'Wi-Fi', 'Sofa', 'Refrigerator', 'Microwave'],
-    department: 'VIP'
-  },
-  {
-    id: 'R010',
-    roomNumber: '501',
-    floor: 5,
-    type: 'Suite',
-    status: 'Available',
-    bedCapacity: 1,
-    occupiedBeds: 0,
-    dailyRate: 600,
-    amenities: ['AC', 'Smart TV', 'Luxury Bathroom', 'Wi-Fi', 'Living Area', 'Kitchen', 'Butler Service'],
-    department: 'VIP'
-  },
-  {
-    id: 'R011',
-    roomNumber: '105',
-    floor: 1,
-    type: 'General',
-    status: 'Maintenance',
-    bedCapacity: 4,
-    occupiedBeds: 0,
-    dailyRate: 100,
-    amenities: ['AC', 'TV', 'Shared Bathroom'],
-    department: 'General Medicine'
-  },
-  {
-    id: 'R012',
-    roomNumber: '203',
-    floor: 2,
-    type: 'Private',
-    status: 'Reserved',
-    bedCapacity: 1,
-    occupiedBeds: 0,
-    dailyRate: 250,
-    amenities: ['AC', 'TV', 'Private Bathroom', 'Wi-Fi', 'Refrigerator'],
-    department: 'Maternity'
-  }
-];
-
-// Mock room assignments
-const mockRoomAssignments: RoomAssignment[] = [
-  {
-    id: 'RA001',
-    patientId: 'P001',
-    patientName: 'John Smith',
-    roomId: 'R004',
-    roomNumber: '202',
-    roomType: 'Private',
-    checkInDate: '2024-01-15',
-    dailyRate: 250,
-    totalDays: 3,
-    totalCharges: 750,
-    status: 'Active',
-    assignedBy: 'Dr. Sarah Johnson',
-    bedNumber: 1
-  }
-];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Fetch all rooms
- */
-export const fetchRooms = async (): Promise<Room[]> => {
-  await delay(300);
-  return [...mockRooms];
+const ROOM_TYPE_MAP: Record<string, Room['type']> = {
+  general: 'General',
+  private: 'Private',
+  icu: 'ICU',
+  semi_private: 'Semi-Private',
+  deluxe: 'Deluxe',
+  suite: 'Suite',
 };
 
-/**
- * Fetch available rooms (for autosuggest)
- */
-export const fetchAvailableRooms = async (): Promise<Room[]> => {
-  await delay(200);
-  return mockRooms.filter(room => 
-    room.status === 'Available' || 
-    (room.status === 'Occupied' && room.occupiedBeds < room.bedCapacity)
-  );
+const ROOM_STATUS_MAP: Record<string, Room['status']> = {
+  available: 'Available',
+  occupied: 'Occupied',
+  maintenance: 'Maintenance',
+  reserved: 'Reserved',
 };
 
-/**
- * Search rooms by number, type, or department
- */
-export const searchRooms = async (query: string): Promise<Room[]> => {
-  await delay(200);
-  const lowerQuery = query.toLowerCase();
-  return mockRooms.filter(room => 
-    room.roomNumber.toLowerCase().includes(lowerQuery) ||
-    room.type.toLowerCase().includes(lowerQuery) ||
-    room.department.toLowerCase().includes(lowerQuery)
-  );
-};
-
-/**
- * Get room by ID
- */
-export const getRoomById = async (id: string): Promise<Room | null> => {
-  await delay(200);
-  return mockRooms.find(room => room.id === id) || null;
-};
-
-/**
- * Fetch room assignments for a patient
- */
-export const fetchPatientRoomAssignments = async (patientId: string): Promise<RoomAssignment[]> => {
-  await delay(300);
-  return mockRoomAssignments.filter(ra => ra.patientId === patientId);
-};
-
-/**
- * Assign room to patient
- */
-export const assignRoom = async (assignment: Omit<RoomAssignment, 'id'>): Promise<RoomAssignment> => {
-  await delay(400);
-  
-  const newAssignment: RoomAssignment = {
-    ...assignment,
-    id: `RA${String(mockRoomAssignments.length + 1).padStart(3, '0')}`
-  };
-  
-  mockRoomAssignments.push(newAssignment);
-  
-  // Update room status
-  const roomIndex = mockRooms.findIndex(r => r.id === assignment.roomId);
-  if (roomIndex !== -1) {
-    mockRooms[roomIndex].occupiedBeds += 1;
-    if (mockRooms[roomIndex].occupiedBeds >= mockRooms[roomIndex].bedCapacity) {
-      mockRooms[roomIndex].status = 'Occupied';
-    }
-  }
-  
-  return newAssignment;
-};
-
-/**
- * Update room assignment
- */
-export const updateRoomAssignment = async (id: string, updates: Partial<RoomAssignment>): Promise<RoomAssignment> => {
-  await delay(400);
-  const index = mockRoomAssignments.findIndex(ra => ra.id === id);
-  if (index === -1) throw new Error('Room assignment not found');
-  
-  mockRoomAssignments[index] = { ...mockRoomAssignments[index], ...updates };
-  return mockRoomAssignments[index];
-};
-
-/**
- * Check out patient from room
- */
-export const checkOutPatient = async (assignmentId: string, checkOutDate: string): Promise<RoomAssignment> => {
-  await delay(400);
-  const assignment = mockRoomAssignments.find(ra => ra.id === assignmentId);
-  if (!assignment) throw new Error('Room assignment not found');
-  
-  // Calculate total days and charges
-  const checkIn = new Date(assignment.checkInDate);
-  const checkOut = new Date(checkOutDate);
-  const days = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-  
-  const updatedAssignment = {
-    ...assignment,
-    checkOutDate,
-    totalDays: days,
-    totalCharges: days * assignment.dailyRate,
-    status: 'Completed' as const
-  };
-  
-  // Update assignment
-  const index = mockRoomAssignments.findIndex(ra => ra.id === assignmentId);
-  mockRoomAssignments[index] = updatedAssignment;
-  
-  // Update room status
-  const roomIndex = mockRooms.findIndex(r => r.id === assignment.roomId);
-  if (roomIndex !== -1) {
-    mockRooms[roomIndex].occupiedBeds -= 1;
-    if (mockRooms[roomIndex].occupiedBeds < mockRooms[roomIndex].bedCapacity) {
-      mockRooms[roomIndex].status = 'Available';
-    }
-  }
-  
-  return updatedAssignment;
-};
-
-/**
- * Update a room's status and/or details
- */
-export const updateRoom = async (id: string, updates: Partial<Room>): Promise<Room> => {
-  await delay(300);
-  const index = mockRooms.findIndex(r => r.id === id);
-  if (index === -1) throw new Error('Room not found');
-  mockRooms[index] = { ...mockRooms[index], ...updates };
-  return { ...mockRooms[index] };
-};
-
-/**
- * Add a new room
- */
-export const addRoom = async (room: Omit<Room, 'id'>): Promise<Room> => {
-  await delay(300);
-  const newRoom: Room = { ...room, id: `R${String(mockRooms.length + 1).padStart(3, '0')}` };
-  mockRooms.push(newRoom);
-  return { ...newRoom };
-};
-
-/**
- * Get room statistics
- */
-export const getRoomStats = async () => {
-  await delay(300);
-  const totalRooms = mockRooms.length;
-  const availableRooms = mockRooms.filter(r => r.status === 'Available').length;
-  const occupiedRooms = mockRooms.filter(r => r.status === 'Occupied').length;
-  const maintenanceRooms = mockRooms.filter(r => r.status === 'Maintenance').length;
-  const totalBeds = mockRooms.reduce((sum, r) => sum + r.bedCapacity, 0);
-  const occupiedBeds = mockRooms.reduce((sum, r) => sum + r.occupiedBeds, 0);
-  const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-  
+function mapRoom(raw: any): Room {
+  const type = ROOM_TYPE_MAP[String(raw.type || '').toLowerCase()] || 'General';
+  const status = ROOM_STATUS_MAP[String(raw.status || '').toLowerCase()] || 'Available';
   return {
-    totalRooms,
-    availableRooms,
-    occupiedRooms,
-    maintenanceRooms,
-    totalBeds,
-    occupiedBeds,
-    occupancyRate
+    id: raw._id || raw.id || '',
+    roomNumber: raw.room_number || raw.roomNumber || '',
+    floor: raw.floor ?? 1,
+    type,
+    status,
+    bedCapacity: raw.bed_capacity ?? raw.bedCapacity ?? 1,
+    occupiedBeds: raw.occupied_beds ?? raw.occupiedBeds ?? 0,
+    dailyRate: raw.daily_rate ?? raw.dailyRate ?? 0,
+    amenities: Array.isArray(raw.amenities) ? raw.amenities : [],
+    department: raw.department || '',
   };
+}
+
+function mapAdmissionToAssignment(raw: any): RoomAssignment {
+  const checkIn = raw.check_in_date || raw.checkInDate || raw.admission_date || '';
+  const checkOut = raw.check_out_date || raw.checkOutDate || raw.discharge_date || undefined;
+  let totalDays = raw.total_days ?? raw.totalDays ?? 0;
+  if (!totalDays && checkIn) {
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = checkOut ? new Date(checkOut) : new Date();
+    totalDays = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+  }
+  const dailyRate = raw.daily_rate ?? raw.dailyRate ?? 0;
+  return {
+    id: raw._id || raw.id || '',
+    patientId: raw.patient_id || raw.patientId || '',
+    patientName: raw.patient_name || raw.patientName || '',
+    roomId: raw.room_id || raw.roomId || '',
+    roomNumber: raw.room_number || raw.roomNumber || '',
+    roomType: raw.room_type || raw.roomType || '',
+    checkInDate: checkIn,
+    checkOutDate: checkOut,
+    dailyRate,
+    totalDays,
+    totalCharges: totalDays * dailyRate,
+    status: (raw.status === 'active' || raw.status === 'Active') ? 'Active' : 'Completed',
+    assignedBy: raw.assigned_by || raw.assignedBy || '',
+    bedNumber: raw.bed_number ?? raw.bedNumber,
+  };
+}
+
+export const fetchRooms = async (): Promise<Room[]> => {
+  const response = await apiClient.get('/rooms', { params: { limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapRoom);
+};
+
+export const fetchAvailableRooms = async (): Promise<Room[]> => {
+  const response = await apiClient.get('/rooms/available');
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapRoom);
+};
+
+export const searchRooms = async (query: string): Promise<Room[]> => {
+  const response = await apiClient.get('/rooms', { params: { search: query, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapRoom);
+};
+
+export const getRoomById = async (id: string): Promise<Room | null> => {
+  try {
+    const response = await apiClient.get(`/rooms/${id}`);
+    return mapRoom(response.data);
+  } catch {
+    return null;
+  }
+};
+
+export const fetchPatientRoomAssignments = async (patientId: string): Promise<RoomAssignment[]> => {
+  const response = await apiClient.get('/admissions', { params: { patient_id: patientId, status: 'active' } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapAdmissionToAssignment);
+};
+
+export const assignRoom = async (assignment: Omit<RoomAssignment, 'id'>): Promise<RoomAssignment> => {
+  const body = {
+    patient_id: assignment.patientId,
+    room_id: assignment.roomId,
+    check_in_date: assignment.checkInDate,
+    daily_rate: assignment.dailyRate,
+    bed_number: assignment.bedNumber,
+    assigned_by: assignment.assignedBy,
+  };
+  const response = await apiClient.post('/admissions', body);
+  return mapAdmissionToAssignment(response.data);
+};
+
+export const updateRoomAssignment = async (id: string, updates: Partial<RoomAssignment>): Promise<RoomAssignment> => {
+  const response = await apiClient.patch(`/admissions/${id}`, updates);
+  return mapAdmissionToAssignment(response.data);
+};
+
+export const checkOutPatient = async (assignmentId: string, checkOutDate: string): Promise<RoomAssignment> => {
+  const response = await apiClient.post(`/admissions/${assignmentId}/discharge`, { check_out_date: checkOutDate });
+  return mapAdmissionToAssignment(response.data);
+};
+
+export const updateRoom = async (id: string, updates: Partial<Room>): Promise<Room> => {
+  const body: any = {};
+  if (updates.roomNumber !== undefined) body.room_number = updates.roomNumber;
+  if (updates.type !== undefined) body.type = updates.type.toLowerCase().replace('-', '_').replace(' ', '_');
+  if (updates.status !== undefined) body.status = updates.status.toLowerCase();
+  if (updates.bedCapacity !== undefined) body.bed_capacity = updates.bedCapacity;
+  if (updates.occupiedBeds !== undefined) body.occupied_beds = updates.occupiedBeds;
+  if (updates.dailyRate !== undefined) body.daily_rate = updates.dailyRate;
+  if (updates.amenities !== undefined) body.amenities = updates.amenities;
+  if (updates.department !== undefined) body.department = updates.department;
+  if (updates.floor !== undefined) body.floor = updates.floor;
+  const response = await apiClient.patch(`/rooms/${id}`, body);
+  return mapRoom(response.data);
+};
+
+export const addRoom = async (room: Omit<Room, 'id'>): Promise<Room> => {
+  const body = {
+    room_number: room.roomNumber,
+    floor: room.floor,
+    type: room.type.toLowerCase().replace('-', '_').replace(' ', '_'),
+    status: room.status.toLowerCase(),
+    bed_capacity: room.bedCapacity,
+    occupied_beds: room.occupiedBeds,
+    daily_rate: room.dailyRate,
+    amenities: room.amenities,
+    department: room.department,
+  };
+  const response = await apiClient.post('/rooms', body);
+  return mapRoom(response.data);
+};
+
+export const getRoomStats = async () => {
+  const response = await apiClient.get('/rooms/stats');
+  return response.data;
 };
