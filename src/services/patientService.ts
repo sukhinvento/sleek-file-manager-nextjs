@@ -5,14 +5,19 @@ export interface Patient {
   id: string;
   patientId: string;
   name: string;
-  age: number;
+  dob?: string;             // ISO date string "YYYY-MM-DD" — source of truth for age
+  age: number;              // computed from dob on read
   gender: string;
   phone: string;
   email: string;
   address: string;
   bloodGroup: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  allergies?: string[] | string;
+  existingConditions?: string[] | string;
   lastVisit: string;
-  status: 'Active' | 'Admitted' | 'Discharged' | 'Critical';
+  status: 'Active' | 'Admitted' | 'Discharged' | 'Critical' | 'Registered';
   doctor: string;
   department: string;
   // Tracking codes
@@ -34,6 +39,7 @@ const STATUS_MAP: Record<string, Patient['status']> = {
   discharged: 'Discharged',
   deceased: 'Critical',
   critical: 'Critical',
+  registered: 'Registered',
 };
 
 function computeAge(dob: string): number {
@@ -52,12 +58,17 @@ function mapPatient(raw: any): Patient {
     id: raw._id || raw.id || '',
     patientId: raw.patient_id || '',
     name: [raw.first_name, raw.last_name].filter(Boolean).join(' '),
+    dob: raw.dob || '',
     age: computeAge(raw.dob),
     gender: raw.gender || '',
     phone: raw.phone || '',
     email: raw.email || '',
     address: raw.address || '',
     bloodGroup: raw.blood_group || '',
+    emergencyContactName: raw.emergency_contact_name || raw.emergency_contact || '',
+    emergencyContactPhone: raw.emergency_contact_phone || raw.emergency_phone || '',
+    allergies: Array.isArray(raw.allergies) ? raw.allergies : (raw.allergies ? [raw.allergies] : []),
+    existingConditions: Array.isArray(raw.existing_conditions) ? raw.existing_conditions : (raw.existing_conditions ? [raw.existing_conditions] : []),
     lastVisit: raw.updatedAt ? raw.updatedAt.split('T')[0] : '',
     status,
     doctor: '',
@@ -72,11 +83,19 @@ function mapPatient(raw: any): Patient {
  * Fetch patients with pagination
  * GET /patients?page=1&limit=50
  */
-export const fetchPatients = async (page: number = 1, limit: number = 50): Promise<Patient[]> => {
-  const response = await apiClient.get('/patients', { params: { page, limit } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapPatient);
+export const fetchPatients = async (page = 1, limit = 25, search?: string): Promise<{ data: Patient[]; total: number; page: number; limit: number }> => {
+  const params: Record<string, any> = { page, limit };
+  if (search?.trim()) params.search = search.trim();
+  const response = await apiClient.get('/patients', { params });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapPatient),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
+
 
 /**
  * Fetch a single patient by ID
@@ -96,19 +115,35 @@ export const fetchPatientById = async (id: string): Promise<Patient | null> => {
  * POST /patients
  */
 export const createPatient = async (patient: Omit<Patient, 'id'>): Promise<Patient> => {
-  const nameParts = patient.name.split(' ');
-  const body = {
+  const nameParts = patient.name.trim().split(/\s+/);
+  const body: Record<string, any> = {
     first_name: nameParts[0] || '',
     last_name: nameParts.slice(1).join(' ') || '',
     gender: patient.gender,
     phone: patient.phone,
-    email: patient.email,
-    address: patient.address,
-    blood_group: patient.bloodGroup,
-    department: patient.department,
-    barcode: patient.barcode,
-    rfid_tag: patient.rfidTag,
+    email: patient.email || undefined,
+    address: patient.address || undefined,
+    blood_group: patient.bloodGroup || undefined,
+    department: patient.department || undefined,
+    barcode: patient.barcode || undefined,
+    rfid_tag: patient.rfidTag || undefined,
   };
+  // Date of birth — pass through if provided
+  if (patient.dob) body.dob = patient.dob;
+  // Emergency contact
+  if (patient.emergencyContactName) body.emergency_contact_name = patient.emergencyContactName;
+  if (patient.emergencyContactPhone) body.emergency_contact_phone = patient.emergencyContactPhone;
+  // Medical history
+  if (patient.allergies) {
+    body.allergies = Array.isArray(patient.allergies)
+      ? patient.allergies
+      : patient.allergies.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+  if (patient.existingConditions) {
+    body.existing_conditions = Array.isArray(patient.existingConditions)
+      ? patient.existingConditions
+      : patient.existingConditions.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
   const response = await apiClient.post('/patients', body);
   return mapPatient(response.data);
 };
@@ -165,7 +200,19 @@ export const deletePatient = async (id: string): Promise<boolean> => {
  */
 export const fetchPatientStats = async () => {
   const response = await apiClient.get('/patients/stats');
-  return response.data;
+  const raw = response.data;
+  const byStatus: { _id: string | null; count: number }[] = raw.byStatus ?? [];
+  const get = (status: string) => byStatus.find(s => s._id === status)?.count ?? 0;
+  return {
+    totalPatients:     byStatus.reduce((sum, s) => sum + s.count, 0),
+    activePatients:    get('active'),
+    admittedPatients:  get('admitted'),
+    dischargedPatients:get('discharged'),
+    criticalPatients:  get('critical'),
+    totalDepartments:  (raw.byDepartment ?? []).length,
+    averageAge: 0,
+    bloodGroups: 0,
+  };
 };
 
 /**

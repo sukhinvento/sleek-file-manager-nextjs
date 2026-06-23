@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { StockItem } from '@/types/purchaseOrder';
 import { EntityOption } from '@/types/shared';
 import { toast } from '@/hooks/use-toast';
 import * as salesOrderService from '@/services/salesOrderService';
+import { fetchActiveTaxes } from '@/services/taxService';
 
 // Design tokens
 const PRIMARY = '#385a9f';
@@ -29,7 +30,7 @@ const PAYMENT_METHODS = [
   { value: 'Insurance', label: 'Insurance', icon: Shield },
 ];
 
-const GST_RATES = [0, 5, 12, 18];
+const FALLBACK_GST_RATES = [5, 12, 18];
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -55,12 +56,37 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
   const [amountTendered, setAmountTendered] = useState('');
   const [saleType, setSaleType] = useState<'cash' | 'credit'>('cash'); // cash memo vs credit (khata)
   const [doctorName, setDoctorName] = useState(''); // for prescription-based sales
-  const [gstRate, setGstRate] = useState(0);
+  const [gstRate, setGstRate] = useState(FALLBACK_GST_RATES[0]);
 
   // Processing state
   const [processing, setProcessing] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<SalesOrder | null>(null);
+
+  // Tax slabs from API
+  const [gstRates, setGstRates] = useState<number[]>(FALLBACK_GST_RATES);
+
+  // Per-item stock validation: item_id (or index key) → over-stock amount
+  const [stockErrors, setStockErrors] = useState<Record<string, number>>({});
+
+  // Available stock per item (keyed by item_id or name)
+  const [stockMap, setStockMap] = useState<Record<string, number>>({});
+
+  // Fetch tax slabs on mount
+  useEffect(() => {
+    fetchActiveTaxes('sales')
+      .then((taxes) => {
+        const rates = taxes
+          .filter(t => t.rate_type === 'percentage' && t.status === 'active')
+          .map(t => t.rate);
+        const unique = Array.from(new Set(rates)).sort((a, b) => a - b);
+        if (unique.length > 0) {
+          setGstRates(unique);
+          setGstRate(unique[0]); // default to lowest configured slab
+        }
+      })
+      .catch(() => {/* keep fallback */});
+  }, []);
 
   // Calculations
   const subtotal = useMemo(() => round2(cartItems.reduce((sum, item) => sum + item.subtotal, 0)), [cartItems]);
@@ -72,16 +98,37 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
 
   // Add item from autosuggest
   const handleAddItem = useCallback((stockItem: StockItem) => {
+    // Track available stock for this item
+    const itemKey = stockItem.id || stockItem.name;
+    setStockMap(prev => ({ ...prev, [itemKey]: stockItem.stock }));
+
     setCartItems((prev) => {
       const existing = prev.findIndex((i) => i.item_id === stockItem.id || i.name === stockItem.name);
       if (existing >= 0) {
+        const newQty = prev[existing].qty + 1;
+        if (newQty > stockItem.stock) {
+          toast({
+            title: 'Insufficient Stock',
+            description: `Only ${stockItem.stock} units of "${stockItem.name}" available.`,
+            variant: 'destructive',
+          });
+          return prev;
+        }
         const updated = [...prev];
         updated[existing] = {
           ...updated[existing],
-          qty: updated[existing].qty + 1,
-          subtotal: round2((updated[existing].qty + 1) * updated[existing].unitPrice),
+          qty: newQty,
+          subtotal: round2(newQty * updated[existing].unitPrice),
         };
         return updated;
+      }
+      if (stockItem.stock <= 0) {
+        toast({
+          title: 'Out of Stock',
+          description: `"${stockItem.name}" has no stock available.`,
+          variant: 'destructive',
+        });
+        return prev;
       }
       return [...prev, {
         id: undefined,
@@ -108,18 +155,31 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
     });
   }, [handleAddItem]);
 
-  // Cart item changes from OrderItemsTable
+  // Cart item changes from OrderItemsTable — validate qty against available stock
   const handleCartChange = useCallback((items: SalesOrderItem[]) => {
-    setCartItems(items.map(item => ({
-      ...item,
-      subtotal: round2(item.qty * item.unitPrice * (1 - (item.discount || 0) / 100)),
-    })));
-  }, []);
+    const newErrors: Record<string, number> = {};
+    const validated = items.map((item) => {
+      const key = item.item_id || item.name;
+      const available = stockMap[key];
+      const recalcSubtotal = round2(item.qty * item.unitPrice * (1 - (item.discount || 0) / 100));
+      if (available !== undefined && item.qty > available) {
+        newErrors[key] = item.qty - available;
+        return { ...item, subtotal: recalcSubtotal };
+      }
+      return { ...item, subtotal: recalcSubtotal };
+    });
+    setStockErrors(newErrors);
+    setCartItems(validated);
+  }, [stockMap]);
 
   // Complete sale
   const handleCompleteSale = async () => {
     if (cartItems.length === 0) {
       toast({ title: 'Empty Cart', description: 'Add items before completing the sale.', variant: 'destructive' });
+      return;
+    }
+    if (Object.keys(stockErrors).length > 0) {
+      toast({ title: 'Stock Error', description: 'One or more items exceed available stock. Please adjust quantities.', variant: 'destructive' });
       return;
     }
 
@@ -134,6 +194,9 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
       const customerName = walkIn ? (walkInName || 'Walk-in Customer') : (customer?.name || 'Customer');
       const isCreditSale = saleType === 'credit';
       const gstNote = gstRate > 0 ? ` | GST ${gstRate}% (₹${taxAmount.toFixed(2)})` : '';
+      const itemsWithTax = gstRate > 0
+        ? cartItems.map(item => ({ ...item, taxSlab: gstRate }))
+        : cartItems;
       const orderData: Omit<SalesOrder, 'id'> = {
         orderNumber: '',
         customerId: walkIn ? undefined : customer?.id,
@@ -144,9 +207,11 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
         orderDate: new Date().toISOString().split('T')[0],
         deliveryDate: new Date().toISOString().split('T')[0],
         dueDate: '',
-        status: 'Processing',
+        // Cash/card/UPI sales: customer takes items immediately → Delivered
+        // Credit (Khata) sales: items pending collection → Processing
+        status: isCreditSale ? 'Processing' : 'Delivered',
         paymentStatus: isCreditSale ? 'Pending' : 'Paid',
-        items: cartItems,
+        items: itemsWithTax,
         total,
         paidAmount: isCreditSale ? 0 : total,
         paymentMethod: isCreditSale ? 'Credit' : paymentMethod,
@@ -213,6 +278,8 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
 
   const resetPOS = () => {
     setCartItems([]);
+    setStockErrors({});
+    setStockMap({});
     setCustomer(null);
     setWalkIn(true);
     setWalkInName('');
@@ -245,7 +312,7 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
             <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border pointer-events-none">
               {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
             </Badge>
-            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -276,7 +343,7 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
               {completedOrder.paymentStatus !== 'Paid' && (
                 <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 inline-block">
                   <p className="text-sm text-amber-800 font-medium">Credit to: {completedOrder.customerName}</p>
-                  <p className="text-xs text-amber-600 mt-0.5">Collect payment from Sales Orders or Billing page</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Collect payment from Sales Orders or Invoices</p>
                 </div>
               )}
             </div>
@@ -341,12 +408,37 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
                     <p className="text-xs text-muted-foreground mt-1">Search or scan items to add them here</p>
                   </div>
                 ) : (
-                  <OrderItemsTable
-                    items={cartItems}
-                    editable
-                    onItemsChange={handleCartChange}
-                    compact
-                  />
+                  <>
+                    <OrderItemsTable
+                      items={cartItems}
+                      editable
+                      onItemsChange={handleCartChange}
+                      compact
+                    />
+                    {/* Stock error banners */}
+                    {Object.keys(stockErrors).length > 0 && (
+                      <div className="mt-3 space-y-1.5">
+                        {cartItems.map((item) => {
+                          const key = item.item_id || item.name;
+                          const over = stockErrors[key];
+                          if (!over) return null;
+                          const available = stockMap[key] ?? 0;
+                          return (
+                            <div key={key} className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2">
+                              <svg className="h-3.5 w-3.5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                              </svg>
+                              <p className="text-xs text-red-700 dark:text-red-300">
+                                <span className="font-semibold">{item.name}</span>: only{' '}
+                                <span className="font-semibold">{available}</span> in stock,{' '}
+                                <span className="font-semibold">{over}</span> over limit.
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -430,11 +522,11 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
                       <span className="font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
 
-                    {/* GST rate selector */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">GST</span>
-                      <div className="flex gap-1">
-                        {GST_RATES.map((r) => (
+                    {/* GST rate selector — rates fetched from /taxes/active/list */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground shrink-0">GST</span>
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {gstRates.map((r) => (
                           <button
                             key={r}
                             onClick={() => setGstRate(r)}
@@ -512,7 +604,7 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
                     <p className="text-xs font-semibold text-amber-800">Credit Sale (Khata)</p>
                     <p className="text-xs text-amber-700 mt-1">
                       ₹{total.toLocaleString('en-IN')} will be added to the customer's ledger.
-                      Payment can be collected later from the Sales Orders or Billing page.
+                      Payment can be collected later from the Sales Orders or Invoices.
                     </p>
                   </div>
                 )}
@@ -525,7 +617,7 @@ export default function POSOverlay({ isOpen, onClose, onComplete, patients = [] 
             <div className="w-full lg:max-w-md lg:ml-auto space-y-2">
               <Button
                 onClick={handleCompleteSale}
-                disabled={processing || cartItems.length === 0}
+                disabled={processing || cartItems.length === 0 || Object.keys(stockErrors).length > 0}
                 className="w-full h-12 text-base font-bold text-white gap-2"
                 style={{ backgroundColor: accent }}
               >

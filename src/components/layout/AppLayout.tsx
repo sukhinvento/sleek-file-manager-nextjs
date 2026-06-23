@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, ChevronLeft, ChevronRight, Plus, User } from 'lucide-react';
+import { Menu, ChevronLeft, ChevronRight, Plus, User, Stethoscope, BedDouble, FlaskConical, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -46,7 +46,7 @@ export const AppLayout = ({
       '/sales-orders': 'Sales Orders',
       '/vendors': 'Vendor Management',
       '/stock-transfer': 'Stock Transfer',
-      '/billing': 'Billing',
+      '/invoices': 'Invoices',
       '/diagnostics': 'Diagnostics',
       '/patients': 'Patients',
       '/patients/admit': 'New Patient Admission',
@@ -59,13 +59,23 @@ export const AppLayout = ({
       '/analytics/usage': 'Usage Statistics',
       '/analytics/trends': 'Trends Analytics',
       '/analytics/distribution': 'Distribution Analytics',
+      '/finance/accounts': 'Chart of Accounts',
+      '/finance/journal': 'Journal Entries',
+      '/finance/aging': 'AR/AP Aging',
+      '/finance/pnl': 'P&L Statement',
+      '/finance/bank-accounts': 'Bank Accounts',
+      '/finance/payroll': 'Payroll',
+      '/finance/fixed-assets': 'Fixed Assets',
+      '/finance/balance-sheet': 'Balance Sheet',
     };
     return titleMap[pathname] || 'Dashboard';
   };
-  const getCreateButtonConfig = (pathname: string) => {
+  const getCreateButtonConfig = (pathname: string, search: string = '') => {
+    const tab = new URLSearchParams(search).get('tab') ?? 'ipd';
     const configMap: Record<string, {
       text: string;
       action: () => void;
+      items?: { label: string; icon?: React.ReactNode; action: () => void }[];
     }> = {
       '/inventory-dashboard': {
         text: 'Add Item',
@@ -113,8 +123,25 @@ export const AppLayout = ({
         }
       },
       '/patients': {
-        text: 'Admit Patient',
-        action: () => navigate('/patients/admit'),
+        text: 'Add Patient',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'patient' } })),
+        items: [
+          {
+            label: 'Add Patient',
+            icon: <User className="h-3.5 w-3.5" />,
+            action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'patient' } })),
+          },
+          {
+            label: 'Admit Patient (IPD)',
+            icon: <BedDouble className="h-3.5 w-3.5" />,
+            action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'ipd' } })),
+          },
+          {
+            label: 'Register OPD Visit',
+            icon: <Stethoscope className="h-3.5 w-3.5" />,
+            action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'opd' } })),
+          },
+        ],
       },
       '/billing': {
         text: 'New Invoice',
@@ -128,24 +155,36 @@ export const AppLayout = ({
       },
       '/diagnostics': {
         text: 'Book Test',
-        action: () => {
-          window.dispatchEvent(new CustomEvent('openCreateModal', {
-            detail: {
-              type: 'diagnostic'
-            }
-          }));
-        }
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'diagnostic' } })),
       },
       '/stock-transfer': {
         text: 'New Transfer',
         action: () => {
           window.dispatchEvent(new CustomEvent('openCreateModal', {
-            detail: {
-              type: 'stock-transfer'
-            }
+            detail: { type: 'stock-transfer' }
           }));
         }
-      }
+      },
+      '/finance/accounts': {
+        text: 'Add Account',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'chart-of-accounts' } })),
+      },
+      '/finance/journal': {
+        text: 'New Entry',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'journal-entry' } })),
+      },
+      '/finance/bank-accounts': {
+        text: 'Add Account',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'bank-account' } })),
+      },
+      '/finance/payroll': {
+        text: 'Run Payroll',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'payroll' } })),
+      },
+      '/finance/fixed-assets': {
+        text: 'Add Asset',
+        action: () => window.dispatchEvent(new CustomEvent('openCreateModal', { detail: { type: 'fixed-asset' } })),
+      },
     };
     return configMap[pathname];
   };
@@ -174,15 +213,38 @@ export const AppLayout = ({
         {/* Right - Create Button, Notifications and Profile */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Create Button */}
-          {getCreateButtonConfig(location.pathname) && (
-            <Button
-              onClick={getCreateButtonConfig(location.pathname)?.action}
-              className="action-button-primary h-8 w-8 p-0"
-              size="sm"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
+          {(() => {
+            const cfg = getCreateButtonConfig(location.pathname, location.search);
+            if (!cfg) return null;
+            if (cfg.items && cfg.items.length > 0) {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="action-button-primary h-8 w-8 p-0" size="sm">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {cfg.items.map((item, i) => (
+                      <DropdownMenuItem key={i} onClick={item.action} className="gap-2 text-sm">
+                        {item.icon}
+                        {item.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <Button
+                onClick={cfg.action}
+                className="action-button-primary h-8 w-8 p-0"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            );
+          })()}
 
           {/* Notification + User section with border */}
           <div className="flex items-center gap-1 border border-border rounded-full px-1 py-0.5">
@@ -230,7 +292,7 @@ export const AppLayout = ({
       
       {/* Desktop Header - Only show on desktop */}
       <div className={`fixed top-0 right-0 z-20 transition-all duration-300 ${isCollapsed ? 'lg:left-16' : 'lg:left-60'} left-0 hidden lg:block`}>
-        <PageHeader title={getPageTitle(location.pathname)} notificationCount={0} userName={userName} userEmail={userEmail} userRole={userRole} onProfileClick={() => navigate('/settings')} onCreateClick={getCreateButtonConfig(location.pathname)?.action} createButtonText={getCreateButtonConfig(location.pathname)?.text} onLogout={logout} />
+        <PageHeader title={getPageTitle(location.pathname)} notificationCount={0} userName={userName} userEmail={userEmail} userRole={userRole} onProfileClick={() => navigate('/settings')} onCreateClick={getCreateButtonConfig(location.pathname, location.search)?.items ? undefined : getCreateButtonConfig(location.pathname, location.search)?.action} createButtonText={getCreateButtonConfig(location.pathname, location.search)?.text} createButtonItems={getCreateButtonConfig(location.pathname, location.search)?.items} onLogout={logout} />
       </div>
 
       <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-60'}`}>
@@ -240,7 +302,7 @@ export const AppLayout = ({
               {children}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 min-w-0">
+            <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 min-w-0">
               {children}
             </div>
           )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,13 +17,16 @@ import {
 import {
   X, Save, Edit3, Trash2, Package, AlertCircle,
   MapPin, Building2, FlaskConical, Tag, Box, IndianRupee,
-  ArrowLeft, RotateCcw,
+  ArrowLeft, RotateCcw, Plus, Warehouse,
 } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 import { BarcodeQRManager } from './BarcodeQRManager';
 import { VendorAutosuggestInput } from './VendorAutosuggestInput';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from '@/hooks/use-toast';
+import { fetchItemLocations, assignItemLocation, InventoryLocationStock } from '@/services/inventoryService';
+import { fetchLocationLookup } from '@/services/locationService';
+import { LocationLookupOption } from '@/types/inventory';
 
 // Design tokens (matching DoctorSheet)
 const PRIMARY = '#385a9f';
@@ -84,7 +88,60 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isEdit = mode === 'edit' || mode === 'add';
 
+  // Location stock tracking
+  const [locationStocks, setLocationStocks] = useState<InventoryLocationStock[]>([]);
+  const [allLocations, setAllLocations] = useState<LocationLookupOption[]>([]);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLocId, setNewLocId] = useState('');
+  const [newSubLoc, setNewSubLoc] = useState('');
+  const [newQty, setNewQty] = useState(0);
+  const [savingLoc, setSavingLoc] = useState(false);
+
   useEffect(() => { setForm(item ?? { ...EMPTY_ITEM }); setErrors({}); }, [item]);
+
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  // Load location stocks when viewing an existing item — always reset first
+  useEffect(() => {
+    if (item?.id && mode !== 'add') {
+      setLocationStocks([]);           // Clear stale data immediately
+      setLoadingLocations(true);
+      fetchItemLocations(item.id)
+        .then(setLocationStocks)
+        .catch(() => setLocationStocks([]))
+        .finally(() => setLoadingLocations(false));
+      fetchLocationLookup().then(setAllLocations).catch(() => {});
+    } else if (mode === 'add') {
+      setLocationStocks([]);           // Clear when switching to add mode
+    }
+  }, [item?.id, mode]);
+
+  const handleAssignLocation = async () => {
+    if (!item?.id || !newLocId || newQty < 0) return;
+    const loc = allLocations.find(l => l.value === newLocId);
+    if (!loc) return;
+    setSavingLoc(true);
+    try {
+      const result = await assignItemLocation(item.id, newLocId, loc.label, newQty, newSubLoc || undefined);
+      if (result) {
+        // Refresh the list
+        const updated = await fetchItemLocations(item.id);
+        setLocationStocks(updated);
+        setShowAddLocation(false);
+        setNewLocId('');
+        setNewSubLoc('');
+        setNewQty(0);
+        toast({ title: 'Location Updated', description: `Stock assigned to ${loc.label}${newSubLoc ? ` (${newSubLoc})` : ''}`, variant: 'success' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to assign location', variant: 'destructive' });
+    } finally {
+      setSavingLoc(false);
+    }
+  };
+
+  // Get sub-locations for the selected location
+  const selectedLocSubLocations = allLocations.find(l => l.value === newLocId)?.sub_locations || [];
 
   const upd = (key: string, val: any) => {
     setForm((p) => ({ ...p, [key]: val }));
@@ -149,36 +206,28 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
       <Sheet open={!!item || mode === 'add'} onOpenChange={(open) => { if (!open) onClose(); }}>
         <SheetContent side="right" className="w-full sm:w-[680px] sm:max-w-[680px] p-0 flex flex-col h-full bg-background">
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              {mode !== 'add' && item && (
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
-                  <Package className="h-5 w-5 text-primary" />
-                </div>
-              )}
-              <div className="min-w-0">
-                <h2 className="text-base font-bold text-foreground truncate">
+          {/* Header — title + subtitle + close only; CTAs are in the footer */}
+          <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-bold text-foreground leading-tight break-words">
                   {mode === 'add' ? 'Add New Item' : mode === 'edit' ? `Edit — ${item?.name}` : item?.name}
-                </h2>
+                </h1>
                 {mode === 'view' && item && (
-                  <p className="text-xs text-muted-foreground mt-0.5">SKU: {item.sku} · {item.category}</p>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">SKU: {item.sku} · {item.category}</p>
+                )}
+                {mode === 'add' && (
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Add a new item to inventory</p>
+                )}
+                {mode === 'edit' && item && (
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">SKU: {item.sku} · {item.category}</p>
                 )}
               </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {mode === 'view' && (
-                <>
-                  {onDelete && (
-                    <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs">
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                    </Button>
-                  )}
-                </>
-              )}
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
-                <X className="h-4 w-4 text-muted-foreground" />
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0 text-muted-foreground">
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -224,7 +273,7 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
                   </div>
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="p-3 text-center bg-card">
-                      <IndianRupee className="h-4 w-4 mx-auto mb-1.5" className="text-primary" />
+                      <IndianRupee className="h-4 w-4 mx-auto mb-1.5 text-primary" />
                       <p className="text-lg font-bold text-foreground">
                         ₹{item.unitPrice.toLocaleString('en-IN')}
                       </p>
@@ -283,6 +332,108 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
                     disabled
                   />
                 )}
+
+                {/* Location Stock Breakdown */}
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Warehouse className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">Location Stock</span>
+                      {loadingLocations && <span className="text-[10px] text-muted-foreground animate-pulse">Loading…</span>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
+                        onClick={() => {
+                          if (!item?.id) return;
+                          setLoadingLocations(true);
+                          fetchItemLocations(item.id)
+                            .then(setLocationStocks)
+                            .catch(() => setLocationStocks([]))
+                            .finally(() => setLoadingLocations(false));
+                        }}>
+                        ↻
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setShowAddLocation(true); fetchLocationLookup().then(setAllLocations); }}>
+                        <Plus className="h-3 w-3 mr-1" /> Assign
+                      </Button>
+                    </div>
+                  </div>
+                  {loadingLocations ? (
+                    <div className="px-4 py-6 text-center text-xs text-muted-foreground animate-pulse">
+                      Fetching location data…
+                    </div>
+                  ) : locationStocks.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                      No location assignments yet. Click "Assign" to add stock locations.
+                    </div>
+                  ) : (
+                    <div>
+                      {locationStocks.map((ls, idx) => (
+                        <div key={ls.id} className={`flex items-center justify-between px-4 py-2.5 border-b border-border/50 last:border-0 ${idx % 2 === 0 ? 'bg-card' : 'bg-primary/[0.02]'}`}>
+                          <div className="flex-1">
+                            <span className="text-xs font-semibold text-foreground">{ls.locationName}</span>
+                            {ls.subLocation && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{ls.subLocation}</span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs font-bold text-foreground">{ls.quantity}</span>
+                            <span className="text-[10px] text-muted-foreground ml-1">units</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between px-4 py-2 bg-primary/[0.06] border-t border-border">
+                        <span className="text-xs font-semibold text-primary">Total Across Locations</span>
+                        <span className="text-xs font-bold text-primary">{locationStocks.reduce((s, l) => s + l.quantity, 0)} units</span>
+                      </div>
+                    </div>
+                  ) /* end location stocks ternary */}
+
+                  {/* Add Location Form */}
+                  {showAddLocation && (
+                    <div className="p-4 border-t border-border space-y-3 bg-muted/30">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[10px] font-medium text-muted-foreground uppercase">Location</Label>
+                          <Select value={newLocId} onValueChange={(v) => { setNewLocId(v); setNewSubLoc(''); }}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select location" /></SelectTrigger>
+                            <SelectContent>
+                              {allLocations.map(loc => (
+                                <SelectItem key={loc.value} value={loc.value}>{loc.label} ({loc.type})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] font-medium text-muted-foreground uppercase">Shelf / Drawer</Label>
+                          {selectedLocSubLocations.length > 0 ? (
+                            <Select value={newSubLoc} onValueChange={(v) => setNewSubLoc(v === '__none__' ? '' : v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select position" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">None</SelectItem>
+                                {selectedLocSubLocations.map((sl: any) => (
+                                  <SelectItem key={sl.name} value={sl.name}>{sl.name} ({sl.type})</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input className="h-8 text-xs" value={newSubLoc} onChange={e => setNewSubLoc(e.target.value)} placeholder="e.g., Shelf A1, Drawer 3" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-end gap-3">
+                        <div className="flex-1">
+                          <Label className="text-[10px] font-medium text-muted-foreground uppercase">Quantity</Label>
+                          <Input type="number" className="h-8 text-xs" min={0} value={newQty} onChange={e => setNewQty(Number(e.target.value))} />
+                        </div>
+                        <Button size="sm" className="h-8 text-xs" onClick={handleAssignLocation} disabled={!newLocId || savingLoc}>
+                          {savingLoc ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowAddLocation(false)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -372,7 +523,11 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
                             placeholder="Enter batch number" />
                         </FieldGroup>
                         <FieldGroup label="Expiry Date">
-                          <Input type="date" value={form.expiryDate || ''} onChange={(e) => upd('expiryDate', e.target.value)} />
+                          <DatePicker
+                            date={form.expiryDate ? new Date(form.expiryDate + 'T00:00:00') : undefined}
+                            onDateChange={(d) => upd('expiryDate', d ? d.toISOString().split('T')[0] : '')}
+                            placeholder="Select expiry date"
+                          />
                         </FieldGroup>
                       </div>
                   </div>
@@ -426,6 +581,83 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
                     }));
                   }}
                 />
+
+                {/* Location Stock — only for existing items in edit mode */}
+                {mode === 'edit' && item?.id && (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Warehouse className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">Location Stock</span>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setShowAddLocation(true); fetchLocationLookup().then(setAllLocations); }}>
+                        <Plus className="h-3 w-3 mr-1" /> Assign
+                      </Button>
+                    </div>
+                    {locationStocks.length === 0 ? (
+                      <div className="px-4 py-4 text-center text-xs text-muted-foreground">
+                        No location assignments. Click "Assign" to add.
+                      </div>
+                    ) : (
+                      <div>
+                        {locationStocks.map((ls, idx) => (
+                          <div key={ls.id} className={`flex items-center justify-between px-4 py-2.5 border-b border-border/50 last:border-0 ${idx % 2 === 0 ? 'bg-card' : 'bg-primary/[0.02]'}`}>
+                            <div className="flex-1">
+                              <span className="text-xs font-semibold text-foreground">{ls.locationName}</span>
+                              {ls.subLocation && (
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{ls.subLocation}</span>
+                              )}
+                            </div>
+                            <span className="text-xs font-bold text-foreground">{ls.quantity} <span className="text-[10px] text-muted-foreground font-normal">units</span></span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {showAddLocation && (
+                      <div className="p-4 border-t border-border space-y-3 bg-muted/30">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-[10px] font-medium text-muted-foreground uppercase">Location</Label>
+                            <Select value={newLocId} onValueChange={(v) => { setNewLocId(v); setNewSubLoc(''); }}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select location" /></SelectTrigger>
+                              <SelectContent>
+                                {allLocations.map(loc => (
+                                  <SelectItem key={loc.value} value={loc.value}>{loc.label} ({loc.type})</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[10px] font-medium text-muted-foreground uppercase">Shelf / Drawer</Label>
+                            {selectedLocSubLocations.length > 0 ? (
+                              <Select value={newSubLoc} onValueChange={(v) => setNewSubLoc(v === '__none__' ? '' : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select position" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">None</SelectItem>
+                                  {selectedLocSubLocations.map((sl: any) => (
+                                    <SelectItem key={sl.name} value={sl.name}>{sl.name} ({sl.type})</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input className="h-8 text-xs" value={newSubLoc} onChange={e => setNewSubLoc(e.target.value)} placeholder="e.g., Shelf A1" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-end gap-3">
+                          <div className="flex-1">
+                            <Label className="text-[10px] font-medium text-muted-foreground uppercase">Quantity</Label>
+                            <Input type="number" className="h-8 text-xs" min={0} value={newQty} onChange={e => setNewQty(Number(e.target.value))} />
+                          </div>
+                          <Button size="sm" className="h-8 text-xs" onClick={handleAssignLocation} disabled={!newLocId || savingLoc}>
+                            {savingLoc ? 'Saving...' : 'Save'}
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowAddLocation(false)}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -458,6 +690,12 @@ export default function InventorySheet({ item, mode, onClose, onSave, onDelete }
               <Button variant="outline" size="sm" className="h-9 text-xs gap-1">
                 <RotateCcw className="h-3.5 w-3.5" /> Stock History
               </Button>
+              {onDelete && (
+                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
+                  className="h-9 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              )}
               <Button size="sm" className="h-9 text-xs ml-auto gap-1"
                 onClick={() => onSave({ ...item! })}>
                 <Edit3 className="h-3.5 w-3.5" /> Edit Item

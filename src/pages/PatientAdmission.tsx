@@ -334,12 +334,12 @@ const StepRegistration = ({ form, update }: { form: AdmissionForm; update: (k: k
     )}
 
     <div className="border-t border-border pt-4 space-y-3">
-      <SectionLabel>Emergency Contact</SectionLabel>
+      <SectionLabel>Emergency Contact <span className="text-muted-foreground/60 font-normal normal-case">(optional)</span></SectionLabel>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-        <Field label="Name" required id="emergencyContact">
+        <Field label="Name" id="emergencyContact">
           <Input id="emergencyContact" value={form.emergencyContact} onChange={e => update('emergencyContact', e.target.value)} placeholder="Contact name" />
         </Field>
-        <Field label="Phone" required id="emergencyPhone">
+        <Field label="Phone" id="emergencyPhone">
           <Input id="emergencyPhone" value={form.emergencyPhone} onChange={e => update('emergencyPhone', e.target.value)} placeholder="+91 98765 43210" />
         </Field>
       </div>
@@ -367,11 +367,11 @@ const StepRoomBooking = ({ form, update, rooms, loadingRooms }: {
   rooms: Room[]; loadingRooms: boolean;
 }) => {
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const filtered = rooms.filter(r => {
     const matchSearch = !search || r.roomNumber.includes(search) || r.department.toLowerCase().includes(search.toLowerCase());
-    const matchType = !typeFilter || r.type === typeFilter;
+    const matchType = typeFilter === 'all' || !typeFilter || r.type === typeFilter;
     return matchSearch && matchType;
   });
 
@@ -419,7 +419,7 @@ const StepRoomBooking = ({ form, update, rooms, loadingRooms }: {
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {['General', 'Semi-Private', 'Private', 'ICU', 'Deluxe', 'Suite'].map(t => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
@@ -710,13 +710,29 @@ export const PatientAdmission = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Escape key exits on step 1 (no data entered) — on later steps just goes back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (step === 1) navigate('/patients');
+        else setStep(s => Math.max(1, s - 1));
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [step, navigate]);
+
   useEffect(() => {
     roomService.fetchAvailableRooms()
       .then(r => setRooms(r))
       .catch(() => {})
       .finally(() => setLoadingRooms(false));
-    doctorService.fetchDoctors()
-      .then(d => setDoctors(d))
+    doctorService.fetchDoctors(1, 100)
+      .then(result => {
+        // fetchDoctors returns a paginated object { data, total } or array
+        const list = Array.isArray(result) ? result : (result as any).data ?? [];
+        setDoctors(list);
+      })
       .catch(() => {});
   }, []);
 
@@ -725,8 +741,19 @@ export const PatientAdmission = () => {
 
   const validateStep = (): boolean => {
     if (step === 1) {
-      if (!form.firstName || !form.lastName || !form.dob || !form.gender || !form.phone || !form.emergencyContact || !form.emergencyPhone) {
-        toast({ title: 'Missing fields', description: 'Please fill all required fields in Patient Registration.', variant: 'destructive' });
+      // Emergency contact is optional — only name, dob, gender, phone are required
+      const missing: string[] = [];
+      if (!form.firstName?.trim()) missing.push('First Name');
+      if (!form.lastName?.trim()) missing.push('Last Name');
+      if (!form.dob) missing.push('Date of Birth');
+      if (!form.gender) missing.push('Gender');
+      if (!form.phone?.trim()) missing.push('Phone');
+      if (missing.length > 0) {
+        toast({
+          title: 'Missing required fields',
+          description: `Please fill in: ${missing.join(', ')}`,
+          variant: 'destructive',
+        });
         return false;
       }
     }
@@ -735,7 +762,7 @@ export const PatientAdmission = () => {
       return false;
     }
     if (step === 3 && (!form.selectedDoctor || !form.admissionReason || !form.department)) {
-      toast({ title: 'Missing fields', description: 'Please select a doctor and provide the admission reason.', variant: 'destructive' });
+      toast({ title: 'Missing fields', description: 'Please select a doctor, department, and admission reason.', variant: 'destructive' });
       return false;
     }
     if (step === 4 && !form.paymentMode) {
@@ -762,12 +789,17 @@ export const PatientAdmission = () => {
       const newPatient = await patientService.createPatient({
         patientId: '',
         name: `${form.firstName} ${form.lastName}`,
+        dob: form.dob,
         age: 0,
         gender: form.gender,
         phone: form.phone,
         email: form.email,
         address: form.address,
         bloodGroup: form.bloodGroup,
+        emergencyContactName: form.emergencyContact,
+        emergencyContactPhone: form.emergencyPhone,
+        allergies: form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+        existingConditions: form.existingConditions ? form.existingConditions.split(',').map(s => s.trim()).filter(Boolean) : [],
         lastVisit: '',
         status: 'Admitted',
         doctor: form.selectedDoctor,
@@ -815,12 +847,14 @@ export const PatientAdmission = () => {
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">{STEP_META[step].subtitle}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/patients')}
-            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0 mt-0.5"
+            className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground gap-1.5 flex-shrink-0"
           >
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
+            <X className="h-3.5 w-3.5" /> Cancel
+          </Button>
         </div>
       </div>
 
@@ -835,9 +869,20 @@ export const PatientAdmission = () => {
 
       {/* ── Static Footer ── */}
       <div className="flex-shrink-0 border-t border-border bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        <Button variant="outline" size="sm" onClick={prev} disabled={step === 1} className="gap-1">
-          <ChevronLeft className="h-4 w-4" /> Back
-        </Button>
+        {step === 1 ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/patients')}
+            className="gap-1 text-muted-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Discard
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" onClick={prev} className="gap-1">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </Button>
+        )}
         <span className="text-xs text-muted-foreground hidden sm:block">Step {step} of {STEPS.length}</span>
         {step < 5 ? (
           <Button size="sm" onClick={next} className="gap-1">

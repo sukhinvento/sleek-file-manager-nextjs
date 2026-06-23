@@ -32,8 +32,9 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange, 
   }, [value]);
 
   useEffect(() => {
-    fetchInventoryItems()
-      .then(items =>
+    fetchInventoryItems(1, 200)
+      .then(result => {
+        const items = result.data || [];
         setAllStock(
           items.map(item => ({
             id: item.id,
@@ -43,8 +44,8 @@ export const AutosuggestInput = ({ onSelect, placeholder, value = '', onChange, 
             unitPrice: item.unitPrice,
             saleUnit: item.saleUnit,
           })),
-        ),
-      )
+        );
+      })
       .catch(() => {});
   }, []);
 

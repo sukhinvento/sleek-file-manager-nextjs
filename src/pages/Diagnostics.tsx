@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search, Filter, ArrowUpDown, Calendar, Clock, Activity, TrendingUp,
   Eye, Edit, Trash2, FileText, AlertCircle, FlaskConical, BookOpen,
   ClipboardList, CheckCircle2, Package, Timer, Stethoscope, ChevronRight,
-  ArrowUpRight, ReceiptText,
+  ArrowUpRight, ReceiptText, Plus, Droplets, Heart, Scan, TestTube2,
+  Waves, Brain, Microscope,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ import type { PatientDiagnostic, DiagnosticTest } from '@/services/diagnosticSer
 import { ModernDiagnosticOverlay } from '@/components/diagnostics/ModernDiagnosticOverlay';
 import { DiagnosticFilterModal } from '@/components/diagnostics/DiagnosticFilterModal';
 import { DiagnosticsSortModal } from '@/components/diagnostics/DiagnosticsSortModal';
+import { CreateTestCatalogModal } from '@/components/diagnostics/CreateTestCatalogModal';
 import { countActiveFilters } from '@/lib/filterUtils';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
@@ -99,33 +102,117 @@ const Tab = ({ active, icon: Icon, label, count, onClick }: { active: boolean; i
   </button>
 );
 
+// ── Category icon map ─────────────────────────────────────────────────────────
+const CAT_ICONS: Record<string, React.ElementType> = {
+  Haematology:  Droplets,
+  Biochemistry: FlaskConical,
+  Microbiology: Microscope,
+  Radiology:    Scan,
+  Cardiology:   Heart,
+  Pathology:    TestTube2,
+  Ultrasound:   Waves,
+  MRI:          Brain,
+  'CT Scan':    Scan,
+  'X-Ray':      Scan,
+  Other:        FlaskConical,
+};
+
 // ── Test Catalog card ─────────────────────────────────────────────────────────
-const TestCard = ({ test, onBook }: { test: DiagnosticTest; onBook: (t: DiagnosticTest) => void }) => {
+const TestCard = ({ test, onBook, onEdit, onDelete }: {
+  test: DiagnosticTest;
+  onBook: (t: DiagnosticTest) => void;
+  onEdit?: (t: DiagnosticTest) => void;
+  onDelete?: (t: DiagnosticTest) => void;
+}) => {
   const cs = catStyle(test.category);
+  const Icon = CAT_ICONS[test.category] ?? FlaskConical;
+
   return (
-    <Card className="shadow hover:shadow-md transition-shadow flex flex-col" style={{ background: 'hsl(0,0%,100%)', borderColor: BORDER }}>
-      <CardContent className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-2">
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border" style={{ background: cs.bg, color: cs.text, borderColor: cs.border }}>
+    <Card className="flex flex-col hover:shadow-md transition-all duration-150 overflow-hidden"
+      style={{ background: 'hsl(0,0%,100%)', borderColor: BORDER }}>
+
+      {/* Coloured top bar */}
+      <div className="h-1 w-full flex-shrink-0" style={{ background: cs.text }} />
+
+      <CardContent className="p-4 flex flex-col flex-1 gap-3">
+
+        {/* Icon + price row */}
+        <div className="flex items-start justify-between">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: cs.bg, border: `1.5px solid ${cs.border}` }}>
+            <Icon size={18} style={{ color: cs.text }} />
+          </div>
+          <div className="text-right">
+            <p className="text-base font-bold leading-none" style={{ color: TEXT_MAIN }}>
+              ₹{test.price?.toLocaleString('en-IN') ?? '—'}
+            </p>
+            <p className="text-[10px] mt-0.5" style={{ color: TEXT_MUTE }}>per test</p>
+          </div>
+        </div>
+
+        {/* Name + category */}
+        <div>
+          <h4 className="text-sm font-bold leading-snug mb-1.5" style={{ color: TEXT_MAIN }}>
+            {test.name}
+          </h4>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border inline-block"
+            style={{ background: cs.bg, color: cs.text, borderColor: cs.border }}>
             {test.category}
           </span>
-          <span className="text-sm font-bold" style={{ color: TEXT_MAIN }}>₹{test.price?.toLocaleString('en-IN') ?? '—'}</span>
         </div>
-        <h4 className="text-sm font-semibold mb-1 leading-snug" style={{ color: TEXT_MAIN }}>{test.name}</h4>
-        <p className="text-xs mb-3 line-clamp-2 flex-1" style={{ color: TEXT_MUTE }}>{test.description || test.preparation || 'No description available.'}</p>
-        <div className="flex items-center gap-3 text-xs mb-3" style={{ color: TEXT_MUTE }}>
-          <span className="flex items-center gap-1"><Timer size={11} />{test.duration || '—'}</span>
-          <span className="flex items-center gap-1"><Stethoscope size={11} />{test.department}</span>
+
+        {/* Description */}
+        <p className="text-xs leading-relaxed line-clamp-2 flex-1" style={{ color: TEXT_MUTE }}>
+          {test.description || 'No description available.'}
+        </p>
+
+        {/* Duration + department chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {test.duration && (
+            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+              style={{ background: 'hsl(220,14%,96%)', color: TEXT_MUTE }}>
+              <Timer size={10} />{test.duration}
+            </span>
+          )}
+          {test.department && (
+            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+              style={{ background: 'hsl(220,14%,96%)', color: TEXT_MUTE }}>
+              <Stethoscope size={10} />{test.department}
+            </span>
+          )}
         </div>
+
+        {/* Prep note */}
         {test.preparation && (
-          <p className="text-[11px] p-2 rounded-md mb-3 italic line-clamp-2" style={{ background: 'hsl(220,14%,96%)', color: TEXT_MUTE }}>
-            Prep: {test.preparation}
-          </p>
+          <div className="rounded-lg p-2.5 text-[11px] leading-snug"
+            style={{ background: 'hsl(220,14%,97%)', color: TEXT_MUTE, borderLeft: `3px solid ${cs.text}` }}>
+            <span className="font-semibold" style={{ color: cs.text }}>Prep: </span>
+            <span className="line-clamp-2">{test.preparation}</span>
+          </div>
         )}
-        <Button size="sm" className="w-full text-xs h-7 mt-auto" style={{ background: PRIMARY, color: '#fff' }}
-          onClick={() => onBook(test)}>
-          Book Test
-        </Button>
+
+        {/* Actions */}
+        <div className="flex gap-1.5 mt-auto pt-1">
+          <Button size="sm" className="flex-1 text-xs h-8 font-semibold"
+            style={{ background: PRIMARY, color: '#fff' }}
+            onClick={() => onBook(test)}>
+            Book Test
+          </Button>
+          {onEdit && (
+            <Button size="sm" variant="outline"
+              className="h-8 w-8 p-0 flex items-center justify-center flex-shrink-0"
+              onClick={() => onEdit(test)} title="Edit">
+              <Edit size={13} />
+            </Button>
+          )}
+          {onDelete && (
+            <Button size="sm" variant="outline"
+              className="h-8 w-8 p-0 flex items-center justify-center flex-shrink-0 text-red-500 hover:border-red-300 hover:bg-red-50"
+              onClick={() => onDelete(test)} title="Remove">
+              <Trash2 size={13} />
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -247,7 +334,12 @@ type TabId = 'bookings' | 'catalog' | 'results';
 
 export const Diagnostics = () => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState<TabId>('bookings');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = (searchParams.get('tab') as TabId) || 'bookings';
+  const setActiveTab = useCallback((tab: TabId) => {
+    setSearchParams(prev => { prev.set('tab', tab); return prev; }, { replace: true });
+  }, [setSearchParams]);
 
   // ── Data state ──────────────────────────────────────────────────────────────
   const [diagnostics, setDiagnostics] = useState<PatientDiagnostic[]>([]);
@@ -277,21 +369,23 @@ export const Diagnostics = () => {
   const [isCatalogSortModalOpen, setIsCatalogSortModalOpen] = useState(false);
   const [catalogSortConfig, setCatalogSortConfig] = useState({ field: '', direction: 'asc' as 'asc' | 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // ── Load data ───────────────────────────────────────────────────────────────
-  const loadDiagnostics = async () => {
+  const loadDiagnostics = async (page = currentPage) => {
     setIsLoadingData(true);
     try {
-      const data = await diagnosticService.fetchAllPatientDiagnostics();
-      setDiagnostics(data);
+      const result = await diagnosticService.fetchAllPatientDiagnostics(page, itemsPerPage);
+      setDiagnostics(result.data);
+      setTotalItems(result.total);
       setStats({
-        total: data.length,
-        scheduled: data.filter(d => d.status === 'Scheduled').length,
-        inProgress: data.filter(d => d.status === 'In Progress').length,
-        completed: data.filter(d => d.status === 'Completed').length,
-        urgent: data.filter(d => d.priority === 'Urgent').length,
-        emergency: data.filter(d => d.priority === 'Emergency').length,
+        total: result.total,
+        scheduled: result.data.filter(d => d.status === 'Scheduled').length,
+        inProgress: result.data.filter(d => d.status === 'In Progress').length,
+        completed: result.data.filter(d => d.status === 'Completed').length,
+        urgent: result.data.filter(d => d.priority === 'Urgent').length,
+        emergency: result.data.filter(d => d.priority === 'Emergency').length,
       });
     } catch {
       toast({ title: 'Error', description: 'Failed to load diagnostics.', variant: 'destructive' });
@@ -304,8 +398,8 @@ export const Diagnostics = () => {
     if (catalogTests.length > 0) return;
     setIsLoadingCatalog(true);
     try {
-      const data = await diagnosticService.fetchDiagnosticTests();
-      setCatalogTests(data);
+      const result = await diagnosticService.fetchDiagnosticTests(1, 100);
+      setCatalogTests(result.data);
     } catch {
       toast({ title: 'Error', description: 'Failed to load test catalog.', variant: 'destructive' });
     } finally {
@@ -313,11 +407,19 @@ export const Diagnostics = () => {
     }
   };
 
+  useEffect(() => { loadDiagnostics(currentPage); }, [currentPage]);
+
   useEffect(() => {
-    loadDiagnostics();
-    window.addEventListener('openCreateModal', (e: any) => {
+    const handler = (e: any) => {
       if (e.detail?.type === 'diagnostic') openBooking();
-    });
+      if (e.detail?.type === 'diagnostic-catalog') {
+        setEditCatalogTest(null);
+        setIsAddTestOpen(true);
+        setActiveTab('catalog');
+      }
+    };
+    window.addEventListener('openCreateModal', handler);
+    return () => window.removeEventListener('openCreateModal', handler);
   }, []);
 
   useEffect(() => {
@@ -347,11 +449,8 @@ export const Diagnostics = () => {
     return 0;
   }), [filteredBookings, sortConfig]);
 
-  const totalPages = Math.ceil(sortedBookings.length / itemsPerPage);
-  const paginatedBookings = useMemo(() => {
-    const s = (currentPage - 1) * itemsPerPage;
-    return sortedBookings.slice(s, s + itemsPerPage);
-  }, [sortedBookings, currentPage]);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedBookings = sortedBookings;
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedStatus, selectedFilters, sortConfig]);
 
@@ -424,6 +523,9 @@ export const Diagnostics = () => {
   };
 
   const [cancelTarget, setCancelTarget] = useState<PatientDiagnostic | null>(null);
+  const [isAddTestOpen, setIsAddTestOpen] = useState(false);
+  const [editCatalogTest, setEditCatalogTest] = useState<DiagnosticTest | null>(null);
+  const [catalogDeleteTarget, setCatalogDeleteTarget] = useState<DiagnosticTest | null>(null);
 
   const handleDelete = async (d: PatientDiagnostic) => {
     try {
@@ -432,6 +534,26 @@ export const Diagnostics = () => {
       toast({ title: 'Cancelled', description: 'Test cancelled.', variant: 'success' });
     } catch {
       toast({ title: 'Error', description: 'Failed to cancel.', variant: 'destructive' });
+    }
+  };
+
+  const handleCatalogTestSaved = (savedTest: DiagnosticTest) => {
+    if (editCatalogTest) {
+      setCatalogTests(prev => prev.map(t => t.id === editCatalogTest.id ? savedTest : t));
+    } else {
+      setCatalogTests(prev => [savedTest, ...prev]);
+    }
+    setIsAddTestOpen(false);
+    setEditCatalogTest(null);
+  };
+
+  const handleDeleteCatalogTest = async (test: DiagnosticTest) => {
+    try {
+      await diagnosticService.deleteDiagnosticTest(test.id);
+      setCatalogTests(prev => prev.filter(t => t.id !== test.id));
+      toast({ title: 'Deleted', description: 'Test removed from catalog.', variant: 'success' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to delete test.', variant: 'destructive' });
     }
   };
 
@@ -766,6 +888,11 @@ export const Diagnostics = () => {
                 onClick={() => setIsCatalogSortModalOpen(true)}>
                 <ArrowUpDown size={13} /> Sort
               </Button>
+              <Button size="sm" className="h-8 text-xs gap-1 px-3"
+                style={{ background: PRIMARY, color: '#fff' }}
+                onClick={() => { setEditCatalogTest(null); setIsAddTestOpen(true); }}>
+                <Plus size={13} /> Add Test
+              </Button>
             </div>
           </div>
 
@@ -782,6 +909,12 @@ export const Diagnostics = () => {
                 onClick={() => setIsCatalogSortModalOpen(true)}>
                 <ArrowUpDown size={13} />
                 <span className="hidden sm:inline">Sort</span>
+              </Button>
+              <Button size="sm" className="h-8 text-xs gap-1"
+                style={{ background: PRIMARY, color: '#fff' }}
+                onClick={() => { setEditCatalogTest(null); setIsAddTestOpen(true); }}>
+                <Plus size={13} />
+                <span className="hidden sm:inline">Add Test</span>
               </Button>
             </div>
             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
@@ -810,11 +943,19 @@ export const Diagnostics = () => {
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <Package size={36} style={{ color: 'hsl(220,13%,80%)' }} />
               <p className="text-sm" style={{ color: TEXT_MUTE }}>No tests found</p>
+              <Button size="sm" className="mt-2 text-xs gap-1" style={{ background: PRIMARY, color: '#fff' }}
+                onClick={() => { setEditCatalogTest(null); setIsAddTestOpen(true); }}>
+                <Plus size={13} /> Add First Test
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredCatalog.map(test => (
-                <TestCard key={test.id} test={test} onBook={t => { openBooking(t); setActiveTab('bookings'); }} />
+                <TestCard key={test.id} test={test}
+                  onBook={t => { openBooking(t); setActiveTab('bookings'); }}
+                  onEdit={t => { setEditCatalogTest(t); setIsAddTestOpen(true); }}
+                  onDelete={t => setCatalogDeleteTarget(t)}
+                />
               ))}
             </div>
           )}
@@ -1050,6 +1191,23 @@ export const Diagnostics = () => {
         confirmLabel="Cancel Test"
         variant="destructive"
         onConfirm={() => cancelTarget && handleDelete(cancelTarget)}
+      />
+
+      <CreateTestCatalogModal
+        isOpen={isAddTestOpen}
+        onClose={() => { setIsAddTestOpen(false); setEditCatalogTest(null); }}
+        onSaved={handleCatalogTestSaved}
+        editTest={editCatalogTest}
+      />
+
+      <ConfirmDialog
+        open={!!catalogDeleteTarget}
+        onOpenChange={(open) => { if (!open) setCatalogDeleteTarget(null); }}
+        title="Remove test from catalog?"
+        description={`This will permanently remove "${catalogDeleteTarget?.name || 'this test'}" from the catalog.`}
+        confirmLabel="Remove Test"
+        variant="destructive"
+        onConfirm={() => catalogDeleteTarget && handleDeleteCatalogTest(catalogDeleteTarget)}
       />
     </div>
   );

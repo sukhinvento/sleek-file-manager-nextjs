@@ -261,36 +261,19 @@ export const ModernVendorOverlay = ({
           className="w-full sm:w-[90vw] sm:max-w-[680px] p-0 flex flex-col h-full bg-gradient-to-br from-background to-muted/20"
           side="right"
         >
-          {/* Header */}
+          {/* Header — title + subtitle + close only; CTAs are in the footer */}
           <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 px-5 py-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-lg font-bold text-foreground tracking-tight truncate">{vendor.name}</h1>
-                    <Badge variant="outline" className={`${statusColors[vendor.status] || ''} text-[10px] shrink-0`}>
-                      {vendor.status}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">{vendor.vendorId} · {vendor.category || 'Uncategorized'}</p>
-                </div>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex items-center gap-1.5 ml-2">
-                <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="h-8 px-2.5 text-xs">
-                  <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit
-                </Button>
-                {onDelete && (
-                  <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)} className="h-8 px-2.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                  <X className="h-4 w-4" />
-                </Button>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-foreground tracking-tight leading-tight break-words">{vendor.name}</h1>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">{vendor.vendorId} · {vendor.category || 'Uncategorized'}</p>
               </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0 text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
 

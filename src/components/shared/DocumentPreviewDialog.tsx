@@ -26,6 +26,7 @@ export interface GSTBreakdown {
   taxableAmount: number;
   cgst: number;
   sgst: number;
+  igst?: number;
   totalTax: number;
 }
 
@@ -65,6 +66,12 @@ export interface PrintableDocument {
 
   /** GST breakdown by slab */
   gstBreakdown?: GSTBreakdown[];
+
+  /** GST identity */
+  sellerGstin?: string;
+  buyerGstin?: string;
+  placeOfSupply?: string;
+  isInterState?: boolean;
 
   /** Optional */
   notes?: string;
@@ -170,7 +177,7 @@ export default function DocumentPreviewDialog({ doc, isOpen, onClose }: Document
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrint}>
               <Printer className="h-3.5 w-3.5" /> Print
             </Button>
-            <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -283,45 +290,38 @@ export default function DocumentPreviewDialog({ doc, isOpen, onClose }: Document
               </tbody>
             </table>
 
-            {/* ─ GST Breakdown table (only if slabs exist) ─ */}
-            {hasGSTBreakdown && (
-              <div style={{ marginBottom: 24 }}>
-                <h3 style={{ ...S.label, marginBottom: 8 }}>GST Summary</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...S.thCell, background: '#f0f9ff', color: '#0369a1' }}>Tax Slab</th>
-                      <th style={{ ...S.thRight, background: '#f0f9ff', color: '#0369a1' }}>Taxable Amt</th>
-                      <th style={{ ...S.thRight, background: '#f0f9ff', color: '#0369a1' }}>CGST</th>
-                      <th style={{ ...S.thRight, background: '#f0f9ff', color: '#0369a1' }}>SGST</th>
-                      <th style={{ ...S.thRight, background: '#f0f9ff', color: '#0369a1' }}>Total GST</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {doc.gstBreakdown!.map((slab, i) => (
-                      <tr key={i}>
-                        <td style={{ ...S.td, fontWeight: 500 }}>GST @ {slab.rate}%</td>
-                        <td style={S.tdRight}>₹{fmt(slab.taxableAmount)}</td>
-                        <td style={S.tdRight}>₹{fmt(slab.cgst)}</td>
-                        <td style={S.tdRight}>₹{fmt(slab.sgst)}</td>
-                        <td style={{ ...S.tdRight, fontWeight: 500 }}>₹{fmt(slab.totalTax)}</td>
-                      </tr>
-                    ))}
-                    <tr style={{ background: '#f8fafc' }}>
-                      <td style={{ ...S.td, fontWeight: 600 }}>Total</td>
-                      <td style={{ ...S.tdRight, fontWeight: 600 }}>₹{fmt(doc.gstBreakdown!.reduce((s, t) => s + t.taxableAmount, 0))}</td>
-                      <td style={{ ...S.tdRight, fontWeight: 600 }}>₹{fmt(doc.gstBreakdown!.reduce((s, t) => s + t.cgst, 0))}</td>
-                      <td style={{ ...S.tdRight, fontWeight: 600 }}>₹{fmt(doc.gstBreakdown!.reduce((s, t) => s + t.sgst, 0))}</td>
-                      <td style={{ ...S.tdRight, fontWeight: 600 }}>₹{fmt(doc.taxAmount ?? 0)}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* ─ GST Identity ─ */}
+            {(doc.sellerGstin || doc.buyerGstin) && (
+              <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, display: 'flex', gap: 32, fontSize: 12 }}>
+                {doc.sellerGstin && (
+                  <div>
+                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Seller GSTIN: </span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0369a1' }}>{doc.sellerGstin}</span>
+                  </div>
+                )}
+                {doc.buyerGstin && (
+                  <div>
+                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Buyer GSTIN: </span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0369a1' }}>{doc.buyerGstin}</span>
+                  </div>
+                )}
+                {doc.placeOfSupply && (
+                  <div>
+                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Place of Supply: </span>
+                    <span style={{ fontWeight: 600, color: '#0369a1' }}>{doc.placeOfSupply}</span>
+                  </div>
+                )}
+                {doc.isInterState && (
+                  <div>
+                    <span style={{ padding: '2px 6px', background: '#fef3c7', color: '#92400e', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>INTER-STATE</span>
+                  </div>
+                )}
               </div>
             )}
 
             {/* ─ Totals ─ */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
-              <div style={{ width: 280 }}>
+              <div style={{ width: 320 }}>
                 {/* Subtotal */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
                   <span style={{ color: '#6b7280' }}>Subtotal</span>
@@ -336,13 +336,43 @@ export default function DocumentPreviewDialog({ doc, isOpen, onClose }: Document
                     </span>
                   </div>
                 )}
-                {/* Tax */}
-                {hasTax && (
+                {/* GST — inline CGST/SGST/IGST breakdown per slab */}
+                {hasGSTBreakdown ? (
+                  <>
+                    {doc.gstBreakdown!.map((slab, i) => {
+                      const hasIgst = (slab.igst ?? 0) > 0;
+                      return (
+                        <div key={i} style={{ borderLeft: `2px solid ${PRIMARY}20`, marginLeft: 4, paddingLeft: 10, marginTop: i === 0 ? 4 : 0, marginBottom: 4 }}>
+                          <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>
+                            GST @ {slab.rate}% on ₹{fmt(slab.taxableAmount)}
+                          </div>
+                          {hasIgst ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: 12 }}>
+                              <span style={{ color: '#6b7280' }}>IGST @ {slab.rate}%</span>
+                              <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>₹{fmt(slab.igst!)}</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: 12 }}>
+                                <span style={{ color: '#6b7280' }}>CGST @ {slab.rate / 2}%</span>
+                                <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>₹{fmt(slab.cgst)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: 12 }}>
+                                <span style={{ color: '#6b7280' }}>SGST @ {slab.rate / 2}%</span>
+                                <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>₹{fmt(slab.sgst)}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                ) : hasTax ? (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
                     <span style={{ color: '#6b7280' }}>GST</span>
                     <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>₹{fmt(doc.taxAmount!)}</span>
                   </div>
-                )}
+                ) : null}
                 {/* Grand Total */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `2px solid ${PRIMARY}`, paddingTop: 10, marginTop: 6, fontSize: 16, fontWeight: 700, color: PRIMARY }}>
                   <span>Grand Total</span>

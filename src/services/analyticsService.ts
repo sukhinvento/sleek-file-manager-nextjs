@@ -53,6 +53,13 @@ export interface BillingMonthlyData {
   count: number;
 }
 
+export interface ExpenditureMonthlyData {
+  month: string;
+  spend: number;   // PO vendor spend (₹K)
+  paid: number;    // amount already paid to vendors (₹K)
+  count: number;
+}
+
 export interface DiagnosticsMonthlyCategoryData {
   categories: string[];
   rows: Array<Record<string, any>>;
@@ -113,12 +120,17 @@ export const fetchAdmissionsMonthlyAnalytics = async (months = 12): Promise<Admi
 };
 
 export const fetchBillingWeeklyAnalytics = async (weeks = 12): Promise<BillingWeeklyData[]> => {
-  const res = await apiClient.get<BillingWeeklyData[]>('/hospital-billing/analytics/weekly', { params: { weeks } });
+  const res = await apiClient.get<BillingWeeklyData[]>('/invoices/analytics/weekly', { params: { weeks } });
   return Array.isArray(res.data) ? res.data : [];
 };
 
 export const fetchBillingMonthlyAnalytics = async (months = 12): Promise<BillingMonthlyData[]> => {
-  const res = await apiClient.get<BillingMonthlyData[]>('/hospital-billing/analytics/monthly', { params: { months } });
+  const res = await apiClient.get<BillingMonthlyData[]>('/invoices/analytics/monthly', { params: { months } });
+  return Array.isArray(res.data) ? res.data : [];
+};
+
+export const fetchExpenditureMonthlyAnalytics = async (months = 12): Promise<ExpenditureMonthlyData[]> => {
+  const res = await apiClient.get<ExpenditureMonthlyData[]>('/invoices/analytics/expenditure/monthly', { params: { months } });
   return Array.isArray(res.data) ? res.data : [];
 };
 

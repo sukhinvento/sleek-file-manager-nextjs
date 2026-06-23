@@ -34,6 +34,7 @@ import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
 import { countActiveFilters } from '@/lib/filterUtils';
 import * as inventoryService from '@/services/inventoryService';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -152,10 +153,12 @@ export const Inventory = () => {
   const [vendorOptions, setVendorOptions] = useState<EntityOption[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-  
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState({
@@ -175,11 +178,12 @@ export const Inventory = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
 
   // Load inventory items from service
-  const loadInventoryItems = async () => {
+  const loadInventoryItems = async (page = currentPage) => {
     try {
       setIsLoadingData(true);
-      const data = await inventoryService.fetchInventoryItems();
-      setInventoryItems(data);
+      const result = await inventoryService.fetchInventoryItems(page, itemsPerPage);
+      setInventoryItems(result.data);
+      setTotalItems(result.total);
     } catch (error) {
       console.error('Error loading inventory items:', error);
       toast({ title: 'Error', description: 'Failed to load inventory items. Please try again.', variant: 'destructive' });
@@ -218,9 +222,10 @@ export const Inventory = () => {
     }
   };
 
+  useEffect(() => { loadInventoryItems(currentPage); }, [currentPage]);
+
   // Load data on mount
   useEffect(() => {
-    loadInventoryItems();
     loadStats();
     loadVendors();
   }, []);
@@ -291,8 +296,8 @@ export const Inventory = () => {
   }, [inventoryItems, searchTerm, selectedCategory, selectedStatus, selectedFilters]);
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const currentPageData = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = filteredItems;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -593,7 +598,7 @@ export const Inventory = () => {
             ...(getItemStatus(item) !== 'Normal'
               ? [{ label: 'Raise PO', onClick: () => handleRaisePO(item), icon: ShoppingCart }]
               : []),
-            { label: 'Delete', onClick: () => handleDeleteItem(item.id), variant: 'destructive' as const, icon: Trash2 }
+            { label: 'Delete', onClick: () => setDeleteTarget(item.id), variant: 'destructive' as const, icon: Trash2 }
           ]}
         />
       )}
@@ -658,7 +663,7 @@ export const Inventory = () => {
             }
             handleSaveItem(savedItem);
           }}
-          onDelete={handleDeleteItem}
+          onDelete={(id: string) => setDeleteTarget(id)}
         />
       )}
 
@@ -673,6 +678,16 @@ export const Inventory = () => {
           onSave={handleCreatePOFromInventory}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete inventory item?"
+        description="This will permanently remove this inventory item. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget ? handleDeleteItem(deleteTarget) : Promise.resolve()}
+      />
     </div>
   );
 };

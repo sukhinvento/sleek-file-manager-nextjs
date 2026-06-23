@@ -99,13 +99,18 @@ function mapPurchaseOrder(raw: any): PurchaseOrder {
 }
 
 /**
- * Fetch all purchase orders
- * GET /purchase-orders?limit=200
+ * Fetch paginated purchase orders
+ * GET /purchase-orders?page=1&limit=25&sort=createdAt_desc
  */
-export const fetchPurchaseOrders = async (): Promise<PurchaseOrder[]> => {
-  const response = await apiClient.get('/purchase-orders', { params: { limit: 200 } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapPurchaseOrder);
+export const fetchPurchaseOrders = async (page = 1, limit = 25): Promise<{ data: PurchaseOrder[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/purchase-orders', { params: { page, limit, sort: 'createdAt_desc' } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapPurchaseOrder),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**

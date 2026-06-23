@@ -21,6 +21,7 @@ import * as doctorService from '@/services/doctorService';
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import DocumentPreviewDialog from '@/components/shared/DocumentPreviewDialog';
 import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 import { toast } from '@/hooks/use-toast';
 // Separator removed — using border-based dividers
 
@@ -67,6 +68,10 @@ export const ModernDiagnosticOverlay = ({
   const [filteredDoctors, setFilteredDoctors] = useState<any[]>([]);
   const [showTestSuggestions, setShowTestSuggestions] = useState(false);
   const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
+  const [availablePatients, setAvailablePatients] = useState<any[]>([]);
+  const [isPatientsLoading, setIsPatientsLoading] = useState(false);
+  const [selectedPatientDisplay, setSelectedPatientDisplay] = useState<string>('');
+  const patientJustSelected = useRef(false);
   const [showDoctorSuggestions, setShowDoctorSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -85,6 +90,7 @@ export const ModernDiagnosticOverlay = ({
     if (isOpen) {
       loadTests();
       loadDoctors();
+      loadPatients();
       if (diagnostic) {
         setFormData(diagnostic);
         setSearchTest(diagnostic.testName);
@@ -119,6 +125,7 @@ export const ModernDiagnosticOverlay = ({
         });
         setSearchTest('');
         setSearchPatient('');
+        setSelectedPatientDisplay('');
         setIsEditMode(false);
         setAttachments([]);
         setOrderedDate(new Date());
@@ -162,7 +169,8 @@ export const ModernDiagnosticOverlay = ({
 
   const loadTests = async () => {
     try {
-      const tests = await diagnosticService.fetchDiagnosticTests(1, 100);
+      const res = await diagnosticService.fetchDiagnosticTests(1, 100);
+      const tests = Array.isArray(res) ? res : (res as any).data ?? [];
       setAvailableTests(tests);
       setFilteredTests(tests);
     } catch (error) {
@@ -172,10 +180,24 @@ export const ModernDiagnosticOverlay = ({
 
   const loadDoctors = async () => {
     try {
-      const doctors = await doctorService.fetchDoctors(1, 100);
+      const res = await doctorService.fetchDoctors(1, 100);
+      const doctors = Array.isArray(res) ? res : (res as any).data ?? [];
       setAvailableDoctors(doctors);
     } catch (error) {
       console.error('Failed to load doctors:', error);
+    }
+  };
+
+  const loadPatients = async () => {
+    if (availablePatients.length > 0) return;
+    setIsPatientsLoading(true);
+    try {
+      const res = await patientService.fetchPatients(1, 200);
+      setAvailablePatients(res.data ?? []);
+    } catch (error) {
+      console.error('Failed to load patients:', error);
+    } finally {
+      setIsPatientsLoading(false);
     }
   };
 
@@ -192,28 +214,30 @@ export const ModernDiagnosticOverlay = ({
     }
   }, [searchTest, availableTests]);
 
-  // Search patients
+  // Search patients — local filter on decrypted names (names are PII-encrypted server-side)
+  // Visibility is controlled only by onChange/handlePatientSelect, not here
   useEffect(() => {
-    const searchPatients = async () => {
-      if (searchPatient.length >= 2) {
-        try {
-          const patients = await patientService.fetchPatients(1, 100);
-          const filtered = patients.filter(p =>
-            (p?.name?.toLowerCase().includes(searchPatient.toLowerCase())) ||
-            (p?.patientId?.toLowerCase().includes(searchPatient.toLowerCase()))
-          );
-          setFilteredPatients(filtered);
-        } catch (error) {
-          console.error('Failed to search patients:', error);
-        }
-      } else {
-        setFilteredPatients([]);
-      }
-    };
-    searchPatients();
-  }, [searchPatient]);
+    if (patientJustSelected.current) {
+      patientJustSelected.current = false;
+      return;
+    }
+    if (searchPatient.trim().length < 2) {
+      setFilteredPatients([]);
+      setShowPatientSuggestions(false);
+      return;
+    }
+    const q = searchPatient.toLowerCase().trim();
+    const results = availablePatients.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.patientId || '').toLowerCase().includes(q) ||
+      (p.phone || '').includes(q)
+    );
+    setFilteredPatients(results);
+    // Don't call setShowPatientSuggestions here — onChange controls opening,
+    // handlePatientSelect controls closing
+  }, [searchPatient, availablePatients]);
 
-  // Search doctors
+  // Search doctors — visibility is controlled only by onChange/onFocus/handleDoctorSelect
   useEffect(() => {
     if (searchDoctor.length >= 1) {
       const filtered = availableDoctors.filter(doc => {
@@ -222,7 +246,6 @@ export const ModernDiagnosticOverlay = ({
         return nameMatch || specMatch;
       });
       setFilteredDoctors(filtered);
-      setShowDoctorSuggestions(filtered.length > 0);
     } else {
       setFilteredDoctors([]);
       setShowDoctorSuggestions(false);
@@ -242,19 +265,23 @@ export const ModernDiagnosticOverlay = ({
   };
 
   const handlePatientSelect = (patient: any) => {
+    patientJustSelected.current = true;
     setFormData(prev => ({
       ...prev,
-      patientId: patient.patientId,
+      patientId: patient.id,          // MongoDB ObjectId — FK sent to API
       patientName: patient.name,
     }));
     setSearchPatient(patient.name);
+    setSelectedPatientDisplay(patient.patientId || '');
     setShowPatientSuggestions(false);
+    setFilteredPatients([]);
   };
 
   const handleDoctorSelect = (doctor: any) => {
     setFormData(prev => ({
       ...prev,
       orderedBy: doctor.name,
+      orderedById: doctor.id || doctor._id || '',
     }));
     setSearchDoctor(doctor.name);
     setShowDoctorSuggestions(false);
@@ -340,6 +367,321 @@ export const ModernDiagnosticOverlay = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // ── Print ────────────────────────────────────────────────────────────────
+  const handlePrint = () => {
+    const d = formData;
+    const testPrep = availableTests.find(t => t.id === d.testId)?.preparation || '';
+    const scheduledTime = d.scheduledTime
+      ? (() => {
+          const [h, m] = d.scheduledTime.split(':');
+          const n = parseInt(h, 10);
+          return `${n % 12 || 12}:${m} ${n >= 12 ? 'PM' : 'AM'}`;
+        })()
+      : '—';
+
+    const priorityColor: Record<string, string> = {
+      Emergency: '#dc2626',
+      Urgent:    '#d97706',
+      Routine:   '#2563eb',
+    };
+    const statusColor: Record<string, string> = {
+      Completed: '#059669',
+      Scheduled: '#2563eb',
+      'In Progress': '#d97706',
+      Cancelled: '#dc2626',
+      Pending:   '#6b7280',
+    };
+    const pColor = priorityColor[d.priority || ''] || '#2563eb';
+    const sColor = statusColor[d.status || ''] || '#6b7280';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lab Test Requisition – ${d.testName || 'Diagnostic'}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1f2937;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 36px;
+      background: #fff;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 3px solid #385a9f;
+      margin-bottom: 20px;
+    }
+    .header-org { font-size: 20px; font-weight: 700; color: #385a9f; }
+    .header-sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
+    .header-right { text-align: right; }
+    .doc-title { font-size: 18px; font-weight: 700; color: #385a9f; letter-spacing: -0.3px; }
+    .booking-id { font-size: 11px; color: #6b7280; margin-top: 2px; font-family: monospace; }
+    .badges { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    /* ── Two-col info grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      margin-bottom: 18px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .info-section {
+      padding: 14px 16px;
+    }
+    .info-section:first-child {
+      border-right: 1px solid #e5e7eb;
+    }
+    .section-title {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #385a9f;
+      background: #eff6ff;
+      margin: -14px -16px 10px;
+      padding: 6px 16px;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .field { margin-bottom: 8px; }
+    .field-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #9ca3af; margin-bottom: 1px; }
+    .field-value { font-size: 12px; font-weight: 500; color: #1f2937; }
+    .field-value.large { font-size: 14px; font-weight: 700; }
+
+    /* ── Full-width section ── */
+    .full-section {
+      margin-bottom: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .full-section-title {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #385a9f;
+      background: #eff6ff;
+      padding: 6px 16px;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .full-section-body {
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    /* ── Order row ── */
+    .order-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+
+    /* ── Price strip ── */
+    .price-strip {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 16px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .price-label { font-size: 11px; color: #6b7280; }
+    .price-value { font-size: 18px; font-weight: 700; color: #385a9f; }
+
+    /* ── Signature row ── */
+    .sig-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .sig-box { text-align: center; }
+    .sig-line { border-top: 1px solid #374151; margin-bottom: 6px; }
+    .sig-label { font-size: 9px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      font-size: 9px;
+      color: #9ca3af;
+    }
+    .footer span { margin: 0 6px; }
+
+    @media print {
+      body { padding: 16px; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="header-org">MedSystem</div>
+      <div class="header-sub">Healthcare Management System</div>
+    </div>
+    <div class="header-right">
+      <div class="doc-title">Lab Test Requisition</div>
+      <div class="booking-id">${d.id ? `Booking #${d.id.slice(-8).toUpperCase()}` : 'New Requisition'}</div>
+      <div class="badges">
+        <span class="badge" style="color:${pColor};border-color:${pColor};background:${pColor}18">${d.priority || 'Routine'}</span>
+        <span class="badge" style="color:${sColor};border-color:${sColor};background:${sColor}18">${d.status || 'Scheduled'}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient + Test info -->
+  <div class="info-grid">
+    <div class="info-section">
+      <div class="section-title">Patient Information</div>
+      <div class="field">
+        <div class="field-label">Full Name</div>
+        <div class="field-value large">${d.patientName || '—'}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Patient ID</div>
+        <div class="field-value">${selectedPatientDisplay || '—'}</div>
+      </div>
+    </div>
+    <div class="info-section">
+      <div class="section-title">Test Information</div>
+      <div class="field">
+        <div class="field-label">Test Name</div>
+        <div class="field-value large">${d.testName || '—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="field">
+          <div class="field-label">Category</div>
+          <div class="field-value">${d.category || '—'}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Department</div>
+          <div class="field-value">${availableTests.find(t => t.id === d.testId)?.department || '—'}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order details -->
+  <div class="full-section">
+    <div class="full-section-title">Order Details</div>
+    <div class="order-grid">
+      <div class="field">
+        <div class="field-label">Ordered By</div>
+        <div class="field-value">${d.orderedBy || '—'}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Ordered Date</div>
+        <div class="field-value">${d.orderedDate || '—'}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Scheduled Date</div>
+        <div class="field-value">${d.scheduledDate || '—'}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Scheduled Time</div>
+        <div class="field-value">${scheduledTime}</div>
+      </div>
+    </div>
+  </div>
+
+  ${testPrep ? `
+  <!-- Preparation Instructions -->
+  <div class="full-section">
+    <div class="full-section-title">Patient Preparation Instructions</div>
+    <div class="full-section-body">${testPrep}</div>
+  </div>
+  ` : ''}
+
+  ${d.notes ? `
+  <!-- Special Notes -->
+  <div class="full-section">
+    <div class="full-section-title">Special Instructions / Notes</div>
+    <div class="full-section-body">${d.notes}</div>
+  </div>
+  ` : ''}
+
+  ${d.results ? `
+  <!-- Results -->
+  <div class="full-section">
+    <div class="full-section-title">Test Results</div>
+    <div class="full-section-body" style="white-space:pre-wrap">${d.results}</div>
+  </div>
+  ` : ''}
+
+  <!-- Price -->
+  <div class="price-strip">
+    <div class="price-label">Test Fee</div>
+    <div class="price-value">₹${(d.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+  </div>
+
+  <!-- Signature row -->
+  <div class="sig-row">
+    <div class="sig-box">
+      <div class="sig-line" style="margin-bottom:28px"></div>
+      <div class="sig-label">Patient / Guardian Signature</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line" style="margin-bottom:28px"></div>
+      <div class="sig-label">Ordering Physician</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line" style="margin-bottom:28px"></div>
+      <div class="sig-label">Lab Technician</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Generated: ${new Date().toLocaleString('en-IN')}</span>
+    <span>·</span>
+    <span>This is a computer-generated document.</span>
+    <span>·</span>
+    <span>MedSystem Healthcare Management System</span>
+  </div>
+
+</body>
+</html>`;
+
+    const w = window.open('', '_blank', 'width=900,height=1000');
+    if (!w) { toast({ title: 'Popup blocked', description: 'Please allow popups for this site to print.', variant: 'destructive' }); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 400);
+  };
+
   const handleSave = async () => {
     if (!validateForm()) return;
 
@@ -379,10 +721,10 @@ export const ModernDiagnosticOverlay = ({
   const headerActions = (
     <div className="flex items-center gap-2">
       {(isEditMode || !diagnostic) && (
-        <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-slate-600 hover:bg-slate-700 text-white">
+        <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
           {isSaving ? (
             <>
-              <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full" />
+              <div className="animate-spin h-4 w-4 mr-1 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full" />
               Saving...
             </>
           ) : (
@@ -405,11 +747,11 @@ export const ModernDiagnosticOverlay = ({
 
   const quickActions = (
     <>
-      <Button variant="ghost" size="sm" onClick={() => { if (diagnostic) setShowPreview(true); }}>
+      <Button variant="ghost" size="sm" onClick={handlePrint}>
         <Printer className="h-4 w-4 mr-2" />
         Print
       </Button>
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" onClick={handlePrint}>
         <FileText className="h-4 w-4 mr-2" />
         Export
       </Button>
@@ -424,6 +766,7 @@ export const ModernDiagnosticOverlay = ({
       onClose={onClose}
       title={diagnostic ? `Diagnostic Test ${diagnostic.id || ''}` : 'New Diagnostic Test'}
       subtitle={diagnostic ? `Patient: ${diagnostic.patientName} • Test: ${diagnostic.testName}` : 'Book a new diagnostic test'}
+      icon={<Activity className="h-5 w-5 text-primary" />}
       status={formData.status}
       statusColor={getStatusColor(formData.status)}
       headerActions={headerActions}
@@ -665,7 +1008,7 @@ export const ModernDiagnosticOverlay = ({
           </div>
 
           {/* Patient Information */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Patient</span>
@@ -679,47 +1022,65 @@ export const ModernDiagnosticOverlay = ({
                 <div className="relative mt-1">
                   <Input
                     id="patient"
-                    placeholder="Search patient by name or ID..."
+                    placeholder="Type name or patient ID…"
                     value={searchPatient}
                     onChange={(e) => {
                       setSearchPatient(e.target.value);
                       setShowPatientSuggestions(true);
                     }}
-                    onFocus={() => setShowPatientSuggestions(true)}
                     className={errors.patientId ? 'border-red-500' : ''}
+                    autoComplete="off"
                   />
-                  {showPatientSuggestions && filteredPatients.length > 0 && (
-                    <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {filteredPatients.map((patient) => (
-                        <div
-                          key={patient.id}
-                          className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handlePatientSelect(patient);
-                          }}
-                        >
-                          <div className="font-medium text-sm">{patient.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            ID: {patient.patientId} | {patient.age}y, {patient.gender}
+                  {searchPatient.trim().length >= 2 && (
+                    <>
+                      {isPatientsLoading && (
+                        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg px-3 py-2.5">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                            Loading patients…
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                      {!isPatientsLoading && showPatientSuggestions && filteredPatients.length > 0 && (
+                        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {filteredPatients.map((patient) => (
+                            <div
+                              key={patient.id}
+                              className="p-3 hover:bg-muted/80 cursor-pointer border-b border-border/50 last:border-b-0"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handlePatientSelect(patient);
+                              }}
+                            >
+                              <div className="font-medium text-sm">{patient.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {patient.patientId}{patient.age > 0 ? ` · ${patient.age}y` : ''}{patient.gender ? `, ${patient.gender}` : ''}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!isPatientsLoading && showPatientSuggestions && filteredPatients.length === 0 && (
+                        <div className="absolute z-[9999] w-full mt-1 bg-background border border-border rounded-lg shadow-lg px-3 py-2.5">
+                          <p className="text-xs text-muted-foreground">No patients found for "{searchPatient}"</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
                 {errors.patientId && <p className="text-xs text-red-500 mt-1">{errors.patientId}</p>}
               </div>
 
               {formData.patientName && (
-                <div className="rounded-lg border border-border/50 overflow-hidden">
-                  <div className="flex px-4 py-2 bg-card border-b border-border/50">
-                    <span className="text-xs text-muted-foreground w-16">Name</span>
+                <div className="rounded-lg border border-primary/20 bg-primary/[0.03] overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+                    <User className="h-3 w-3 text-primary flex-shrink-0" />
                     <span className="text-xs font-semibold text-foreground">{formData.patientName}</span>
                   </div>
-                  <div className="flex px-4 py-2 bg-primary/[0.02]">
-                    <span className="text-xs text-muted-foreground w-16">ID</span>
-                    <span className="text-xs font-semibold text-foreground">{formData.patientId || 'N/A'}</span>
+                  <div className="px-3 py-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      {selectedPatientDisplay || 'Patient selected'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -755,14 +1116,15 @@ export const ModernDiagnosticOverlay = ({
                 {errors.scheduledDate && <p className="text-xs text-red-500 mt-1">{errors.scheduledDate}</p>}
               </div>
               <div>
-                <Label htmlFor="scheduledTime" className="text-xs font-medium text-muted-foreground">Scheduled Time</Label>
-                <Input
-                  id="scheduledTime"
-                  type="time"
-                  value={formData.scheduledTime || ''}
-                  onChange={(e) => handleInputChange('scheduledTime', e.target.value)}
-                  className={`mt-1 ${errors.scheduledTime ? 'border-red-500' : ''}`}
-                />
+                <Label className="text-xs font-medium text-muted-foreground">Scheduled Time</Label>
+                <div className="mt-1">
+                  <TimePicker
+                    value={formData.scheduledTime || ''}
+                    onChange={(v) => handleInputChange('scheduledTime', v)}
+                    placeholder="Select time"
+                    hasError={!!errors.scheduledTime}
+                  />
+                </div>
                 {errors.scheduledTime && <p className="text-xs text-red-500 mt-1">{errors.scheduledTime}</p>}
               </div>
             </div>
@@ -817,7 +1179,7 @@ export const ModernDiagnosticOverlay = ({
         <div className="flex flex-col gap-4 p-6 h-full overflow-y-auto">
 
           {/* Test Selection */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <Activity className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Test Selection</span>
@@ -882,7 +1244,7 @@ export const ModernDiagnosticOverlay = ({
           </div>
 
           {/* Doctor Information */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Doctor</span>
@@ -978,7 +1340,7 @@ export const ModernDiagnosticOverlay = ({
           </div>
 
           {/* Patient Information */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Patient</span>
@@ -1009,14 +1371,15 @@ export const ModernDiagnosticOverlay = ({
                 {errors.patientId && <p className="text-xs text-red-500 mt-1">{errors.patientId}</p>}
               </div>
               {formData.patientName && (
-                <div className="rounded-lg border border-border/50 overflow-hidden">
-                  <div className="flex px-4 py-2 bg-card border-b border-border/50">
-                    <span className="text-xs text-muted-foreground w-16">Name</span>
+                <div className="rounded-lg border border-primary/20 bg-primary/[0.03] overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+                    <User className="h-3 w-3 text-primary flex-shrink-0" />
                     <span className="text-xs font-semibold text-foreground">{formData.patientName}</span>
                   </div>
-                  <div className="flex px-4 py-2 bg-primary/[0.02]">
-                    <span className="text-xs text-muted-foreground w-16">ID</span>
-                    <span className="text-xs font-semibold text-foreground">{formData.patientId || 'N/A'}</span>
+                  <div className="px-3 py-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      {selectedPatientDisplay || 'Patient selected'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -1024,7 +1387,7 @@ export const ModernDiagnosticOverlay = ({
           </div>
 
           {/* Test Selection */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <Activity className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Test Selection</span>
@@ -1073,7 +1436,7 @@ export const ModernDiagnosticOverlay = ({
           </div>
 
           {/* Doctor Information */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-visible">
             <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Doctor</span>

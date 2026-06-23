@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Package } from 'lucide-react';
 import { OrderItem } from '@/types/shared';
+import { DeletePopover } from '@/components/ui/delete-popover';
 
 interface OrderItemsTableProps {
   items: OrderItem[];
@@ -100,10 +101,11 @@ export default function OrderItemsTable({
                 {item.saleUnit && <p className="text-xs text-muted-foreground">{item.saleUnit}</p>}
               </div>
               {editable && (
-                <button type="button" onClick={() => removeItem(index)}
-                  className="shrink-0 p-1 rounded hover:bg-red-50 transition-colors">
-                  <Trash2 className="h-4 w-4 text-red-400 hover:text-red-600" />
-                </button>
+                <DeletePopover
+                  onConfirm={() => removeItem(index)}
+                  title="Remove this item?"
+                  description="It will be removed from the order."
+                />
               )}
             </div>
             {editable ? (
@@ -199,11 +201,12 @@ export default function OrderItemsTable({
                 </td>
                 {editable && (
                   <td className="py-2 px-1">
-                    <Button variant="ghost" size="icon"
+                    <DeletePopover
+                      onConfirm={() => removeItem(index)}
+                      title="Remove this item?"
+                      description="It will be removed from the order."
                       className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => removeItem(index)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    />
                   </td>
                 )}
               </tr>

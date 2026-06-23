@@ -38,6 +38,7 @@ function mapInvoiceToDocument(invoice: Invoice): PrintableDocument {
     taxableAmount: slab.taxableAmount,
     cgst: slab.cgst,
     sgst: slab.sgst,
+    igst: slab.igst,
     totalTax: slab.totalTax,
   }));
 
@@ -73,6 +74,10 @@ function mapInvoiceToDocument(invoice: Invoice): PrintableDocument {
     shippingAddress: invoice.shippingAddress,
     shippingLabel: isPO ? 'Ship To' : 'Delivery Address',
     gstBreakdown,
+    sellerGstin: invoice.sellerGstin,
+    buyerGstin: invoice.buyerGstin,
+    placeOfSupply: invoice.placeOfSupply,
+    isInterState: invoice.isInterState,
   };
 }
 

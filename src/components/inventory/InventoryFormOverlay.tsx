@@ -168,6 +168,7 @@ export const InventoryFormOverlay = ({
       onClose={onClose}
       title={item ? `Inventory Item ${item.sku}` : 'New Inventory Item'}
       subtitle={item ? item.name : 'Add a new item to inventory'}
+      icon={<Package className="h-5 w-5 text-primary" />}
       headerActions={headerActions}
       quickActions={quickActions}
       size="small"

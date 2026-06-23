@@ -76,6 +76,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Skip toast for requests marked as silent (best-effort calls)
+    if ((error.config as any)?.silent) {
+      return Promise.reject(error);
+    }
+
     // Handle other errors with a message from the backend
     if (error.response?.data) {
       const errorData = error.response.data as any;

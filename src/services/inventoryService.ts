@@ -53,10 +53,15 @@ function toBackendBody(itemData: Partial<InventoryItem>): Record<string, any> {
  * Fetch all inventory items
  * GET /inventory?limit=200
  */
-export const fetchInventoryItems = async (): Promise<InventoryItem[]> => {
-  const response = await apiClient.get('/inventory', { params: { limit: 200 } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapInventoryItem);
+export const fetchInventoryItems = async (page = 1, limit = 25): Promise<{ data: InventoryItem[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/inventory', { params: { page, limit } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapInventoryItem),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**
@@ -140,6 +145,20 @@ export const searchInventoryItems = async (query: string): Promise<InventoryItem
 };
 
 /**
+ * Fetch inventory items at a specific location
+ * GET /inventory?location=X&limit=200
+ */
+export const fetchInventoryByLocation = async (location: string): Promise<InventoryItem[]> => {
+  try {
+    const response = await apiClient.get('/inventory', { params: { location, limit: 200 } });
+    const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+    return data.map(mapInventoryItem);
+  } catch {
+    return [];
+  }
+};
+
+/**
  * Get items by category
  * GET /inventory?category=X
  */
@@ -157,4 +176,109 @@ export const getLowStockItems = async (): Promise<InventoryItem[]> => {
   const response = await apiClient.get('/inventory', { params: { low_stock: true, limit: 200 } });
   const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
   return data.map(mapInventoryItem);
+};
+
+/**
+ * Fetch distinct inventory locations
+ * GET /inventory/locations
+ */
+export const fetchInventoryLocations = async (): Promise<string[]> => {
+  try {
+    const response = await apiClient.get('/inventory/locations');
+    const data = Array.isArray(response.data) ? response.data : [];
+    return data.filter((loc: any) => typeof loc === 'string' && loc.length > 0);
+  } catch {
+    return [];
+  }
+};
+
+// ── Inventory-Location stock tracking ────────────────────────────────────
+
+export interface InventoryLocationStock {
+  id: string;
+  locationId: string;
+  locationName: string;
+  subLocation: string;
+  quantity: number;
+}
+
+/**
+ * Get per-location stock breakdown for an inventory item
+ * GET /inventory/:id/locations
+ */
+export const fetchItemLocations = async (itemId: string): Promise<InventoryLocationStock[]> => {
+  try {
+    const response = await apiClient.get(`/inventory/${itemId}/locations`);
+    const data = Array.isArray(response.data) ? response.data : [];
+    return data.map((r: any) => ({
+      id: r._id || r.id || '',
+      locationId: r.location_id || '',
+      locationName: r.location_name || '',
+      subLocation: r.sub_location || '',
+      quantity: r.quantity ?? 0,
+    }));
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Assign/update item stock at a location (with optional shelf/drawer)
+ * POST /inventory/:id/locations
+ */
+export const assignItemLocation = async (
+  itemId: string,
+  locationId: string,
+  locationName: string,
+  quantity: number,
+  subLocation?: string,
+): Promise<InventoryLocationStock | null> => {
+  try {
+    const response = await apiClient.post(`/inventory/${itemId}/locations`, {
+      location_id: locationId,
+      location_name: locationName,
+      sub_location: subLocation || undefined,
+      quantity,
+    });
+    const r = response.data;
+    return {
+      id: r._id || r.id || '',
+      locationId: r.location_id || '',
+      locationName: r.location_name || '',
+      subLocation: r.sub_location || '',
+      quantity: r.quantity ?? 0,
+    };
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Update inventory stock at a specific location
+ * Adjusts stock by the given quantity (positive or negative)
+ * PATCH /inventory/:id/locations/:locationName
+ */
+export const updateInventoryStock = async (
+  itemId: string,
+  locationName: string,
+  quantityChange: number,
+): Promise<InventoryLocationStock | null> => {
+  try {
+    const response = await apiClient.patch(
+      `/inventory/${itemId}/locations/${encodeURIComponent(locationName)}`,
+      { quantity_change: quantityChange },
+      { silent: true } as any,
+    );
+    const r = response.data;
+    return {
+      id: r._id || r.id || '',
+      locationId: r.location_id || '',
+      locationName: r.location_name || '',
+      subLocation: r.sub_location || '',
+      quantity: r.quantity ?? 0,
+    };
+  } catch (error) {
+    console.error(`Failed to update inventory stock at location ${locationName}:`, error);
+    return null;
+  }
 };

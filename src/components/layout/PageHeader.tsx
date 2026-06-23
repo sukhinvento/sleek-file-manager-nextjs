@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Plus } from 'lucide-react';
+import { User, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -10,6 +10,12 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { NotificationPopover } from '@/components/notifications/NotificationPopover';
+
+interface CreateButtonItem {
+  label: string;
+  icon?: React.ReactNode;
+  action: () => void;
+}
 
 interface PageHeaderProps {
   title: string;
@@ -23,6 +29,7 @@ interface PageHeaderProps {
   onCreateClick?: () => void;
   onLogout?: () => void;
   createButtonText?: string;
+  createButtonItems?: CreateButtonItem[];
   children?: React.ReactNode;
 }
 
@@ -36,6 +43,7 @@ export const PageHeader = ({
   onCreateClick,
   onLogout,
   createButtonText = "Create New",
+  createButtonItems,
   children
 }: PageHeaderProps) => {
   return (
@@ -51,8 +59,30 @@ export const PageHeader = ({
           {/* Additional content from children */}
           {children}
 
-          {/* Create Button */}
-          {onCreateClick && (
+          {/* Create Button — dropdown variant */}
+          {createButtonItems && createButtonItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="action-button-primary hidden sm:flex" size="sm">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  <span className="hidden md:inline">{createButtonText}</span>
+                  <span className="md:hidden">Add</span>
+                  <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {createButtonItems.map((item, i) => (
+                  <DropdownMenuItem key={i} onClick={item.action} className="gap-2 text-sm">
+                    {item.icon}
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Create Button — single action variant */}
+          {onCreateClick && !createButtonItems && (
             <Button
               onClick={onCreateClick}
               className="action-button-primary hidden sm:flex"
@@ -65,7 +95,7 @@ export const PageHeader = ({
           )}
 
           {/* Mobile Create Button */}
-          {onCreateClick && (
+          {(onCreateClick && !createButtonItems) && (
             <Button
               onClick={onCreateClick}
               className="action-button-primary sm:hidden"
@@ -73,6 +103,23 @@ export const PageHeader = ({
             >
               <Plus className="h-4 w-4" />
             </Button>
+          )}
+          {createButtonItems && createButtonItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="action-button-primary sm:hidden" size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {createButtonItems.map((item, i) => (
+                  <DropdownMenuItem key={i} onClick={item.action} className="gap-2 text-sm">
+                    {item.icon}
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
         {/* Notification + User section with border */}

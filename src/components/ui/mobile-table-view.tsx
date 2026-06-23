@@ -1,6 +1,14 @@
 import React from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MobileResponsiveCard } from './mobile-responsive-card';
 
 const HEADER_BG = 'hsl(220,14%,93%)';
@@ -23,10 +31,14 @@ interface MobileTableViewProps<T> {
     onClick: () => void;
     variant?: 'default' | 'destructive' | 'outline';
     icon?: React.ComponentType<{ className?: string }>;
+    disabled?: boolean;
+    disabledReason?: string;
   }>;
   onRowClick?: (item: T) => void;
   showMobileCards?: boolean;
   stickyHeader?: boolean;
+  /** Max action icons shown inline before overflow goes into ⋯ menu. Default: 3 */
+  maxVisibleActions?: number;
   /** Custom mobile card renderer — when provided, replaces MobileResponsiveCard */
   renderMobileItem?: (item: T, onView?: () => void) => React.ReactNode;
 }
@@ -42,9 +54,101 @@ export function MobileTableView<T>({
   onRowClick,
   showMobileCards = true,
   stickyHeader = false,
+  maxVisibleActions = 3,
   renderMobileItem,
 }: MobileTableViewProps<T>) {
   const hasActions = !!(getActions || onRowClick);
+
+  // Render action buttons: first N visible as icons, rest in ⋯ dropdown
+  // Priority: View → Edit → Delete are always shown inline when present
+  const renderActions = (item: T) => {
+    const allActions = getActions?.(item) ?? [];
+    if (allActions.length === 0) return null;
+
+    // If everything fits, show all — no reordering needed
+    if (allActions.length <= maxVisibleActions) {
+      return renderActionButtons(allActions, []);
+    }
+
+    // Separate priority actions (View, Edit, Delete) from the rest
+    const PRIORITY_LABELS = ['view', 'edit', 'delete'];
+    const priority: typeof allActions = [];
+    const rest: typeof allActions = [];
+    for (const action of allActions) {
+      if (PRIORITY_LABELS.includes(action.label.toLowerCase())) {
+        priority.push(action);
+      } else {
+        rest.push(action);
+      }
+    }
+
+    // Fill visible slots: priority first, then rest
+    const sorted = [...priority, ...rest];
+    const visible = sorted.slice(0, maxVisibleActions);
+    const overflow = sorted.slice(maxVisibleActions);
+
+    return renderActionButtons(visible, overflow);
+  };
+
+  const renderActionButtons = (
+    visible: ReturnType<NonNullable<typeof getActions>>,
+    overflow: ReturnType<NonNullable<typeof getActions>>
+  ) => {
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {visible.map((action, i) => {
+          const IconComponent = action.icon;
+          const isDestructive = action.variant === 'destructive';
+          return (
+            <Button
+              key={i}
+              variant="ghost"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); if (!action.disabled) action.onClick(); }}
+              disabled={action.disabled}
+              className={`h-7 w-7 p-0 ${isDestructive && !action.disabled ? 'text-destructive hover:text-destructive hover:bg-destructive/10' : ''} ${action.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+              title={action.disabled && action.disabledReason ? action.disabledReason : action.label}
+            >
+              {IconComponent && <IconComponent className="h-3.5 w-3.5" />}
+            </Button>
+          );
+        })}
+        {overflow.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={e => e.stopPropagation()}>
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {overflow.map((action, i) => {
+                const IconComponent = action.icon;
+                const isDestructive = action.variant === 'destructive';
+                return (
+                  <React.Fragment key={i}>
+                    {isDestructive && i === 0 && overflow.length > 1 && <DropdownMenuSeparator />}
+                    {isDestructive && i > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuItem
+                      onClick={(e) => { e.stopPropagation(); if (!action.disabled) action.onClick(); }}
+                      disabled={action.disabled}
+                      className={isDestructive && !action.disabled ? 'text-destructive focus:text-destructive' : ''}
+                    >
+                      {IconComponent && <IconComponent className="h-3.5 w-3.5 mr-2" />}
+                      {action.label}
+                      {action.disabled && action.disabledReason && (
+                        <span className="ml-auto text-[10px] text-muted-foreground">{action.disabledReason}</span>
+                      )}
+                    </DropdownMenuItem>
+                  </React.Fragment>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    );
+  };
 
   if (showMobileCards) {
     return (
@@ -116,23 +220,7 @@ export function MobileTableView<T>({
                     ))}
                     {hasActions && (
                       <td className="px-3 py-2 align-middle">
-                        <div className="flex items-center gap-1">
-                          {getActions?.(item)?.map((action, actionIndex) => {
-                            const IconComponent = action.icon;
-                            return (
-                              <Button
-                                key={actionIndex}
-                                variant={action.variant === 'destructive' ? 'destructive' : 'ghost'}
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-                                className="h-7 w-7 p-0"
-                                title={action.label}
-                              >
-                                {IconComponent && <IconComponent className="h-3.5 w-3.5" />}
-                              </Button>
-                            );
-                          })}
-                        </div>
+                        {renderActions(item)}
                       </td>
                     )}
                   </tr>
@@ -178,23 +266,7 @@ export function MobileTableView<T>({
                 ))}
                 {hasActions && (
                   <td className="px-3 py-2 align-middle">
-                    <div className="flex items-center gap-1">
-                      {getActions?.(item)?.map((action, actionIndex) => {
-                        const IconComponent = action.icon;
-                        return (
-                          <Button
-                            key={actionIndex}
-                            variant={action.variant === 'destructive' ? 'destructive' : 'ghost'}
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-                            className="h-7 w-7 p-0"
-                            title={action.label}
-                          >
-                            {IconComponent && <IconComponent className="h-3.5 w-3.5" />}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                    {renderActions(item)}
                   </td>
                 )}
               </tr>

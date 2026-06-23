@@ -32,6 +32,7 @@ import * as vendorService from '@/services/vendorService';
 import type { VendorFilterParams } from '@/services/vendorService';
 import { VendorWithRisk } from '@/services/vendorService';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -140,7 +141,8 @@ export const VendorManagement = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-  
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -612,7 +614,7 @@ export const VendorManagement = () => {
             getActions={(vendor) => [
               { label: 'View', onClick: () => handleViewVendor(vendor), icon: Eye },
               { label: 'Edit', onClick: () => handleEditVendor(vendor), icon: Edit },
-              { label: 'Delete', onClick: () => handleDeleteVendor(vendor.id), variant: 'destructive', icon: Trash2 },
+              { label: 'Delete', onClick: () => setDeleteTarget(vendor.id), variant: 'destructive', icon: Trash2 },
             ]}
           />
         )}
@@ -676,7 +678,17 @@ export const VendorManagement = () => {
         isEdit={isEditMode}
         onSave={handleSaveVendor}
         onUpdate={handleSaveVendor}
-        onDelete={handleDeleteVendor}
+        onDelete={(id: string) => setDeleteTarget(id)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete vendor?"
+        description="This will permanently remove this vendor and all associated data. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget ? handleDeleteVendor(deleteTarget) : Promise.resolve()}
       />
     </div>
   );

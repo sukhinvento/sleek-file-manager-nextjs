@@ -23,6 +23,14 @@ import {
   Activity,
   BedDouble,
   Stethoscope,
+  BookOpen,
+  BookMarked,
+  Hourglass,
+  BarChart2,
+  Landmark,
+  Banknote,
+  Building2,
+  Scale,
   LucideIcon
 } from 'lucide-react';
 
@@ -67,6 +75,19 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { path: '/invoices', label: 'Invoices', icon: FileText, scopes: ['invoices'] },
       { path: '/diagnostics', label: 'Diagnostics', icon: Activity, scopes: ['diagnostics'] },
+    ],
+  },
+  {
+    title: 'Financial Reporting',
+    items: [
+      { path: '/finance/accounts', label: 'Chart of Accounts', icon: BookOpen, scopes: ['finance'] },
+      { path: '/finance/journal', label: 'Journal Entries', icon: BookMarked, scopes: ['finance'] },
+      { path: '/finance/aging', label: 'AR/AP Aging', icon: Hourglass, scopes: ['finance'] },
+      { path: '/finance/pnl', label: 'P&L Statement', icon: BarChart2, scopes: ['finance'] },
+      { path: '/finance/bank-accounts', label: 'Bank Accounts', icon: Landmark, scopes: ['finance'] },
+      { path: '/finance/payroll', label: 'Payroll', icon: Banknote, scopes: ['finance'] },
+      { path: '/finance/fixed-assets', label: 'Fixed Assets', icon: Building2, scopes: ['finance'] },
+      { path: '/finance/balance-sheet', label: 'Balance Sheet', icon: Scale, scopes: ['finance'] },
     ],
   },
   {

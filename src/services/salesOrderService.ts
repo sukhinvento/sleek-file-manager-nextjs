@@ -1,6 +1,5 @@
 import apiClient from '@/lib/api-client';
 import { SalesOrder, SalesOrderItem } from '@/types/inventory';
-import * as billingService from '@/services/billingService';
 
 function mapOrderItem(raw: any): SalesOrderItem {
   return {
@@ -130,10 +129,15 @@ function toBackendPayload(orderData: Partial<SalesOrder>): Record<string, any> {
  * Fetch all sales orders
  * GET /sales-orders?limit=200
  */
-export const fetchSalesOrders = async (): Promise<SalesOrder[]> => {
-  const response = await apiClient.get('/sales-orders', { params: { limit: 200 } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapSalesOrder);
+export const fetchSalesOrders = async (page = 1, limit = 25): Promise<{ data: SalesOrder[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/sales-orders', { params: { page, limit, sort: 'createdAt_desc' } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapSalesOrder),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**
@@ -211,28 +215,10 @@ export const shipSalesOrder = async (id: string): Promise<SalesOrder> => {
 
 /**
  * Invoice a sales order — POST /sales-orders/:id/invoice
- * Also creates a billing record so it appears in the Billing section.
  */
 export const invoiceSalesOrder = async (id: string): Promise<SalesOrder> => {
   const response = await apiClient.post(`/sales-orders/${id}/invoice`);
-  const so = mapSalesOrder(response.data);
-  try {
-    const invoiceNum = `INV-SO-${so.orderNumber || id.slice(-6).toUpperCase()}`;
-    await billingService.createBillingRecord({
-      invoiceNumber: invoiceNum,
-      patientName: so.customerName,
-      patientId: so.customerId || '',
-      department: 'Sales',
-      doctor: so.createdBy || '',
-      date: so.orderDate,
-      dueDate: so.dueDate || '',
-      amount: so.total,
-      paidAmount: so.paidAmount || (so.paymentStatus === 'Paid' ? so.total : 0),
-      status: so.paymentStatus === 'Paid' ? 'Paid' : so.paymentStatus === 'Partial' ? 'Partial' : 'Pending',
-      services: so.items.map(i => i.name),
-    });
-  } catch { /* billing creation is best-effort */ }
-  return so;
+  return mapSalesOrder(response.data);
 };
 
 /**

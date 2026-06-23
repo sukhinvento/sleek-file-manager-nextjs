@@ -167,11 +167,13 @@ export const DistributionAnalytics = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [patients, admissions, inventoryItems] = await Promise.all([
-          fetchPatients(),
+        const [patientsRes, admissions, inventoryRes] = await Promise.all([
+          fetchPatients(1, 500),
           fetchActiveAdmissions(),
-          fetchInventoryItems(),
+          fetchInventoryItems(1, 500),
         ]);
+        const patients = patientsRes.data;
+        const inventoryItems = inventoryRes.data;
 
         setGenderData(computeGenderData(patients));
         setPaymentMethodData(computePaymentMethodData(admissions));
@@ -202,8 +204,7 @@ export const DistributionAnalytics = () => {
     return (
       <div className="space-y-6 p-1">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Distribution Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Loading data…</p>
+          <p className="text-sm text-muted-foreground">Loading data…</p>
         </div>
         <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">Loading analytics…</div>
       </div>
@@ -212,11 +213,6 @@ export const DistributionAnalytics = () => {
 
   return (
     <div className="space-y-6 p-1">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Distribution Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Demographic, financial, and inventory composition breakdowns</p>
-      </div>
 
       {/* Row 1: Donut charts */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

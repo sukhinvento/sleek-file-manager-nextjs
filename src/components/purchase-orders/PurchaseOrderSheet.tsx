@@ -25,7 +25,7 @@ import { ItemScanner } from '@/components/scanner/ItemScanner';
 import { PaymentRecord, EntityOption } from '@/types/shared';
 import EntityAutosuggest from '@/components/shared/EntityAutosuggest';
 import * as purchaseOrderService from '@/services/purchaseOrderService';
-import { fetchRooms, Room } from '@/services/roomService';
+import { fetchLocationLookup } from '@/services/locationService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -83,50 +83,14 @@ export default function PurchaseOrderSheet({
 
   useEffect(() => {
     if (mode === 'add' || mode === 'edit') {
-      fetchRooms().then((rooms) => {
-        const seen = new Set<string>();
-        const locs: { id: string; name: string; detail: string }[] = [];
-        // Static hospital locations first
-        const staticLocations = ['Pharmacy', 'Operation Theatre (OT)', 'Emergency', 'ICU', 'NICU', 'General Ward', 'Reception', 'Store Room', 'Admin Office', 'Laboratory', 'Radiology'];
-        staticLocations.forEach((loc, i) => {
-          locs.push({ id: `static-${i}`, name: loc, detail: 'Hospital' });
-          seen.add(loc.toLowerCase());
-        });
-        // Derive from rooms: unique departments
-        rooms.forEach((room) => {
-          if (room.department && !seen.has(room.department.toLowerCase())) {
-            seen.add(room.department.toLowerCase());
-            locs.push({ id: `dept-${room.department}`, name: room.department, detail: `Floor ${room.floor}` });
-          }
-        });
-        // Also add room types as categories (ICU, General Ward, etc.)
-        const typeLabels: Record<string, string> = {
-          General: 'General Ward', Private: 'Private Ward', ICU: 'ICU',
-          'Semi-Private': 'Semi-Private Ward', Deluxe: 'Deluxe Ward', Suite: 'Suite',
-        };
-        rooms.forEach((room) => {
-          const label = typeLabels[room.type] || room.type;
-          if (!seen.has(label.toLowerCase())) {
-            seen.add(label.toLowerCase());
-            locs.push({ id: `type-${room.type}`, name: label, detail: `Floor ${room.floor}` });
-          }
-        });
-        setDeliveryLocations(locs);
+      fetchLocationLookup().then((locs) => {
+        setDeliveryLocations(locs.map(l => ({
+          id: l.value,
+          name: l.label,
+          detail: [l.type, l.address].filter(Boolean).join(' — '),
+        })));
       }).catch(() => {
-        // Fallback: provide static locations even if rooms API fails
-        setDeliveryLocations([
-          { id: 'static-0', name: 'Pharmacy', detail: 'Hospital' },
-          { id: 'static-1', name: 'Operation Theatre (OT)', detail: 'Hospital' },
-          { id: 'static-2', name: 'Emergency', detail: 'Hospital' },
-          { id: 'static-3', name: 'ICU', detail: 'Hospital' },
-          { id: 'static-4', name: 'NICU', detail: 'Hospital' },
-          { id: 'static-5', name: 'General Ward', detail: 'Hospital' },
-          { id: 'static-6', name: 'Store Room', detail: 'Hospital' },
-          { id: 'static-7', name: 'Reception', detail: 'Hospital' },
-          { id: 'static-8', name: 'Admin Office', detail: 'Hospital' },
-          { id: 'static-9', name: 'Laboratory', detail: 'Hospital' },
-          { id: 'static-10', name: 'Radiology', detail: 'Hospital' },
-        ]);
+        setDeliveryLocations([]);
       });
     }
   }, [mode]);
@@ -306,7 +270,7 @@ export default function PurchaseOrderSheet({
                   <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border pointer-events-none">
                     {addItems.length} {addItems.length === 1 ? 'item' : 'items'}
                   </Badge>
-                  <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted">
+                  <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -555,35 +519,35 @@ export default function PurchaseOrderSheet({
           <>
           {/* ── VIEW / EDIT — Standard header + content + footer ── */}
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-base font-bold text-foreground truncate">
-                  {mode === 'edit' ? `Edit — ${order?.poNumber}` : order?.poNumber}
-                </h2>
-                {mode === 'view' && order && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {order.vendorName} · {order.orderDate}
-                  </p>
-                )}
-              </div>
+          {/* Header — title + subtitle + close only; CTAs are in the footer */}
+          <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {mode === 'view' && onDelete && (
-                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                </Button>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-foreground leading-tight break-words">
+                {mode === 'edit' ? `Edit — ${order?.poNumber}` : order?.poNumber}
+              </h2>
+              {mode === 'view' && order && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {order.vendorName} · {order.orderDate}
+                </p>
               )}
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
             </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
+
+          {/* Read-only banner for settled orders */}
+          {mode === 'view' && (order?.status === 'Delivered' || order?.status === 'Cancelled') && (
+            <div className="flex items-center gap-2 px-6 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
+              <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                This order is <span className="font-bold">{order?.status}</span> and cannot be edited or deleted.
+              </p>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
@@ -656,7 +620,7 @@ export default function PurchaseOrderSheet({
                   {/* Right: Payment summary */}
                   <div className="flex flex-col">
                     <OrderSummaryCard
-                      subtotal={order.total}
+                      subtotal={order.items.reduce((sum, i) => sum + (i.subtotal || 0), 0)}
                       total={order.total}
                       paidAmount={order.paidAmount || 0}
                       onRecordPayment={balanceDue > 0 ? () => setShowPaymentDialog(true) : undefined}
@@ -858,31 +822,46 @@ export default function PurchaseOrderSheet({
 
           {/* Footer — View mode */}
           {mode === 'view' && (
-            <div className="border-t border-border px-6 py-4 flex items-center gap-3 flex-shrink-0">
-              {order?.status === 'Pending' && (
-                <Button variant="outline" size="sm" className="h-9 text-xs gap-1" onClick={handleApprove}>
-                  <ShieldCheck className="h-3.5 w-3.5" /> Approve
-                </Button>
-              )}
-              {order?.status === 'Approved' && (
-                <Button variant="outline" size="sm" className="h-9 text-xs gap-1" onClick={handleMarkDelivered}>
-                  <Truck className="h-3.5 w-3.5" /> Mark Delivered
-                </Button>
-              )}
-              {balanceDue > 0 && (
-                <Button variant="outline" size="sm" className="h-9 text-xs gap-1"
-                  onClick={() => setShowPaymentDialog(true)}>
-                  <CreditCard className="h-3.5 w-3.5" /> Record Payment
-                </Button>
-              )}
-              <Button variant="outline" size="sm" className="h-9 text-xs gap-1"
-                onClick={() => setShowPreview(true)}>
-                <Printer className="h-3.5 w-3.5" /> Print
-              </Button>
-              <Button size="sm" className="h-9 text-xs ml-auto gap-1"
-                onClick={() => onSave({ ...order! })}>
-                <Edit3 className="h-3.5 w-3.5" /> Edit PO
-              </Button>
+            <div className="border-t border-border px-6 py-4 flex items-center gap-2 flex-wrap flex-shrink-0">
+              {(() => {
+                const isSettled = order?.status === 'Delivered' || order?.status === 'Cancelled';
+                return (
+                  <>
+                    {onDelete && !isSettled && (
+                      <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
+                        className="h-9 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </Button>
+                    )}
+                    {order?.status === 'Pending' && (
+                      <Button variant="outline" size="sm" className="h-9 text-xs gap-1" onClick={handleApprove}>
+                        <ShieldCheck className="h-3.5 w-3.5" /> Approve
+                      </Button>
+                    )}
+                    {order?.status === 'Approved' && (
+                      <Button variant="outline" size="sm" className="h-9 text-xs gap-1" onClick={handleMarkDelivered}>
+                        <Truck className="h-3.5 w-3.5" /> Mark Delivered
+                      </Button>
+                    )}
+                    {balanceDue > 0 && (
+                      <Button variant="outline" size="sm" className="h-9 text-xs gap-1"
+                        onClick={() => setShowPaymentDialog(true)}>
+                        <CreditCard className="h-3.5 w-3.5" /> Record Payment
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" className="h-9 text-xs gap-1"
+                      onClick={() => setShowPreview(true)}>
+                      <Printer className="h-3.5 w-3.5" /> Print
+                    </Button>
+                    {!isSettled && (
+                      <Button size="sm" className="h-9 text-xs ml-auto gap-1"
+                        onClick={() => onSave({ ...order! })}>
+                        <Edit3 className="h-3.5 w-3.5" /> Edit PO
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
           </>

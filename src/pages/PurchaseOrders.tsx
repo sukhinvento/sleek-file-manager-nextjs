@@ -32,6 +32,7 @@ import * as purchaseOrderService from '@/services/purchaseOrderService';
 import * as vendorService from '@/services/vendorService';
 import { EntityOption } from '@/types/shared';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -139,10 +140,12 @@ export const PurchaseOrders = () => {
   const [sheetMode, setSheetMode] = useState<'view' | 'edit' | 'add'>('view');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState({
@@ -163,11 +166,12 @@ export const PurchaseOrders = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'orderDate', direction: 'desc' });
 
   // Load purchase orders from service
-  const loadPurchaseOrders = async () => {
+  const loadPurchaseOrders = async (page = currentPage) => {
     try {
       setIsLoadingData(true);
-      const data = await purchaseOrderService.fetchPurchaseOrders();
-      setPurchaseOrders(data);
+      const result = await purchaseOrderService.fetchPurchaseOrders(page, itemsPerPage);
+      setPurchaseOrders(result.data);
+      setTotalItems(result.total);
     } catch (error) {
       console.error('Error loading purchase orders:', error);
       toast({ title: 'Error', description: 'Failed to load purchase orders. Please try again.', variant: 'destructive' });
@@ -206,9 +210,12 @@ export const PurchaseOrders = () => {
     }
   };
 
-  // Load data on mount
+  // Load data on mount and page change
   useEffect(() => {
-    loadPurchaseOrders();
+    loadPurchaseOrders(currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
     loadStats();
     loadVendors();
   }, []);
@@ -303,11 +310,9 @@ export const PurchaseOrders = () => {
     enabled: isMobile
   });
 
-  // Pagination logic
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
-  const currentPageData = isMobile 
-    ? mobileDisplayedItems
-    : sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Pagination logic — page count comes from server total
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = isMobile ? mobileDisplayedItems : sortedOrders;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -598,11 +603,14 @@ export const PurchaseOrders = () => {
         ]}
         stickyHeader={true}
         renderMobileItem={(order, onView) => <POMobileCard order={order as PurchaseOrder} onClick={onView} />}
-        getActions={(order) => [
-          { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
-          { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
-          { label: 'Delete', onClick: () => handleDeleteOrder(order.id), variant: 'destructive' as const, icon: Trash2 }
-        ]}
+        getActions={(order) => {
+          const settled = order.status === 'Delivered' || order.status === 'Cancelled';
+          return [
+            { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
+            { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit, disabled: settled, disabledReason: settled ? 'Cannot edit settled order' : undefined },
+            { label: 'Delete', onClick: () => setDeleteTarget(order.id), variant: 'destructive' as const, icon: Trash2, disabled: settled, disabledReason: settled ? 'Cannot delete settled order' : undefined },
+          ];
+        }}
         onRowClick={(order) => handleViewOrder(order)}
       />
       )}
@@ -705,7 +713,7 @@ export const PurchaseOrders = () => {
           onUpdate={async (updatedOrder) => {
             await handleSaveOrder(updatedOrder);
           }}
-          onDelete={handleDeleteOrder}
+          onDelete={(id: string) => setDeleteTarget(id)}
           onRefresh={async () => {
             await loadPurchaseOrders();
             await loadStats();
@@ -726,6 +734,16 @@ export const PurchaseOrders = () => {
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
         onApplySort={handleApplySort}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete purchase order?"
+        description="This will permanently remove this purchase order. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget ? handleDeleteOrder(deleteTarget) : Promise.resolve()}
       />
     </div>
   );

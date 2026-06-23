@@ -5,13 +5,14 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-  TrendingUp, TrendingDown, Users, DollarSign, Package, Calendar,
-  ArrowUpRight, ArrowDownRight, Activity, Stethoscope, BarChart2,
+  Users, DollarSign, TrendingDown, Calendar,
+  ArrowUpRight, ArrowDownRight, Activity, BarChart2,
 } from 'lucide-react';
 import {
   fetchAdmissionsMonthlyAnalytics,
   fetchBillingWeeklyAnalytics,
   fetchBillingMonthlyAnalytics,
+  fetchExpenditureMonthlyAnalytics,
   fetchPOMonthlyAnalytics,
   fetchDiagnosticsMonthlyCategoryAnalytics,
   fillMonthGaps,
@@ -141,54 +142,94 @@ const MetricTab = ({ active, onClick, children }: { active: boolean; onClick: ()
 );
 
 export const TrendsAnalytics = () => {
-  const [metric, setMetric] = useState<'admissions' | 'revenue' | 'inventory' | 'diagnostics'>('admissions');
+  const [metric, setMetric] = useState<'admissions' | 'revenue' | 'expenditure' | 'diagnostics'>('admissions');
   const [loading, setLoading] = useState(true);
 
-  const [monthlyOverview, setMonthlyOverview] = useState<any[]>([]);
-  const [weeklyBilling, setWeeklyBilling] = useState<any[]>([]);
-  const [diagCategories, setDiagCategories] = useState<string[]>([]);
-  const [diagRows, setDiagRows] = useState<any[]>([]);
-  const [kpis, setKpis] = useState({ admissionsMoM: 0, revenueMoM: 0, inventoryOrders: 0, avgLos: 0 });
+  const [monthlyOverview,   setMonthlyOverview]   = useState<any[]>([]);
+  const [revExpMonthly,     setRevExpMonthly]      = useState<any[]>([]);
+  const [weeklyRevenue,     setWeeklyRevenue]      = useState<any[]>([]);
+  const [diagCategories,    setDiagCategories]     = useState<string[]>([]);
+  const [diagRows,          setDiagRows]           = useState<any[]>([]);
+  const [kpis, setKpis] = useState<{
+    admissionsMoM:  number | null;
+    revenueMoM:     number | null;
+    expenditureMoM: number | null;
+    avgLos:         number;
+    // Current month absolute values — shown as fallback when MoM has no prior baseline
+    currAdm:  number;
+    currRev:  number;
+    currExp:  number;
+  }>({
+    admissionsMoM:  null,
+    revenueMoM:     null,
+    expenditureMoM: null,
+    avgLos:         0,
+    currAdm:  0,
+    currRev:  0,
+    currExp:  0,
+  });
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [admData, billingWeekly, billingMonthly, poData, diagData] = await Promise.all([
-          fetchAdmissionsMonthlyAnalytics(12),
-          fetchBillingWeeklyAnalytics(12),
-          fetchBillingMonthlyAnalytics(12),
-          fetchPOMonthlyAnalytics(12),
-          fetchDiagnosticsMonthlyCategoryAnalytics(6),
-        ]);
+        const [admData, billingWeekly, billingMonthly, expenditureMonthly, poData, diagData] =
+          await Promise.all([
+            fetchAdmissionsMonthlyAnalytics(12),
+            fetchBillingWeeklyAnalytics(12),
+            fetchBillingMonthlyAnalytics(12),
+            fetchExpenditureMonthlyAnalytics(12),
+            fetchPOMonthlyAnalytics(12),
+            fetchDiagnosticsMonthlyCategoryAnalytics(6),
+          ]);
 
-        const admFilled = fillMonthGaps(admData.monthly, 12, { admissions: 0, discharges: 0 });
-        const bilMap = new Map(billingMonthly.map(d => [d.month, d.revenue]));
-        const poMap  = new Map(poData.map(d => [d.month, d.count]));
+        const admFilled  = fillMonthGaps(admData.monthly, 12, { admissions: 0, discharges: 0 });
+        const revMap     = new Map(billingMonthly.map(d => [d.month, d.revenue]));
+        const expMap     = new Map(expenditureMonthly.map(d => [d.month, d.spend]));
+        const poMap      = new Map(poData.map(d => [d.month, d.count]));
 
+        // Overview data (used by all tabs)
         const overview = admFilled.map(d => ({
-          month: d.label,
-          admissions: d.admissions,
-          discharges: d.discharges,
-          revenue: bilMap.get(d.month) ?? 0,
-          inventory: poMap.get(d.month) ?? 0,
+          month:       d.label,
+          admissions:  d.admissions,
+          discharges:  d.discharges,
+          revenue:     revMap.get(d.month) ?? 0,
+          expenditure: expMap.get(d.month) ?? 0,
+          inventory:   poMap.get(d.month) ?? 0,
         }));
         setMonthlyOverview(overview);
+
+        // Revenue vs Expenditure monthly comparison
+        setRevExpMonthly(overview.map(d => ({
+          month:       d.month,
+          revenue:     d.revenue,
+          expenditure: d.expenditure,
+        })));
 
         const diagWithLabel = diagData.rows.map(row => ({ ...row, month: toMonthLabel(row.month) }));
         setDiagCategories(diagData.categories);
         setDiagRows(diagWithLabel);
-        setWeeklyBilling(billingWeekly);
+        setWeeklyRevenue(billingWeekly);
 
-        const lastTwo = overview.slice(-2);
-        const prevAdm = lastTwo[0]?.admissions ?? 0;
-        const currAdm = lastTwo[1]?.admissions ?? 0;
-        const prevRev = lastTwo[0]?.revenue ?? 0;
-        const currRev = lastTwo[1]?.revenue ?? 0;
+        // MoM KPIs
+        const lastTwo   = overview.slice(-2);
+        const prevAdm   = lastTwo[0]?.admissions  ?? 0;
+        const currAdm   = lastTwo[1]?.admissions  ?? 0;
+        const prevRev   = lastTwo[0]?.revenue     ?? 0;
+        const currRev   = lastTwo[1]?.revenue     ?? 0;
+        const prevExp   = lastTwo[0]?.expenditure ?? 0;
+        const currExp   = lastTwo[1]?.expenditure ?? 0;
+        // Returns null when there's no prior baseline (prev = 0) — shown as "N/A" in UI
+        const mom = (prev: number, curr: number): number | null =>
+          prev > 0 ? +((((curr - prev) / prev) * 100).toFixed(1)) : null;
+
         setKpis({
-          admissionsMoM: prevAdm > 0 ? +((((currAdm - prevAdm) / prevAdm) * 100).toFixed(1)) : 0,
-          revenueMoM:    prevRev > 0 ? +((((currRev - prevRev) / prevRev) * 100).toFixed(1)) : 0,
-          inventoryOrders: poData.reduce((s, d) => s + d.count, 0),
-          avgLos: admData.avgLos,
+          admissionsMoM:  mom(prevAdm, currAdm),
+          revenueMoM:     mom(prevRev, currRev),
+          expenditureMoM: mom(prevExp, currExp),
+          avgLos:         admData.avgLos,
+          currAdm,
+          currRev,
+          currExp,
         });
       } catch (err) {
         console.error('TrendsAnalytics load error:', err);
@@ -200,58 +241,54 @@ export const TrendsAnalytics = () => {
   }, []);
 
   const metricLabels: Record<typeof metric, string> = {
-    admissions: 'Admissions & Discharges',
-    revenue:    'Billing Revenue (₹K)',
-    inventory:  'Purchase Orders',
+    admissions:  'Admissions & Discharges',
+    revenue:     'Revenue — SO + Diagnostics + Admissions (₹K)',
+    expenditure: 'Expenditure — Purchase Orders (₹K)',
     diagnostics: 'Diagnostics Volume',
-  };
-
-  const metricColors: Record<typeof metric, string> = {
-    admissions: PRIMARY,
-    revenue:    SUCCESS,
-    inventory:  WARNING,
-    diagnostics: PURPLE,
   };
 
   return (
     <div className="space-y-6 p-1">
 
-      {/* ── Page header ───────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'hsl(215,28%,14%)' }}>Trends Analytics</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(220,12%,54%)' }}>12-month historical trends across all modules</p>
-        </div>
+      {/* ── Toolbar ────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border" style={{ borderColor: 'hsl(220,16%,88%)', color: 'hsl(220,12%,54%)' }}>
           <Activity size={13} />
           Live Data
         </div>
       </div>
 
-      {/* ── KPI strip ─────────────────────────────────────────────────── */}
+      {/* ── KPI strip ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Admissions MoM"
-          value={loading ? '—' : `${kpis.admissionsMoM >= 0 ? '+' : ''}${kpis.admissionsMoM}%`}
+          label={kpis.admissionsMoM !== null ? 'Admissions MoM' : 'Admissions (this month)'}
+          value={loading ? '—' : kpis.admissionsMoM !== null
+            ? `${kpis.admissionsMoM >= 0 ? '+' : ''}${kpis.admissionsMoM}%`
+            : String(kpis.currAdm)}
           icon={Users}
-          trend={kpis.admissionsMoM}
-          sub="month-over-month change"
-          accent={kpis.admissionsMoM >= 0 ? 'success' : 'danger'}
+          trend={kpis.admissionsMoM ?? undefined}
+          sub={kpis.admissionsMoM !== null ? 'month-over-month change' : 'first month of data'}
+          accent={kpis.admissionsMoM === null ? 'cyan' : kpis.admissionsMoM >= 0 ? 'success' : 'danger'}
         />
         <StatCard
-          label="Revenue MoM"
-          value={loading ? '—' : `${kpis.revenueMoM >= 0 ? '+' : ''}${kpis.revenueMoM}%`}
+          label={kpis.revenueMoM !== null ? 'Revenue MoM' : 'Revenue (this month)'}
+          value={loading ? '—' : kpis.revenueMoM !== null
+            ? `${kpis.revenueMoM >= 0 ? '+' : ''}${kpis.revenueMoM}%`
+            : `₹${Math.abs(kpis.currRev).toLocaleString('en-IN')}`}
           icon={DollarSign}
-          trend={kpis.revenueMoM}
-          sub="billing revenue change"
-          accent={kpis.revenueMoM >= 0 ? 'success' : 'danger'}
+          trend={kpis.revenueMoM ?? undefined}
+          sub={kpis.revenueMoM !== null ? 'SO + diagnostics + admissions' : 'first month of data'}
+          accent={kpis.revenueMoM === null ? 'cyan' : kpis.revenueMoM >= 0 ? 'success' : 'danger'}
         />
         <StatCard
-          label="PO Orders (12m)"
-          value={loading ? '—' : kpis.inventoryOrders}
-          icon={Package}
-          sub="total purchase orders"
-          accent="primary"
+          label={kpis.expenditureMoM !== null ? 'Expenditure MoM' : 'Expenditure (this month)'}
+          value={loading ? '—' : kpis.expenditureMoM !== null
+            ? `${kpis.expenditureMoM >= 0 ? '+' : ''}${kpis.expenditureMoM}%`
+            : `₹${Math.abs(kpis.currExp).toLocaleString('en-IN')}`}
+          icon={TrendingDown}
+          trend={kpis.expenditureMoM ?? undefined}
+          sub={kpis.expenditureMoM !== null ? 'purchase orders to vendors' : 'first month of data'}
+          accent={kpis.expenditureMoM === null ? 'cyan' : kpis.expenditureMoM <= 0 ? 'success' : 'warning'}
         />
         <StatCard
           label="Avg LOS (days)"
@@ -262,15 +299,14 @@ export const TrendsAnalytics = () => {
         />
       </div>
 
-      {/* ── 12-Month Overview ──────────────────────────────────────────── */}
+      {/* ── 12-Month Overview ───────────────────────────────────────────── */}
       <ChartCard
         title="12-Month Overview"
         subtitle={`Live data — ${metricLabels[metric]}`}
         badge="12 months"
       >
-        {/* Metric tabs */}
         <div className="flex gap-1 px-2 pb-3 pt-1" style={{ background: 'hsl(220,14%,96%)', borderRadius: 8, margin: '0 8px 12px', padding: '4px' }}>
-          {(['admissions', 'revenue', 'inventory', 'diagnostics'] as const).map(m => (
+          {(['admissions', 'revenue', 'expenditure', 'diagnostics'] as const).map(m => (
             <MetricTab key={m} active={metric === m} onClick={() => setMetric(m)}>
               {m}
             </MetricTab>
@@ -279,7 +315,7 @@ export const TrendsAnalytics = () => {
 
         {loading ? <LoadingChart h={260} /> : (
           <ResponsiveContainer width="100%" height={260}>
-            <ComposedChart data={monthlyOverview} margin={{ top: 4, right: 16, left: -10, bottom: 0 }}>
+            <ComposedChart data={metric === 'diagnostics' ? diagRows : monthlyOverview} margin={{ top: 4, right: 16, left: -10, bottom: 0 }}>
               <defs>
                 {CATEGORY_COLORS.map((c, i) => (
                   <linearGradient key={i} id={`ovGrad${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -293,6 +329,7 @@ export const TrendsAnalytics = () => {
               <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
               <Tooltip content={<ChartTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
+
               {metric === 'admissions' && (
                 <>
                   <Area type="monotone" dataKey="admissions" stroke={PRIMARY} fill="url(#ovGrad0)" strokeWidth={2.5} name="Admissions" dot={false} />
@@ -302,12 +339,17 @@ export const TrendsAnalytics = () => {
               {metric === 'revenue' && (
                 <Area type="monotone" dataKey="revenue" stroke={SUCCESS} fill="url(#ovGrad2)" strokeWidth={2.5} name="Revenue (₹K)" dot={false} />
               )}
-              {metric === 'inventory' && (
-                <Area type="monotone" dataKey="inventory" stroke={WARNING} fill="url(#ovGrad3)" strokeWidth={2.5} name="PO Orders" dot={false} />
+              {metric === 'expenditure' && (
+                <Area type="monotone" dataKey="expenditure" stroke={DANGER} fill="url(#ovGrad5)" strokeWidth={2.5} name="Expenditure (₹K)" dot={false} />
               )}
-              {metric === 'diagnostics' && diagRows.length > 0 && (
-                <Area type="monotone" dataKey={diagCategories[0] ?? 'count'} stroke={PURPLE} fill="url(#ovGrad4)" strokeWidth={2.5} name="Diagnostics" dot={false} />
-              )}
+              {metric === 'diagnostics' && diagRows.length > 0 &&
+                diagCategories.map((cat, i) => (
+                  <Area key={cat} type="monotone" dataKey={cat}
+                    stroke={CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
+                    fill={`url(#ovGrad${i})`} strokeWidth={2} name={cat} dot={false}
+                  />
+                ))
+              }
               {metric === 'diagnostics' && diagRows.length === 0 && (
                 <Area type="monotone" dataKey="admissions" stroke="hsl(220,13%,80%)" fill="url(#ovGrad0)" strokeWidth={1} name="No data" dot={false} />
               )}
@@ -316,14 +358,40 @@ export const TrendsAnalytics = () => {
         )}
       </ChartCard>
 
-      {/* ── Billing + Diagnostics row ──────────────────────────────────── */}
+      {/* ── Revenue vs Expenditure + Diagnostics ────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Billing Collection Trend" subtitle="Weekly collected vs outstanding (₹K)">
-          {loading ? <LoadingChart h={220} /> : weeklyBilling.length === 0 ? (
-            <EmptyChart h={220} msg="No billing data yet" />
+
+        {/* Revenue vs Expenditure — monthly comparison */}
+        <ChartCard
+          title="Revenue vs Expenditure"
+          subtitle="Monthly cash flow — income (+) vs procurement spend (−)"
+          badge="12 months"
+        >
+          {loading ? <LoadingChart h={220} /> :
+           revExpMonthly.every(d => d.revenue === 0 && d.expenditure === 0) ? (
+            <EmptyChart h={220} msg="No financial data yet" />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weeklyBilling} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+              <BarChart data={revExpMonthly} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <Tooltip content={<ChartTooltip suffix="K" />} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="revenue"     fill={SUCCESS} name="Revenue (₹K)"     radius={[3, 3, 0, 0]} />
+                <Bar dataKey="expenditure" fill={DANGER}  name="Expenditure (₹K)" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+
+        {/* Revenue inflow trend (weekly collections) */}
+        <ChartCard title="Revenue Collection (Weekly)" subtitle="Collected vs outstanding from SO + diagnostics + admissions (₹K)">
+          {loading ? <LoadingChart h={220} /> : weeklyRevenue.length === 0 ? (
+            <EmptyChart h={220} msg="No revenue data yet" />
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={weeklyRevenue} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
                 <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
                 <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
@@ -335,7 +403,10 @@ export const TrendsAnalytics = () => {
             </ResponsiveContainer>
           )}
         </ChartCard>
+      </div>
 
+      {/* ── Diagnostics + Admissions row ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Diagnostics Volume by Category" subtitle="Test bookings by category — last 6 months">
           {loading ? <LoadingChart h={220} /> : diagRows.length === 0 ? (
             <EmptyChart h={220} msg="No diagnostic booking data yet" />
@@ -365,26 +436,25 @@ export const TrendsAnalytics = () => {
             </ResponsiveContainer>
           )}
         </ChartCard>
-      </div>
 
-      {/* ── Admissions vs Discharges ───────────────────────────────────── */}
-      <ChartCard title="Admissions vs Discharges" subtitle="12-month patient flow trend" badge="Patient Flow">
-        {loading ? <LoadingChart h={220} /> : monthlyOverview.every(d => d.admissions === 0 && d.discharges === 0) ? (
-          <EmptyChart h={220} msg="No admissions data yet" />
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyOverview} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
-              <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="admissions" fill={PRIMARY}  name="Admissions" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="discharges" fill={SUCCESS}  name="Discharges" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </ChartCard>
+        <ChartCard title="Admissions vs Discharges" subtitle="12-month patient flow trend" badge="Patient Flow">
+          {loading ? <LoadingChart h={220} /> : monthlyOverview.every(d => d.admissions === 0 && d.discharges === 0) ? (
+            <EmptyChart h={220} msg="No admissions data yet" />
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyOverview} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(220,12%,54%)' }} />
+                <Tooltip content={<ChartTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="admissions" fill={PRIMARY} name="Admissions" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="discharges" fill={SUCCESS} name="Discharges" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+      </div>
 
     </div>
   );

@@ -95,12 +95,14 @@ export const HospitalDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [patients, rooms, doctors, admissions] = await Promise.all([
-          fetchPatients(),
+        const [patientsRes, rooms, doctorsRes, admissions] = await Promise.all([
+          fetchPatients(1, 500),
           fetchRooms(),
-          fetchDoctors(),
+          fetchDoctors(1, 500),
           fetchActiveAdmissions(),
         ]);
+        const patients = patientsRes.data;
+        const doctors = doctorsRes.data;
 
         const today = new Date();
         const todayStr = today.toISOString().slice(0, 10);

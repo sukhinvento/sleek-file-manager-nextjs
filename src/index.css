@@ -135,7 +135,7 @@
     /* Sidebar — slate-blue with bright blue active rail */
     --sidebar-bg: 220 28% 20%;
     --sidebar-hover: 220 26% 27%;
-    --sidebar-active: 210 90% 62%;
+    --sidebar-active: 210 50% 90%;
     --sidebar-text: 220 18% 72%;
     --sidebar-text-active: 0 0% 100%;
     --sidebar-section: 220 16% 52%;

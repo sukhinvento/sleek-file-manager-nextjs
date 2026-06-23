@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { AlertCircle, CreditCard, IndianRupee } from 'lucide-react';
 import { PaymentRecord, PAYMENT_METHODS } from '@/types/shared';
+import { DatePicker } from '@/components/ui/date-picker';
 
 // Design tokens
 const PRIMARY = '#385a9f';
@@ -222,15 +223,14 @@ export default function RecordPaymentDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="payment-date">Date *</Label>
-              <Input
-                id="payment-date"
-                type="date"
-                value={date}
-                onChange={(e) => {
-                  setDate(e.target.value);
+              <Label>Date *</Label>
+              <DatePicker
+                date={date ? new Date(date + 'T00:00:00') : undefined}
+                onDateChange={(d) => {
+                  setDate(d ? d.toISOString().split('T')[0] : '');
                   setErrors((prev) => ({ ...prev, date: '' }));
                 }}
+                placeholder="Pick a date"
                 className={errors.date ? 'border-red-500' : ''}
               />
               {errors.date && (

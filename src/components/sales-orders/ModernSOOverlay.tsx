@@ -26,6 +26,7 @@ import { OrderStatusDialog, StatusUpdateData, OrderItem } from '../orders/OrderS
 import { fetchPatients } from '@/services/patientService';
 import { fetchRooms } from '@/services/roomService';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { fetchActiveTaxes } from '@/services/taxService';
 
 interface Customer {
   id: string;
@@ -298,6 +299,7 @@ export const ModernSOOverlay = ({
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [defaultTaxSlab, setDefaultTaxSlab] = useState<number>(18);
 
   // Invoice generation states
   const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
@@ -358,8 +360,9 @@ export const ModernSOOverlay = ({
 
   // Load customers (patients/client accounts) and locations from API
   useEffect(() => {
-    fetchPatients().then(patients => {
-      setCustomers(patients.map(p => ({
+    fetchPatients().then(res => {
+      const patients = Array.isArray(res) ? res : (res as any).data ?? [];
+      setCustomers(patients.map((p: any) => ({
         id: p.id,
         name: p.name,
         email: p.email || '',
@@ -382,6 +385,19 @@ export const ModernSOOverlay = ({
     }).catch(() => {});
   }, []);
 
+  // Fetch default tax slab from API
+  useEffect(() => {
+    fetchActiveTaxes('sales')
+      .then(taxes => {
+        const active = taxes.filter(t => t.rate_type === 'percentage' && t.status === 'active' && t.rate > 0);
+        if (active.length > 0) {
+          const sorted = active.sort((a, b) => a.rate - b.rate);
+          setDefaultTaxSlab(sorted[0].rate);
+        }
+      })
+      .catch(() => {/* keep default 18 */});
+  }, []);
+
   const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
 
   const addItem = (stockItem?: StockItem) => {
@@ -392,13 +408,15 @@ export const ModernSOOverlay = ({
       qty: 1,
       unitPrice: stockItem.unitPrice,
       discount: 0,
-      subtotal: stockItem.unitPrice
+      subtotal: stockItem.unitPrice,
+      taxSlab: defaultTaxSlab
     } : {
       name: '',
       qty: 1,
       unitPrice: 0,
       discount: 0,
-      subtotal: 0
+      subtotal: 0,
+      taxSlab: defaultTaxSlab
     };
     
     setItems(prev => [newItem, ...prev]);
@@ -412,7 +430,8 @@ export const ModernSOOverlay = ({
       qty: quantity || 1,
       unitPrice: item.unitPrice || 0,
       discount: 0,
-      subtotal: (quantity || 1) * (item.unitPrice || 0)
+      subtotal: (quantity || 1) * (item.unitPrice || 0),
+      taxSlab: defaultTaxSlab
     };
     
     setItems([newItem, ...items]);
@@ -443,7 +462,10 @@ export const ModernSOOverlay = ({
 
   const calculateTotals = () => {
     const subTotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    const tax = subTotal * 0.18;
+    const tax = items.reduce((sum, item) => {
+      const rate = item.taxSlab ?? 0;
+      return sum + ((item.subtotal || 0) * rate / 100);
+    }, 0);
     const shipping = subTotal === 0 ? 0 : Math.max(50, Math.min(Math.round(subTotal * 0.02), 1500));
     const total = subTotal + tax + shipping;
     return { subTotal, tax, shipping, total };
@@ -468,7 +490,10 @@ export const ModernSOOverlay = ({
 
     try {
       const subTotal = validItems.reduce((sum, i) => sum + (i.subtotal || 0), 0);
-      const tax = subTotal * 0.18;
+      const tax = validItems.reduce((sum, i) => {
+        const rate = i.taxSlab ?? 0;
+        return sum + ((i.subtotal || 0) * rate / 100);
+      }, 0);
       const shipping = subTotal === 0 ? 0 : Math.max(50, Math.min(Math.round(subTotal * 0.02), 1500));
       const grandTotal = subTotal + tax + shipping;
 
@@ -1060,6 +1085,7 @@ export const ModernSOOverlay = ({
       onClose={onClose}
       title={order ? `Sales Order ${order.orderNumber}` : 'New Sales Order'}
       subtitle={order ? `Created on ${order.orderDate} • Total: ${formatIndianCurrencyFull(totals.total)}` : 'Create a new sales order'}
+      icon={<Tag className="h-5 w-5 text-primary" />}
       status={order?.status}
       statusColor={getStatusColor(order?.status)}
       headerActions={headerActions}
@@ -1068,6 +1094,16 @@ export const ModernSOOverlay = ({
     >
       {/* Container for width monitoring */}
       <div ref={containerRef} className="h-full" data-so-overlay-version="v2025-09-29-2">
+
+        {/* Read-only banner for completed/cancelled orders */}
+        {isReadOnly && (
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
+            <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              This order is <span className="font-bold">{order?.status}</span> and cannot be edited or deleted.
+            </p>
+          </div>
+        )}
 
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
@@ -1090,7 +1126,7 @@ export const ModernSOOverlay = ({
                     <span className="font-medium">{formatIndianCurrencyFull(totals.subTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax (18%)</span>
+                    <span className="text-muted-foreground">GST</span>
                     <span className="font-medium">{formatIndianCurrencyFull(totals.tax)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -1291,12 +1327,13 @@ export const ModernSOOverlay = ({
                       <Table>
                         <TableHeader className="sticky top-0 bg-background z-10">
                           <TableRow>
-                            <TableHead className="w-[36%]">Product</TableHead>
-                            <TableHead className="w-[14%]">Qty</TableHead>
-                            <TableHead className="w-[15%]">Price</TableHead>
-                            <TableHead className="w-[10%]">Disc%</TableHead>
-                            <TableHead className="w-[15%]">Subtotal</TableHead>
-                            {(isEditMode || !order) && <TableHead className="w-[10%]"></TableHead>}
+                            <TableHead className="w-[30%]">Product</TableHead>
+                            <TableHead className="w-[12%]">Qty</TableHead>
+                            <TableHead className="w-[13%]">Price</TableHead>
+                            <TableHead className="w-[9%]">Disc%</TableHead>
+                            <TableHead className="w-[9%]">Tax%</TableHead>
+                            <TableHead className="w-[14%]">Subtotal</TableHead>
+                            {(isEditMode || !order) && <TableHead className="w-[8%]"></TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1319,9 +1356,10 @@ export const ModernSOOverlay = ({
                                            discount: 0,
                                            subtotal: stockItem.unitPrice,
                                            saleUnit: stockItem.saleUnit,
+                                           taxSlab: updated[index].taxSlab ?? 18,
                                          };
                                          if (index === prev.length - 1) {
-                                           return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0 }];
+                                           return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: defaultTaxSlab }];
                                          }
                                          return updated;
                                        });
@@ -1362,6 +1400,21 @@ export const ModernSOOverlay = ({
                                   />
                                 ) : (
                                   <span className="whitespace-nowrap">{item.discount}%</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="p-2">
+                                {(isEditMode || !order) ? (
+                                  <Input
+                                    type="number"
+                                    value={item.taxSlab ?? 18}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => updateItem(index, 'taxSlab', Number(e.target.value))}
+                                    className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min="0"
+                                    max="28"
+                                  />
+                                ) : (
+                                  <span className="whitespace-nowrap">{item.taxSlab ?? 0}%</span>
                                 )}
                               </TableCell>
                               <TableCell className="p-2">
@@ -1601,9 +1654,10 @@ export const ModernSOOverlay = ({
                                         discount: 0,
                                         subtotal: stockItem.unitPrice,
                                         saleUnit: stockItem.saleUnit,
+                                        taxSlab: updated[index].taxSlab ?? 18,
                                       };
                                       if (index === prev.length - 1) {
-                                        return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0 }];
+                                        return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: defaultTaxSlab }];
                                       }
                                       return updated;
                                     });

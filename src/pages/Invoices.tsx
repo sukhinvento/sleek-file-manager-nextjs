@@ -24,6 +24,7 @@ const BORDER = 'hsl(220,16%,90%)';
 
 const STATUS_STYLES: Record<string, string> = {
   Draft: 'bg-gray-100 text-gray-800 border-gray-200',
+  Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   Issued: 'bg-blue-100 text-blue-800 border-blue-200',
   Paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   Partial: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -75,13 +76,15 @@ export const Invoices = () => {
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
-  const loadInvoices = async () => {
+  const loadInvoices = async (page = currentPage) => {
     try {
       setIsLoading(true);
-      const data = await invoiceService.fetchInvoices();
-      setInvoices(data);
+      const result = await invoiceService.fetchInvoices(page, itemsPerPage);
+      setInvoices(result.data);
+      setTotalItems(result.total);
     } catch (err) {
       console.error('Failed to load invoices:', err);
       toast({ title: 'Error', description: 'Failed to load invoices.', variant: 'destructive' });
@@ -90,18 +93,18 @@ export const Invoices = () => {
     }
   };
 
-  useEffect(() => { loadInvoices(); }, []);
+  useEffect(() => { loadInvoices(currentPage); }, [currentPage]);
 
-  // Computed stats
+  // Computed stats from loaded page data
   const stats = useMemo(() => {
-    const total = invoices.length;
+    const pending = invoices.filter(i => i.status === 'Pending').length;
     const draft = invoices.filter(i => i.status === 'Draft').length;
     const paid = invoices.filter(i => i.status === 'Paid').length;
     const totalAmount = invoices.reduce((s, i) => s + (i.grandTotal || 0), 0);
-    return { total, draft, paid, totalAmount };
-  }, [invoices]);
+    return { total: totalItems, pending, draft, paid, totalAmount };
+  }, [invoices, totalItems]);
 
-  const statuses = ['All', 'Draft', 'Issued', 'Paid', 'Partial', 'Overdue', 'Cancelled'];
+  const statuses = ['All', 'Pending', 'Draft', 'Issued', 'Paid', 'Partial', 'Overdue', 'Cancelled'];
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
@@ -116,8 +119,8 @@ export const Invoices = () => {
     });
   }, [invoices, searchTerm, selectedStatus]);
 
-  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
-  const currentPageData = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = filteredInvoices;
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedStatus]);
 
@@ -134,6 +137,8 @@ export const Invoices = () => {
         <div className="flex flex-nowrap gap-3 w-max">
           <StatCard label="Total" value={stats.total} icon={FileText} accent={STAT_ACCENTS.PRIMARY}
             active={selectedStatus === 'All'} onClick={() => setSelectedStatus('All')} />
+          <StatCard label="Pending" value={stats.pending} icon={Clock} accent={STAT_ACCENTS.WARNING}
+            active={selectedStatus === 'Pending'} onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')} />
           <StatCard label="Draft" value={stats.draft} icon={Clock} accent={STAT_ACCENTS.WARNING}
             active={selectedStatus === 'Draft'} onClick={() => setSelectedStatus(selectedStatus === 'Draft' ? 'All' : 'Draft')} />
           <StatCard label="Paid" value={stats.paid} icon={CheckCircle} accent={STAT_ACCENTS.SUCCESS}

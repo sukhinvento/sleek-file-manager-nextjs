@@ -114,10 +114,15 @@ function toSnakeCase(doctor: Partial<Doctor>): Record<string, any> {
   return body;
 }
 
-export const fetchDoctors = async (page: number = 1, limit: number = 50): Promise<Doctor[]> => {
+export const fetchDoctors = async (page = 1, limit = 25): Promise<{ data: Doctor[]; total: number; page: number; limit: number }> => {
   const response = await apiClient.get('/doctors', { params: { page, limit } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapDoctor);
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapDoctor),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 export const getDoctorById = async (id: string): Promise<Doctor | null> => {
@@ -149,3 +154,10 @@ export const fetchDoctorStats = async () => {
   const response = await apiClient.get('/doctors/stats');
   return response.data;
 };
+
+export const searchDoctors = async (query: string): Promise<Doctor[]> => {
+  const response = await apiClient.get('/doctors', { params: { search: query, limit: 50 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapDoctor);
+};
+

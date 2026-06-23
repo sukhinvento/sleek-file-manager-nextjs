@@ -61,10 +61,15 @@ function mapStockTransfer(raw: any): StockTransfer {
  * Fetch all stock transfers
  * GET /stock/transfers?limit=200
  */
-export const fetchStockTransfers = async (): Promise<StockTransfer[]> => {
-  const response = await apiClient.get('/stock/transfers', { params: { limit: 200 } });
-  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
-  return data.map(mapStockTransfer);
+export const fetchStockTransfers = async (page = 1, limit = 25): Promise<{ data: StockTransfer[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/stock/transfers', { params: { page, limit, sort: 'createdAt_desc' } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapStockTransfer),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Bell, Check, CheckCheck, Package, ShoppingCart, Users, Activity, FileText, AlertTriangle, Info, CheckCircle2, XCircle, Stethoscope, Pill, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -171,7 +170,7 @@ export const NotificationPopover = () => {
         </div>
 
         {/* Notification list */}
-        <ScrollArea className="max-h-[400px] overflow-auto">
+        <div className="max-h-[400px] overflow-y-auto">
           {loading && notifications.length === 0 ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
               Loading...
@@ -231,7 +230,7 @@ export const NotificationPopover = () => {
               })}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         {notifications.length > 0 && (

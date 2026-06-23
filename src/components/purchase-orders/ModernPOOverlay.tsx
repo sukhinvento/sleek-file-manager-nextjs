@@ -19,13 +19,14 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { formatIndianCurrency, formatIndianCurrencyFull } from '@/lib/utils';
 import { InventoryItem } from '@/types/inventory';
 import { fetchVendors } from '@/services/vendorService';
-import { fetchRooms } from '@/services/roomService';
+import { fetchLocationLookup } from '@/services/locationService';
 import { InvoiceOptionsDialog, InvoiceGenerationOptions } from '../invoice/InvoiceOptionsDialog';
 import { InvoiceTemplate, InvoiceData } from '../invoice/InvoiceTemplate';
 import { generatePDF } from '@/lib/pdfUtils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OrderStatusDialog, StatusUpdateData, OrderItem } from '../orders/OrderStatusDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { fetchActiveTaxes } from '@/services/taxService';
 
 interface Vendor {
   id: string;
@@ -39,7 +40,7 @@ interface Location {
   id: string;
   name: string;
   address: string;
-  type: 'warehouse' | 'clinic' | 'hospital';
+  type: 'warehouse' | 'pharmacy' | 'clinic' | 'hospital' | 'store';
 }
 
 // Custom Vendor Autosuggest Component
@@ -204,8 +205,10 @@ const LocationAutosuggest = ({ value, onChange, onSelect, locations, disabled, c
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'warehouse': return 'bg-blue-100 text-blue-800';
+      case 'pharmacy': return 'bg-teal-100 text-teal-800';
       case 'hospital': return 'bg-green-100 text-green-800';
       case 'clinic': return 'bg-purple-100 text-purple-800';
+      case 'store': return 'bg-amber-100 text-amber-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -295,6 +298,7 @@ export const ModernPOOverlay = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  const [defaultTaxSlab, setDefaultTaxSlab] = useState<number>(18);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -367,18 +371,26 @@ export const ModernPOOverlay = ({
       })));
     }).catch(() => {});
 
-    fetchRooms().then(rooms => {
-      const seen = new Set<string>();
-      const locs: Location[] = [];
-      for (const r of rooms) {
-        const key = r.department || `Room ${r.roomNumber}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          locs.push({ id: r.id, name: key, address: `Floor ${r.floor}, ${r.type} Ward`, type: 'hospital' });
-        }
-      }
-      setLocations(locs);
+    fetchLocationLookup().then(locs => {
+      setLocations(locs.map(l => ({
+        id: l.value,
+        name: l.label,
+        address: l.address,
+        type: (l.type as Location['type']) || 'warehouse',
+      })));
     }).catch(() => {});
+  }, []);
+
+  // Fetch default tax slab from API
+  useEffect(() => {
+    fetchActiveTaxes('purchase')
+      .then(taxes => {
+        const active = taxes.filter(t => t.rate_type === 'percentage' && t.status === 'active' && t.rate > 0);
+        if (active.length > 0) {
+          setDefaultTaxSlab(active.sort((a, b) => a.rate - b.rate)[0].rate);
+        }
+      })
+      .catch(() => {/* keep default 18 */});
   }, []);
 
   const isReadOnly = order?.status === 'Delivered' || order?.status === 'Cancelled';
@@ -392,14 +404,14 @@ export const ModernPOOverlay = ({
       unitPrice: stockItem.unitPrice,
       discount: 0,
       subtotal: stockItem.unitPrice,
-      taxSlab: 18
+      taxSlab: defaultTaxSlab
     } : {
       name: '',
       qty: 1,
       unitPrice: 0,
       discount: 0,
       subtotal: 0,
-      taxSlab: 18
+      taxSlab: defaultTaxSlab
     };
     
     setItems(prev => [newItem, ...prev]);
@@ -414,7 +426,7 @@ export const ModernPOOverlay = ({
       unitPrice: item.unitPrice || 0,
       discount: 0,
       subtotal: (quantity || 1) * (item.unitPrice || 0),
-      taxSlab: 18
+      taxSlab: defaultTaxSlab
     };
     
     setItems([newItem, ...items]);
@@ -1055,6 +1067,7 @@ export const ModernPOOverlay = ({
       onClose={onClose}
       title={order ? `Purchase Order ${order.poNumber}` : 'New Purchase Order'}
       subtitle={order ? `Created on ${order.orderDate} • Total: ₹${totals.total.toFixed(2)}` : 'Create a new purchase order'}
+      icon={<FileText className="h-5 w-5 text-primary" />}
       status={order?.status}
       statusColor={getStatusColor(order?.status)}
       headerActions={headerActions}
@@ -1063,6 +1076,16 @@ export const ModernPOOverlay = ({
     >
       {/* Container for width monitoring */}
       <div ref={containerRef} className="h-full" data-po-overlay-version="v2025-09-29-2">
+
+        {/* Read-only banner for completed/cancelled orders */}
+        {isReadOnly && (
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
+            <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              This order is <span className="font-bold">{order?.status}</span> and cannot be edited or deleted.
+            </p>
+          </div>
+        )}
 
         {/* Wide Layout: Two Columns (Left & Right) */}
         {!isNarrowLayout ? (
@@ -1316,7 +1339,7 @@ export const ModernPOOverlay = ({
                                            saleUnit: stockItem.saleUnit,
                                          };
                                          if (index === prev.length - 1) {
-                                           return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: 18 }];
+                                           return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: defaultTaxSlab }];
                                          }
                                          return updated;
                                        });
@@ -1598,7 +1621,7 @@ export const ModernPOOverlay = ({
                                         saleUnit: stockItem.saleUnit,
                                       };
                                       if (index === prev.length - 1) {
-                                        return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: 18 }];
+                                        return [...updated, { name: '', qty: 1, unitPrice: 0, discount: 0, subtotal: 0, taxSlab: defaultTaxSlab }];
                                       }
                                       return updated;
                                     });

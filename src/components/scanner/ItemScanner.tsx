@@ -53,7 +53,7 @@ export const ItemScanner = ({
 
   // Load inventory from backend on mount
   useEffect(() => {
-    fetchInventoryItems().then(setInventoryItems).catch(() => {});
+    fetchInventoryItems().then(res => setInventoryItems(res.data || [])).catch(() => {});
   }, []);
 
   const findItemByCode = (code: string, method: 'barcode' | 'qr' | 'rfid'): InventoryItem | null => {

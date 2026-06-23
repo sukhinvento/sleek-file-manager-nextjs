@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,13 @@ import {
 } from 'lucide-react';
 import * as doctorService from '@/services/doctorService';
 import { Doctor, DoctorSchedule } from '@/services/doctorService';
+import { fetchDepartmentNames } from '@/services/departmentService';
 import { toast } from '@/hooks/use-toast';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -30,7 +33,8 @@ const fromDate = (d: Date | undefined): string => d ? d.toISOString().split('T')
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DEPARTMENTS = ['Cardiology', 'Orthopaedics', 'Neurology', 'General Medicine', 'Paediatrics', 'Oncology', 'Emergency', 'Radiology', 'Gynaecology', 'Psychiatry', 'Urology', 'Nephrology', 'ENT', 'Ophthalmology', 'Dermatology'];
+// Fallback list used when API returns nothing (new tenant with no doctors yet)
+const DEPARTMENTS_FALLBACK = ['Cardiology', 'Orthopaedics', 'Neurology', 'General Medicine', 'Paediatrics', 'Oncology', 'Emergency', 'Radiology', 'Gynaecology', 'Psychiatry', 'Urology', 'Nephrology', 'ENT', 'Ophthalmology', 'Dermatology'];
 const STATUSES: Doctor['status'][] = ['Active', 'On Leave', 'Inactive'];
 const GENDERS: Doctor['gender'][] = ['Male', 'Female', 'Other'];
 const DAYS: DoctorSchedule['day'][] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -79,11 +83,14 @@ const SelectField = ({ value, onChange, options, placeholder }: {
   value: string; onChange: (v: string) => void;
   options: { value: string; label: string }[]; placeholder?: string;
 }) => (
-  <select value={value} onChange={e => onChange(e.target.value)}
-    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-    {placeholder && <option value="">{placeholder}</option>}
-    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-  </select>
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="h-9 text-sm w-full">
+      <SelectValue placeholder={placeholder ?? 'Select…'} />
+    </SelectTrigger>
+    <SelectContent>
+      {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+    </SelectContent>
+  </Select>
 );
 
 // ─── Doctor Avatar ─────────────────────────────────────────────────────────────
@@ -155,13 +162,20 @@ interface DoctorSheetProps {
   mode: 'view' | 'edit' | 'add';
   onClose: () => void;
   onSave: (d: Doctor) => void;
+  onDelete?: (d: Doctor) => void;
+  departments?: string[];
 }
 
-const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
+const DoctorSheet = ({ doctor, mode, onClose, onSave, onDelete, departments: propDepartments }: DoctorSheetProps) => {
+  const departments = propDepartments?.length ? propDepartments : DEPARTMENTS_FALLBACK;
   const [form, setForm] = useState<Omit<Doctor, 'id'>>(doctor ? { ...doctor } : { ...EMPTY_DOCTOR });
   const [qualInput, setQualInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const isEdit = mode === 'edit' || mode === 'add';
+  const [internalMode, setInternalMode] = useState<'view' | 'edit' | 'add'>(mode);
+
+  useEffect(() => { setInternalMode(mode); }, [mode]);
+
+  const isEdit = internalMode === 'edit' || internalMode === 'add';
 
   useEffect(() => { setForm(doctor ? { ...doctor } : { ...EMPTY_DOCTOR }); }, [doctor]);
 
@@ -200,23 +214,21 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
   };
 
   return (
-    <Sheet open={!!doctor || mode === 'add'} onOpenChange={open => { if (!open) onClose(); }}>
+    <Sheet open={!!doctor || internalMode === 'add'} onOpenChange={open => { if (!open) onClose(); }}>
       <SheetContent side="right" className="w-full sm:w-[680px] sm:max-w-[680px] p-0 flex flex-col h-full bg-background">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {mode !== 'add' && doctor && <DoctorAvatar doctor={doctor} size="md" />}
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-foreground truncate">
-                {mode === 'add' ? 'Add New Doctor' : mode === 'edit' ? `Edit — ${doctor?.name}` : doctor?.name}
-              </h2>
-              {mode === 'view' && doctor && (
-                <p className="text-xs text-muted-foreground mt-0.5">{doctor.specialisation} · {doctor.department}</p>
-              )}
-            </div>
+        <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
+          {internalMode !== 'add' && doctor && <DoctorAvatar doctor={doctor} size="md" />}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight break-words">
+              {internalMode === 'add' ? 'Add New Doctor' : internalMode === 'edit' ? `Edit — ${doctor?.name}` : doctor?.name}
+            </h2>
+            {internalMode === 'view' && doctor && (
+              <p className="text-xs text-muted-foreground mt-0.5">{doctor.specialisation} · {doctor.department}</p>
+            )}
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
@@ -224,7 +236,7 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
           {/* ── VIEW MODE ─────────────────────────────────────────── */}
-          {mode === 'view' && doctor && (
+          {internalMode === 'view' && doctor && (
             <>
               {/* Status + dept */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -399,7 +411,7 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
                 <div className="grid grid-cols-2 gap-4 p-4">
                   <FieldGroup label="Department" required>
                     <SelectField value={form.department} onChange={v => upd('department', v)}
-                      options={DEPARTMENTS.map(d => ({ value: d, label: d }))} />
+                      options={departments.map(d => ({ value: d, label: d }))} />
                   </FieldGroup>
                   <FieldGroup label="Specialisation" required>
                     <Input value={form.specialisation} onChange={e => upd('specialisation', e.target.value)} placeholder="e.g. Interventional Cardiology" />
@@ -502,12 +514,29 @@ const DoctorSheet = ({ doctor, mode, onClose, onSave }: DoctorSheetProps) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <div className="flex items-center px-6 py-4 border-t border-border bg-card flex-shrink-0 gap-2">
+          {/* View mode — no Close, only action CTAs */}
+          {!isEdit && doctor && (
+            <>
+              {onDelete && (
+                <Button variant="outline" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={() => { onClose(); onDelete(doctor); }}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+              )}
+              <Button className="gap-2 ml-auto" onClick={() => setInternalMode('edit')}>
+                <Edit className="h-4 w-4" /> Edit Doctor
+              </Button>
+            </>
+          )}
+          {/* Edit/Add mode — Cancel + Save */}
           {isEdit && (
-            <Button onClick={handleSave} disabled={saving} className="gap-2">
-              {saving ? 'Saving…' : <><Save className="h-4 w-4" /> Save Doctor</>}
-            </Button>
+            <>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving} className="gap-2 ml-auto">
+                {saving ? 'Saving…' : <><Save className="h-4 w-4" /> Save Doctor</>}
+              </Button>
+            </>
           )}
         </div>
       </SheetContent>
@@ -532,8 +561,12 @@ export const DoctorManagement = () => {
 
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [sheetMode, setSheetMode] = useState<'view' | 'edit' | 'add' | null>(null);
+  const [apiDepartments, setApiDepartments] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(currentPage); }, [currentPage]);
 
   const computeStats = (docs: Doctor[]) => ({
     total: docs.length,
@@ -544,14 +577,20 @@ export const DoctorManagement = () => {
     totalActivePatients: docs.filter(d => d.status === 'Active').reduce((sum, d) => sum + (d.activePatients || 0), 0),
   });
 
-  const loadData = async () => {
+  const loadData = async (page = currentPage) => {
     setLoading(true);
     try {
-      const docs = await doctorService.fetchDoctors();
-      setDoctors(docs);
-      setStats(computeStats(docs));
+      const [result, depts] = await Promise.all([
+        doctorService.fetchDoctors(page, itemsPerPage),
+        page === 1 ? fetchDepartmentNames() : Promise.resolve(apiDepartments),
+      ]);
+      setDoctors(result.data);
+      setTotalItems(result.total);
+      setStats(computeStats(result.data));
+      if (page === 1) setApiDepartments(depts.length ? depts : DEPARTMENTS_FALLBACK);
     } catch {
       toast({ title: 'Error', description: 'Failed to load doctor data.', variant: 'destructive' });
+      setApiDepartments(DEPARTMENTS_FALLBACK);
     } finally {
       setLoading(false);
     }
@@ -842,7 +881,10 @@ export const DoctorManagement = () => {
             const doc = item as Doctor;
             const st = STATUS_STYLES[doc.status];
             return (
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div
+                className="rounded-xl border border-border bg-card p-4 space-y-3 cursor-pointer active:scale-[0.99] transition-all hover:shadow-md"
+                onClick={() => openSheet(doc, 'view')}
+              >
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
                     <DoctorAvatar doctor={doc} size="md" />
@@ -884,17 +926,6 @@ export const DoctorManagement = () => {
                     })}
                   </div>
                 )}
-                <div className="flex gap-2 pt-1 border-t border-border">
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => openSheet(doc, 'view')}>
-                    <Eye className="h-3.5 w-3.5" /> View
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => openSheet(doc, 'edit')}>
-                    <Edit className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={() => setDeleteTarget(doc)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
               </div>
             );
           }}
@@ -907,6 +938,30 @@ export const DoctorManagement = () => {
         />
       )}
 
+      {/* Pagination */}
+      {!loading && Math.ceil(totalItems / itemsPerPage) > 1 && (
+        <div className="flex justify-center mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, Math.ceil(totalItems / itemsPerPage)) }, (_, i) => {
+                const page = i + Math.max(1, Math.min(currentPage - 2, Math.ceil(totalItems / itemsPerPage) - 4));
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink onClick={() => setCurrentPage(page)} isActive={currentPage === page} className="cursor-pointer">{page}</PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              <PaginationItem>
+                <PaginationNext onClick={() => setCurrentPage(p => Math.min(Math.ceil(totalItems / itemsPerPage), p + 1))} className={currentPage === Math.ceil(totalItems / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
       {/* Doctor Sheet */}
       {sheetMode && (
         <DoctorSheet
@@ -914,6 +969,8 @@ export const DoctorManagement = () => {
           mode={sheetMode}
           onClose={closeSheet}
           onSave={handleSave}
+          onDelete={(doc) => { closeSheet(); setDeleteTarget(doc); }}
+          departments={apiDepartments}
         />
       )}
 

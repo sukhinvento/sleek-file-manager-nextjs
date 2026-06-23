@@ -30,6 +30,7 @@ import { toast } from '@/hooks/use-toast';
 import * as stockTransferService from '@/services/stockTransferService';
 import { countActiveFilters } from '@/lib/filterUtils';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -147,10 +148,12 @@ export const StockTransfer = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState<any>({});
@@ -161,11 +164,12 @@ export const StockTransfer = () => {
   const hasSort = sortConfig.field !== 'requestDate' || sortConfig.direction !== 'desc';
 
   // Load stock transfers from service
-  const loadStockTransfers = async () => {
+  const loadStockTransfers = async (page = currentPage) => {
     try {
       setIsLoadingData(true);
-      const data = await stockTransferService.fetchStockTransfers();
-      setStockTransfers(data);
+      const result = await stockTransferService.fetchStockTransfers(page, itemsPerPage);
+      setStockTransfers(result.data);
+      setTotalItems(result.total);
     } catch (error) {
       console.error('Error loading stock transfers:', error);
       toast({ title: 'Error', description: 'Failed to load stock transfers. Please try again.', variant: 'destructive' });
@@ -184,11 +188,8 @@ export const StockTransfer = () => {
     }
   };
 
-  // Load data on mount
-  useEffect(() => {
-    loadStockTransfers();
-    loadStats();
-  }, []);
+  useEffect(() => { loadStockTransfers(currentPage); }, [currentPage]);
+  useEffect(() => { loadStats(); }, []);
 
   // Listen for global create modal events
   useEffect(() => {
@@ -272,8 +273,8 @@ export const StockTransfer = () => {
   }, [filteredTransfers, sortConfig]);
 
   // Pagination logic
-  const totalPages = Math.ceil(sortedTransfers.length / itemsPerPage);
-  const currentPageData = sortedTransfers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = sortedTransfers;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -525,11 +526,14 @@ export const StockTransfer = () => {
                 ),
               },
             ]}
-            getActions={(transfer) => [
-              { label: 'View', onClick: () => handleViewTransfer(transfer), icon: Eye },
-              { label: 'Edit', onClick: () => handleEditTransfer(transfer), icon: Edit },
-              { label: 'Delete', onClick: () => handleDeleteTransfer(transfer.transferId), variant: 'destructive', icon: Trash2 },
-            ]}
+            getActions={(transfer) => {
+              const settled = transfer.status === 'Completed' || transfer.status === 'Cancelled';
+              return [
+                { label: 'View', onClick: () => handleViewTransfer(transfer), icon: Eye },
+                { label: 'Edit', onClick: () => handleEditTransfer(transfer), icon: Edit, disabled: settled, disabledReason: settled ? 'Cannot edit settled transfer' : undefined },
+                { label: 'Delete', onClick: () => setDeleteTarget(transfer.transferId), variant: 'destructive' as const, icon: Trash2, disabled: settled, disabledReason: settled ? 'Cannot delete settled transfer' : undefined },
+              ];
+            }}
           />
         )}
 
@@ -593,7 +597,17 @@ export const StockTransfer = () => {
         isEdit={isEditMode}
         onSave={handleSaveTransfer as any}
         onUpdate={handleSaveTransfer as any}
-        onDelete={handleDeleteTransfer as any}
+        onDelete={(transferId: string) => setDeleteTarget(transferId)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete stock transfer?"
+        description="This will permanently remove this stock transfer. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget ? handleDeleteTransfer(deleteTarget) : Promise.resolve()}
       />
     </div>
   );

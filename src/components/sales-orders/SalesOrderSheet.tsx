@@ -16,7 +16,7 @@ import {
 import {
   X, Save, Edit3, Trash2, CreditCard, User,
   FileText, IndianRupee, Package,
-  AlertCircle, Printer,
+  AlertCircle, Printer, CheckCircle,
   MapPin, Receipt, ShoppingBag,
 } from 'lucide-react';
 import { SalesOrder, SalesOrderItem } from '@/types/inventory';
@@ -68,6 +68,7 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
   const [showPreview, setShowPreview] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'Pick Up' | 'Delivery'>('Pick Up');
   const isEdit = mode === 'edit' || mode === 'add';
+  const isSettled = order?.status === 'Delivered' || order?.status === 'Cancelled';
 
   useEffect(() => {
     if (mode === 'add') {
@@ -155,6 +156,24 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
     }
   };
 
+  const [markingDelivered, setMarkingDelivered] = useState(false);
+  const handleMarkDelivered = async () => {
+    if (!order) return;
+    setMarkingDelivered(true);
+    try {
+      await salesOrderService.updateSalesOrder(order.id, {
+        status: 'Delivered',
+      } as Partial<SalesOrder>);
+      toast({ title: 'Order Delivered', description: `${order.orderNumber} marked as Delivered.`, variant: 'success' });
+      onRefresh?.();
+      onClose();
+    } catch {
+      toast({ title: 'Error', description: 'Failed to mark as delivered.', variant: 'destructive' });
+    } finally {
+      setMarkingDelivered(false);
+    }
+  };
+
   const handleAddItem = (stockItem: StockItem) => {
     const currentItems = form.items || [];
     const existing = currentItems.findIndex((i) => i.item_id === stockItem.id || i.name === stockItem.name);
@@ -196,35 +215,35 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
       <Sheet open={!!order || mode === 'add'} onOpenChange={(open) => { if (!open) onClose(); }}>
         <SheetContent side="right" className="w-full sm:w-[80vw] sm:max-w-[80vw] p-0 flex flex-col h-full bg-background">
 
-          {/* Header — matches PO pattern */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-base font-bold text-foreground truncate">
-                  {mode === 'add' ? 'New Sales Order' : mode === 'edit' ? `Edit — ${order?.orderNumber}` : order?.orderNumber}
-                </h2>
-                {mode === 'view' && order && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {order.customerName} · {order.orderDate}
-                  </p>
-                )}
-              </div>
+          {/* Header — title + subtitle + close only; CTAs are in the footer */}
+          <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {mode === 'view' && onDelete && (
-                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                </Button>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-foreground leading-tight break-words">
+                {mode === 'add' ? 'New Sales Order' : mode === 'edit' ? `Edit — ${order?.orderNumber}` : order?.orderNumber}
+              </h2>
+              {mode === 'view' && order && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {order.customerName} · {order.orderDate}
+                </p>
               )}
-              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
             </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
+
+          {/* Read-only banner for settled orders */}
+          {mode === 'view' && (order?.status === 'Delivered' || order?.status === 'Cancelled') && (
+            <div className="flex items-center gap-2 px-6 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
+              <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                This order is <span className="font-bold">{order?.status}</span> and cannot be edited or deleted.
+              </p>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
@@ -294,7 +313,7 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
                   {/* Right: Payment summary */}
                   <div className="flex flex-col">
                     <OrderSummaryCard
-                      subtotal={order.total}
+                      subtotal={order.items.reduce((sum, i) => sum + (i.subtotal || 0), 0)}
                       total={order.total}
                       paidAmount={order.paidAmount || 0}
                       onRecordPayment={balanceDue > 0 ? () => setShowPaymentDialog(true) : undefined}
@@ -340,36 +359,37 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
                     <User className="h-3.5 w-3.5 text-primary" />
                     <span className="text-xs font-semibold text-primary uppercase tracking-wider">Customer Details</span>
                   </div>
-                  <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Customer Name *</Label>
-                        <Input value={form.customerName || ''} onChange={(e) => upd('customerName', e.target.value)}
-                          className={errors.customerName ? 'border-red-500' : ''}
-                          placeholder="Customer name" />
-                        {errors.customerName && (
-                          <p className="text-xs text-red-500 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> {errors.customerName}
-                          </p>
-                        )}
-                      </div>
+                  <div className="p-4 space-y-3">
+                    {/* Name — full width (most important, needs space) */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Customer Name *</Label>
+                      <Input value={form.customerName || ''} onChange={(e) => upd('customerName', e.target.value)}
+                        className={errors.customerName ? 'border-red-500' : ''}
+                        placeholder="Customer name" />
+                      {errors.customerName && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> {errors.customerName}
+                        </p>
+                      )}
+                    </div>
+                    {/* Phone + Email side by side */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Phone</Label>
                         <Input value={form.customerPhone || ''} onChange={(e) => upd('customerPhone', e.target.value)}
                           placeholder="Phone number" />
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Email</Label>
                         <Input value={form.customerEmail || ''} onChange={(e) => upd('customerEmail', e.target.value)}
                           placeholder="Email" />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Address</Label>
-                        <Input value={form.customerAddress || ''} onChange={(e) => upd('customerAddress', e.target.value)}
-                          placeholder="Address" />
-                      </div>
+                    </div>
+                    {/* Address — full width */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Address</Label>
+                      <Input value={form.customerAddress || ''} onChange={(e) => upd('customerAddress', e.target.value)}
+                        placeholder="Address" />
                     </div>
                   </div>
                 </div>
@@ -415,19 +435,21 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
                     <FileText className="h-3.5 w-3.5 text-primary" />
                     <span className="text-xs font-semibold text-primary uppercase tracking-wider">Order Details</span>
                   </div>
-                  <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Status</Label>
-                        <Select value={form.status || 'Pending'} onValueChange={(v) => upd('status', v)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map(s => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="p-4 space-y-3">
+                    {/* Status — full width so it never truncates */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Status</Label>
+                      <Select value={form.status || 'Pending'} onValueChange={(v) => upd('status', v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* Dates — 2-col gives each DatePicker enough space */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Order Date</Label>
                         <DatePicker
@@ -445,39 +467,39 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Fulfilment</Label>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { setDeliveryType('Pick Up'); upd('shippingAddress', 'Pick Up - Store'); }}
-                            className={`flex items-center gap-1.5 flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                              deliveryType === 'Pick Up' ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
-                          >
-                            <MapPin className="h-3.5 w-3.5" /> Pick Up
-                          </button>
-                          <button
-                            onClick={() => { setDeliveryType('Delivery'); upd('shippingAddress', ''); }}
-                            className={`flex items-center gap-1.5 flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                              deliveryType === 'Delivery' ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
-                          >
-                            <Package className="h-3.5 w-3.5" /> Delivery
-                          </button>
-                        </div>
+                    {/* Fulfilment toggle — full width */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Fulfilment</Label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setDeliveryType('Pick Up'); upd('shippingAddress', 'Pick Up - Store'); }}
+                          className={`flex items-center justify-center gap-1.5 flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                            deliveryType === 'Pick Up' ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <MapPin className="h-3.5 w-3.5" /> Pick Up
+                        </button>
+                        <button
+                          onClick={() => { setDeliveryType('Delivery'); upd('shippingAddress', ''); }}
+                          className={`flex items-center justify-center gap-1.5 flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                            deliveryType === 'Delivery' ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <Package className="h-3.5 w-3.5" /> Delivery
+                        </button>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Payment Method</Label>
-                        <Select value={form.paymentMethod || ''} onValueChange={(v) => upd('paymentMethod', v)}>
-                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent>
-                            {['Cash', 'Card', 'UPI', 'Bank Transfer', 'Cheque', 'Net-30', 'Net-60', 'COD'].map(m => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    </div>
+                    {/* Payment Method — full width */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Payment Method</Label>
+                      <Select value={form.paymentMethod || ''} onValueChange={(v) => upd('paymentMethod', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select payment method" /></SelectTrigger>
+                        <SelectContent>
+                          {['Cash', 'Card', 'UPI', 'Bank Transfer', 'Cheque', 'Net-30', 'Net-60', 'COD'].map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {deliveryType === 'Delivery' && (
                       <div className="space-y-1.5">
@@ -509,14 +531,19 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
           )}
 
           {mode === 'view' && (
-            <div className="border-t border-border px-6 py-4 flex items-center gap-3 flex-shrink-0">
+            <div className="border-t border-border px-6 py-4 flex items-center gap-2 flex-wrap flex-shrink-0">
+              {onDelete && !isSettled && (
+                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}
+                  className="h-9 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              )}
               {balanceDue > 0 && (
                 <Button variant="outline" size="sm" className="h-9 text-xs gap-1"
                   onClick={() => setShowPaymentDialog(true)}>
                   <CreditCard className="h-3.5 w-3.5" /> Record Payment
                 </Button>
               )}
-              {/* Print Popover */}
               <Popover open={showPrintPopover} onOpenChange={setShowPrintPopover}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9 text-xs gap-1">
@@ -540,10 +567,24 @@ export default function SalesOrderSheet({ order, mode, onClose, onSave, onDelete
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button size="sm" className="h-9 text-xs ml-auto gap-1"
-                onClick={() => onSave({ ...order! })}>
-                <Edit3 className="h-3.5 w-3.5" /> Edit Order
-              </Button>
+              {/* Mark Delivered — only for active (non-settled) orders */}
+              {!isSettled && order?.status !== 'Delivered' && (
+                <Button
+                  size="sm"
+                  className="h-9 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={handleMarkDelivered}
+                  disabled={markingDelivered}
+                >
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  {markingDelivered ? 'Updating…' : 'Mark Delivered'}
+                </Button>
+              )}
+              {!isSettled && (
+                <Button size="sm" className="h-9 text-xs ml-auto gap-1"
+                  onClick={() => onSave({ ...order! })}>
+                  <Edit3 className="h-3.5 w-3.5" /> Edit Order
+                </Button>
+              )}
             </div>
           )}
         </SheetContent>

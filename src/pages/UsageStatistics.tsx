@@ -125,12 +125,8 @@ export const UsageStatistics = () => {
 
   return (
     <div className="space-y-6 p-1">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Usage Statistics</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">System-wide activity and adoption metrics</p>
-        </div>
+      {/* Period toggle */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-1 bg-muted rounded-lg p-1">
           {(['today', 'week', 'month'] as const).map(p => (
             <button

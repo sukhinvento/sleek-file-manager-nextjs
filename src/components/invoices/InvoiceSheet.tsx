@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   X, CreditCard, FileText, Printer,
   Calendar, ExternalLink, User, Package, MapPin,
-  Building2, Truck, Receipt,
+  Building2, Truck,
 } from 'lucide-react';
 import { Invoice } from '@/services/invoiceService';
 import OrderSummaryCard from '@/components/shared/OrderSummaryCard';
@@ -96,7 +96,7 @@ export default function InvoiceSheet({ invoice, onClose, onUpdate }: InvoiceShee
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -199,7 +199,7 @@ export default function InvoiceSheet({ invoice, onClose, onUpdate }: InvoiceShee
               </div>
             </div>
 
-            {/* Line items — full width */}
+            {/* Line items — cards (same pattern as ST / PO / SO) */}
             {invoice.lineItems.length > 0 && (
               <div className="rounded-lg border border-border overflow-hidden">
                 <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center justify-between">
@@ -207,94 +207,49 @@ export default function InvoiceSheet({ invoice, onClose, onUpdate }: InvoiceShee
                     <Package className="h-3.5 w-3.5 text-primary" />
                     <span className="text-xs font-semibold text-primary uppercase tracking-wider">Line Items</span>
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">{invoice.lineItems.length} item{invoice.lineItems.length !== 1 ? 's' : ''}</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {invoice.lineItems.length} item{invoice.lineItems.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">#</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">Item</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">Qty</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">Price</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">Disc%</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">GST%</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">Tax</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.lineItems.map((item, i) => (
-                        <tr key={i} className={`border-b border-border/50 last:border-0 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
-                          <td className="px-4 py-2.5 text-muted-foreground">{i + 1}</td>
-                          <td className="px-4 py-2.5">
-                            <div>
-                              <span className="font-medium text-foreground">{item.name || item.description}</span>
-                              {item.sku && <span className="text-muted-foreground ml-1">({item.sku})</span>}
-                            </div>
-                            {item.saleUnit && <span className="text-[10px] text-muted-foreground">{item.saleUnit}</span>}
-                          </td>
-                          <td className="px-4 py-2.5 text-right tabular-nums">{item.quantity}</td>
-                          <td className="px-4 py-2.5 text-right tabular-nums">₹{fmt(item.unitPrice)}</td>
-                          <td className="px-4 py-2.5 text-right tabular-nums">
-                            {item.discountPercent > 0 ? `${item.discountPercent}%` : '—'}
-                          </td>
-                          <td className="px-4 py-2.5 text-right tabular-nums">
-                            {item.taxSlab > 0 ? `${item.taxSlab}%` : '—'}
-                          </td>
-                          <td className="px-4 py-2.5 text-right tabular-nums">
-                            {item.taxAmount > 0 ? `₹${fmt(item.taxAmount)}` : '—'}
-                          </td>
-                          <td className="px-4 py-2.5 text-right tabular-nums font-medium">₹{fmt(item.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+                <div className="divide-y divide-border/50">
+                  {invoice.lineItems.map((item, i) => (
+                    <div key={i} className="p-3 space-y-2.5">
+                      {/* Item name + SKU + unit */}
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm leading-tight text-foreground">
+                          {item.name || item.description}
+                        </p>
+                        {item.sku && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.sku}</p>
+                        )}
+                        {item.saleUnit && (
+                          <p className="text-xs text-muted-foreground">{item.saleUnit}</p>
+                        )}
+                      </div>
+
+                      {/* Qty · price · discount */}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>Qty: <span className="text-foreground font-medium">{item.quantity}</span></span>
+                        <span>₹{fmt(item.unitPrice)}</span>
+                        {item.discountPercent > 0 && <span>-{item.discountPercent}%</span>}
+                        {item.taxSlab > 0 && <span>GST {item.taxSlab}%</span>}
+                      </div>
+
+                      {/* Subtotal row */}
+                      <div className="flex items-center justify-between border-t border-border pt-2">
+                        <span className="text-xs text-muted-foreground">Total</span>
+                        <span className="font-semibold text-sm text-foreground tabular-nums">
+                          ₹{fmt(item.total)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* GST Breakdown card — only if we have tax breakdown data */}
-            {invoice.taxBreakdown.length > 0 && (
-              <div className="rounded-lg border border-border overflow-hidden">
-                <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
-                  <Receipt className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">GST Breakdown</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Slab</th>
-                        <th className="text-right px-4 py-2 font-semibold text-muted-foreground">Taxable Amt</th>
-                        <th className="text-right px-4 py-2 font-semibold text-muted-foreground">CGST</th>
-                        <th className="text-right px-4 py-2 font-semibold text-muted-foreground">SGST</th>
-                        <th className="text-right px-4 py-2 font-semibold text-muted-foreground">Total GST</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.taxBreakdown.map((slab, i) => (
-                        <tr key={i} className="border-b border-border/50 last:border-0">
-                          <td className="px-4 py-2 font-medium text-foreground">GST @ {slab.rate}%</td>
-                          <td className="px-4 py-2 text-right tabular-nums">₹{fmt(slab.taxableAmount)}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">₹{fmt(slab.cgst)}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">₹{fmt(slab.sgst)}</td>
-                          <td className="px-4 py-2 text-right tabular-nums font-medium">₹{fmt(slab.totalTax)}</td>
-                        </tr>
-                      ))}
-                      {/* Total row */}
-                      <tr className="bg-muted/30 font-semibold">
-                        <td className="px-4 py-2 text-foreground">Total</td>
-                        <td className="px-4 py-2 text-right tabular-nums">₹{fmt(invoice.taxBreakdown.reduce((s, t) => s + t.taxableAmount, 0))}</td>
-                        <td className="px-4 py-2 text-right tabular-nums">₹{fmt(invoice.taxBreakdown.reduce((s, t) => s + t.cgst, 0))}</td>
-                        <td className="px-4 py-2 text-right tabular-nums">₹{fmt(invoice.taxBreakdown.reduce((s, t) => s + t.sgst, 0))}</td>
-                        <td className="px-4 py-2 text-right tabular-nums">₹{fmt(invoice.totalTax)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            {/* GST breakdown is shown inline in the Payment Summary card (CGST/SGST per slab) */}
 
             {/* Notes */}
             {invoice.notes && (

@@ -398,7 +398,7 @@ export const DischargeModal = ({ patient, isOpen, onClose }: DischargeModalProps
               {patient?.name} · {patient?.patientId} · Admitted: {patient?.admissionDate || 'N/A'}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>

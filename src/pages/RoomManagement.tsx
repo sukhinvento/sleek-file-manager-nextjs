@@ -12,6 +12,7 @@ import * as roomService from '@/services/roomService';
 import { Room } from '@/services/roomService';
 import { toast } from '@/hooks/use-toast';
 import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const PRIMARY   = STAT_ACCENTS.PRIMARY;
@@ -114,14 +115,14 @@ const SelectField = ({ value, onChange, options, placeholder }: {
   value: string; onChange: (v: string) => void;
   options: { value: string; label: string }[]; placeholder?: string;
 }) => (
-  <select
-    value={value}
-    onChange={e => onChange(e.target.value)}
-    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-  >
-    {placeholder && <option value="">{placeholder}</option>}
-    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-  </select>
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="h-9 text-sm w-full">
+      <SelectValue placeholder={placeholder ?? 'Select…'} />
+    </SelectTrigger>
+    <SelectContent>
+      {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+    </SelectContent>
+  </Select>
 );
 
 // ─── Room Detail / Edit Sheet ─────────────────────────────────────────────────
@@ -131,6 +132,7 @@ interface RoomSheetProps {
   mode: 'view' | 'edit' | 'add';
   onClose: () => void;
   onSave: (room: Room) => void;
+  onStatusChange?: (room: Room, status: Room['status']) => void;
 }
 
 const EMPTY_ROOM: Omit<Room, 'id'> = {
@@ -138,10 +140,14 @@ const EMPTY_ROOM: Omit<Room, 'id'> = {
   bedCapacity: 1, occupiedBeds: 0, dailyRate: 0, amenities: [], department: 'General Medicine',
 };
 
-const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
+const RoomSheet = ({ room, mode, onClose, onSave, onStatusChange }: RoomSheetProps) => {
   const [form, setForm] = useState<Omit<Room, 'id'>>(room ? { ...room } : { ...EMPTY_ROOM });
   const [saving, setSaving] = useState(false);
-  const isEdit = mode === 'edit' || mode === 'add';
+  const [internalMode, setInternalMode] = useState<'view' | 'edit' | 'add'>(mode);
+
+  useEffect(() => { setInternalMode(mode); }, [mode]);
+
+  const isEdit = internalMode === 'edit' || internalMode === 'add';
 
   useEffect(() => {
     setForm(room ? { ...room } : { ...EMPTY_ROOM });
@@ -178,74 +184,86 @@ const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
   };
 
   return (
-    <Sheet open={!!room || mode === 'add'} onOpenChange={open => { if (!open) onClose(); }}>
+    <Sheet open={!!room || internalMode === 'add'} onOpenChange={open => { if (!open) onClose(); }}>
       <SheetContent side="right" className="w-full sm:w-[600px] sm:max-w-[600px] p-0 flex flex-col h-full bg-background">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
-          <div>
-            <h2 className="text-base font-bold text-foreground">
-              {mode === 'add' ? 'Add New Room' : mode === 'edit' ? `Edit Room ${room?.roomNumber}` : `Room ${room?.roomNumber}`}
+        {/* Header — title + close only */}
+        <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight break-words">
+              {internalMode === 'add' ? 'Add New Room' : internalMode === 'edit' ? `Edit Room ${room?.roomNumber}` : `Room ${room?.roomNumber}`}
             </h2>
-            {mode === 'view' && room && (
-              <p className="text-xs text-muted-foreground mt-0.5">{room.department} · Floor {room.floor}</p>
+            {internalMode === 'view' && room && (
+              <p className="text-xs text-muted-foreground mt-0.5">{room.department || room.type} · Floor {room.floor}</p>
             )}
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* View Mode */}
-          {mode === 'view' && room && (
+          {internalMode === 'view' && room && (
             <>
-              {/* Status + Type */}
+              {/* Room photo — half-height, rounded, inside content */}
+              <div className="rounded-xl overflow-hidden -mx-6 -mt-5">
+                <RoomTypeHeader type={room.type} status={room.status} />
+              </div>
+
+              {/* Status + Type + Rate row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusPill status={room.status} />
                 <Badge className={`${TYPE_STYLES[room.type]} border-0 text-xs pointer-events-none`}>{room.type}</Badge>
-                <span className="text-xs text-muted-foreground ml-auto">₹{room.dailyRate.toLocaleString('en-IN')}/day</span>
+                <span className="text-xs font-semibold text-foreground ml-auto">₹{room.dailyRate.toLocaleString('en-IN')}<span className="font-normal text-muted-foreground">/day</span></span>
               </div>
 
-              {/* Occupancy */}
-              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Occupancy</p>
-                <OccupancyBar occupied={room.occupiedBeds} total={room.bedCapacity} />
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  {[
-                    { label: 'Capacity', val: room.bedCapacity },
-                    { label: 'Occupied', val: room.occupiedBeds },
-                    { label: 'Available', val: room.bedCapacity - room.occupiedBeds },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-md bg-background p-2">
-                      <p className="text-lg font-bold text-foreground">{s.val}</p>
-                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Details */}
-              <div className="rounded-lg border border-border overflow-hidden">
+              {/* Bed stats — same pattern as Doctor experience/patients/fee */}
+              <div className="grid grid-cols-3 gap-3">
                 {[
-                  ['Room Number', room.roomNumber],
-                  ['Floor', `Floor ${room.floor}`],
-                  ['Department', room.department],
-                  ['Type', room.type],
-                  ['Daily Rate', `₹${room.dailyRate.toLocaleString('en-IN')}`],
-                  ['Status', room.status],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex px-4 py-2.5 border-b border-border last:border-0 odd:bg-muted/20">
-                    <span className="text-xs text-muted-foreground w-32 flex-shrink-0">{label}</span>
-                    <span className="text-xs font-semibold text-foreground">{value}</span>
+                  { label: 'Capacity', val: room.bedCapacity, icon: BedDouble },
+                  { label: 'Occupied', val: room.occupiedBeds, icon: Users },
+                  { label: 'Available', val: room.bedCapacity - room.occupiedBeds, icon: CheckCircle },
+                ].map(s => (
+                  <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
+                    <s.icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                    <p className="text-xl font-bold text-foreground">{s.val}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Amenities */}
+              {/* Occupancy progress bar */}
+              <OccupancyBar occupied={room.occupiedBeds} total={room.bedCapacity} />
+
+              {/* Room Details section */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+                  <BedDouble className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">Room Details</span>
+                </div>
+                {[
+                  { label: 'Room Number', value: room.roomNumber },
+                  { label: 'Floor', value: `Floor ${room.floor}` },
+                  { label: 'Department', value: room.department || '—' },
+                  { label: 'Type', value: room.type },
+                  { label: 'Daily Rate', value: `₹${room.dailyRate.toLocaleString('en-IN')}` },
+                  { label: 'Status', value: room.status },
+                ].map(({ label, value }, i) => (
+                  <div key={label} className={`flex items-center justify-between px-4 py-2.5 border-b border-border last:border-0 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <span className="text-sm font-semibold text-foreground text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Amenities section */}
               {room.amenities.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Amenities</p>
-                  <div className="flex flex-wrap gap-2">
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+                    <Wifi className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-semibold text-primary uppercase tracking-wider">Amenities</span>
+                  </div>
+                  <div className="px-4 py-3 flex flex-wrap gap-2">
                     {room.amenities.map(a => {
                       const Icon = AMENITY_ICONS[a];
                       return (
@@ -259,7 +277,7 @@ const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
                 </div>
               )}
 
-              {/* Maintenance note */}
+              {/* Maintenance alert */}
               {room.status === 'Maintenance' && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 flex items-start gap-3">
                   <Wrench className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -353,13 +371,36 @@ const RoomSheet = ({ room, mode, onClose, onSave }: RoomSheetProps) => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        {/* Footer — CTAs only */}
+        <div className="flex items-center gap-2 px-5 py-3.5 border-t border-border bg-card flex-shrink-0">
+          {/* View mode — no Close, only action CTAs */}
+          {!isEdit && room && (
+            <>
+              {room.status === 'Available' && onStatusChange && (
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                  onClick={() => { onStatusChange(room, 'Maintenance'); onClose(); }}>
+                  <Wrench className="h-3.5 w-3.5" /> Maintenance
+                </Button>
+              )}
+              {room.status === 'Maintenance' && onStatusChange && (
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                  onClick={() => { onStatusChange(room, 'Available'); onClose(); }}>
+                  <CheckCircle className="h-3.5 w-3.5" /> Mark Available
+                </Button>
+              )}
+              <Button size="sm" className="h-9 gap-1.5 ml-auto" onClick={() => setInternalMode('edit')}>
+                <Edit className="h-4 w-4" /> Edit Room
+              </Button>
+            </>
+          )}
+          {/* Edit/Add mode — Cancel + Save */}
           {isEdit && (
-            <Button onClick={handleSave} disabled={saving} className="gap-2">
-              {saving ? <>Saving…</> : <><Save className="h-4 w-4" /> Save Room</>}
-            </Button>
+            <>
+              <Button variant="outline" size="sm" className="h-9" onClick={onClose}>Cancel</Button>
+              <Button size="sm" onClick={handleSave} disabled={saving} className="h-9 gap-2 ml-auto">
+                {saving ? <>Saving…</> : <><Save className="h-4 w-4" /> Save Room</>}
+              </Button>
+            </>
           )}
         </div>
       </SheetContent>
@@ -539,7 +580,9 @@ export const RoomManagement = () => {
             const freeBeds = room.bedCapacity - room.occupiedBeds;
             const isMaintenance = room.status === 'Maintenance';
             return (
-              <Card key={room.id} className={`border shadow-sm hover:shadow-md transition-shadow bg-card overflow-hidden ${isMaintenance ? 'opacity-75' : ''}`}>
+              <Card key={room.id}
+                className={`border shadow-sm hover:shadow-md transition-all bg-card overflow-hidden cursor-pointer active:scale-[0.99] ${isMaintenance ? 'opacity-75' : ''}`}
+                onClick={() => { setSelectedRoom(room); setSheetMode('view'); }}>
                 <RoomTypeHeader type={room.type} status={room.status} />
                 <CardContent className="p-4 space-y-3">
                   {/* Header row */}
@@ -583,42 +626,6 @@ export const RoomManagement = () => {
                     </div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 pt-1 border-t border-border">
-                    <Button
-                      variant="ghost" size="sm" className="h-7 px-2 text-xs flex-1"
-                      onClick={() => { setSelectedRoom(room); setSheetMode('view'); }}
-                    >
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View
-                    </Button>
-                    <Button
-                      variant="ghost" size="sm" className="h-7 px-2 text-xs flex-1"
-                      onClick={() => { setSelectedRoom(room); setSheetMode('edit'); }}
-                    >
-                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
-                    </Button>
-                    {/* Quick status toggle */}
-                    {room.status === 'Available' && (
-                      <Button
-                        variant="ghost" size="sm"
-                        className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                        onClick={() => handleQuickStatus(room, 'Maintenance')}
-                        title="Mark as Maintenance"
-                      >
-                        <Wrench className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {room.status === 'Maintenance' && (
-                      <Button
-                        variant="ghost" size="sm"
-                        className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => handleQuickStatus(room, 'Available')}
-                        title="Mark as Available"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             );
@@ -633,6 +640,7 @@ export const RoomManagement = () => {
           mode={sheetMode}
           onClose={() => { setSheetMode(null); setSelectedRoom(null); }}
           onSave={handleSave}
+          onStatusChange={handleQuickStatus}
         />
       )}
     </div>

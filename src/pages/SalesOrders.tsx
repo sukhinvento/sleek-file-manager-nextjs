@@ -147,7 +147,8 @@ export const SalesOrders = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState({
@@ -166,17 +167,15 @@ export const SalesOrders = () => {
   // Sort state
   const [sortConfig, setSortConfig] = useState({ field: 'orderDate', direction: 'desc' });
 
-  // Load initial data
-  useEffect(() => {
-    loadSalesOrders();
-    loadStats();
-  }, []);
+  useEffect(() => { loadSalesOrders(currentPage); }, [currentPage]);
+  useEffect(() => { loadStats(); }, []);
 
-  const loadSalesOrders = async () => {
+  const loadSalesOrders = async (page = currentPage) => {
     try {
       setIsLoadingData(true);
-      const orders = await salesOrderService.fetchSalesOrders();
-      setSalesOrders(orders);
+      const result = await salesOrderService.fetchSalesOrders(page, itemsPerPage);
+      setSalesOrders(result.data);
+      setTotalItems(result.total);
     } catch (error) {
       console.error('Failed to load sales orders:', error);
       toast({ title: 'Error', description: 'Failed to load sales orders. Please try again.', variant: 'destructive' });
@@ -272,8 +271,8 @@ export const SalesOrders = () => {
   }, [filteredOrders, sortConfig]);
 
   // Pagination logic
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
-  const currentPageData = sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = sortedOrders;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -299,8 +298,9 @@ export const SalesOrders = () => {
   };
 
   const handleEditOrder = async (order: SalesOrder) => {
+    const settled = order.status === 'Delivered' || order.status === 'Cancelled';
     setEditingOrder(order);
-    setSheetMode('edit');
+    setSheetMode(settled ? 'view' : 'edit');
     const detail = await salesOrderService.fetchSalesOrderById(order.id);
     if (detail) setEditingOrder(detail);
   };
@@ -563,11 +563,14 @@ export const SalesOrders = () => {
             },
           ]}
           onRowClick={(order) => handleViewOrder(order)}
-          getActions={(order) => [
-            { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
-            { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit },
-            { label: 'Delete', onClick: () => setDeleteTarget(order.id), variant: 'destructive' as const, icon: Trash2 }
-          ]}
+          getActions={(order) => {
+            const settled = order.status === 'Delivered' || order.status === 'Cancelled';
+            return [
+              { label: 'View', onClick: () => handleViewOrder(order), icon: Eye },
+              { label: 'Edit', onClick: () => handleEditOrder(order), icon: Edit, disabled: settled, disabledReason: settled ? 'Cannot edit settled order' : undefined },
+              { label: 'Delete', onClick: () => setDeleteTarget(order.id), variant: 'destructive' as const, icon: Trash2, disabled: settled, disabledReason: settled ? 'Cannot delete settled order' : undefined },
+            ];
+          }}
         />
       )}
 
@@ -618,8 +621,10 @@ export const SalesOrders = () => {
           }}
           onSave={(savedOrder) => {
             // If view-mode edit was clicked, reopen in edit mode
+            // Guard: never allow editing a settled (Delivered/Cancelled) order
             if (sheetMode === 'view') {
-              setSheetMode('edit');
+              const settled = editingOrder?.status === 'Delivered' || editingOrder?.status === 'Cancelled';
+              if (!settled) setSheetMode('edit');
               return;
             }
             handleSaveOrder(savedOrder);

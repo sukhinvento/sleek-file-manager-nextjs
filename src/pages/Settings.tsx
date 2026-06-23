@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import {
   User, Mail, Phone, Building2, Briefcase, Shield, Lock,
   Save, Edit, X, CheckCircle, AlertCircle, Eye, EyeOff, Loader2,
+  Receipt, MapPin, Hash,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import * as authService from '@/services/authService';
 import type { UserProfile, UpdateProfilePayload } from '@/services/authService';
+import apiClient from '@/lib/api-client';
 
 const PRIMARY = 'hsl(220,48%,42%)';
 
@@ -25,6 +27,43 @@ export const Settings = () => {
   // Edit form state
   const [formData, setFormData] = useState<UpdateProfilePayload>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // GST settings state (admin only)
+  const isAdmin = user?.roles?.includes('admin') ?? false;
+  const [gstData, setGstData] = useState({ gstin: '', legal_name: '', registered_address: '', state_code: '', pan: '' });
+  const [gstEditing, setGstEditing] = useState(false);
+  const [savingGst, setSavingGst] = useState(false);
+
+  const loadGstSettings = async () => {
+    if (!isAdmin || !user?.tenantId) return;
+    try {
+      const res = await apiClient.get(`/tenants/${user.tenantId}`);
+      const t = res.data;
+      setGstData({
+        gstin:              t.gstin              || '',
+        legal_name:         t.legal_name         || '',
+        registered_address: t.registered_address || '',
+        state_code:         t.state_code         || '',
+        pan:                t.pan                || '',
+      });
+    } catch { /* silent — tenant endpoint might 404 on non-admin */ }
+  };
+
+  const handleSaveGst = async () => {
+    if (!user?.tenantId) return;
+    setSavingGst(true);
+    try {
+      await apiClient.patch(`/tenants/${user.tenantId}`, gstData);
+      toast({ title: 'GST Settings Saved', description: 'Tax registration details updated.' });
+      setGstEditing(false);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save GST settings.', variant: 'destructive' });
+    } finally {
+      setSavingGst(false);
+    }
+  };
+
+  useEffect(() => { loadGstSettings(); }, [isAdmin, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Password change state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -477,6 +516,116 @@ export const Settings = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* ── GST / Tax Registration (admin only) ─────────────────────────── */}
+      {isAdmin && (
+        <Card className="border border-border shadow-sm">
+          <CardHeader className="pb-3 pt-4 px-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(158,70%,36%/0.08)' }}>
+                  <Receipt className="h-4 w-4" style={{ color: 'hsl(158,70%,36%)' }} />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-semibold text-foreground">GST & Tax Registration</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Used on all invoices for legal GST compliance</p>
+                </div>
+              </div>
+              {!gstEditing ? (
+                <Button size="sm" variant="outline" onClick={() => setGstEditing(true)} className="gap-1.5 h-7 text-xs">
+                  <Edit className="h-3 w-3" /> Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setGstEditing(false)} className="h-7 text-xs gap-1">
+                    <X className="h-3 w-3" /> Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSaveGst} disabled={savingGst} className="h-7 text-xs gap-1 action-button-primary text-white">
+                    {savingGst ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                    {savingGst ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* GSTIN */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <Hash className="h-3 w-3" /> GSTIN
+                  {gstData.gstin && <Badge className="text-[10px] bg-green-100 text-green-700 border-0 pointer-events-none ml-1">Verified</Badge>}
+                </Label>
+                {gstEditing ? (
+                  <Input value={gstData.gstin} onChange={e => setGstData(p => ({ ...p, gstin: e.target.value.toUpperCase() }))}
+                    placeholder="27AAAAA0000A1Z5" className="h-8 text-sm font-mono" maxLength={15} />
+                ) : (
+                  <p className="text-sm font-mono text-foreground">{gstData.gstin || <span className="text-muted-foreground italic">Not set</span>}</p>
+                )}
+              </div>
+              {/* PAN */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <Shield className="h-3 w-3" /> PAN
+                </Label>
+                {gstEditing ? (
+                  <Input value={gstData.pan} onChange={e => setGstData(p => ({ ...p, pan: e.target.value.toUpperCase() }))}
+                    placeholder="AAAAA0000A" className="h-8 text-sm font-mono" maxLength={10} />
+                ) : (
+                  <p className="text-sm font-mono text-foreground">{gstData.pan || <span className="text-muted-foreground italic">Not set</span>}</p>
+                )}
+              </div>
+              {/* Legal Name */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <Building2 className="h-3 w-3" /> Legal Name (as per GST)
+                </Label>
+                {gstEditing ? (
+                  <Input value={gstData.legal_name} onChange={e => setGstData(p => ({ ...p, legal_name: e.target.value }))}
+                    placeholder="City General Hospital Pvt Ltd" className="h-8 text-sm" />
+                ) : (
+                  <p className="text-sm text-foreground">{gstData.legal_name || <span className="text-muted-foreground italic">Not set</span>}</p>
+                )}
+              </div>
+              {/* State Code */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <MapPin className="h-3 w-3" /> State Code
+                  <span className="text-muted-foreground font-normal">(drives IGST vs CGST+SGST)</span>
+                </Label>
+                {gstEditing ? (
+                  <Input value={gstData.state_code} onChange={e => setGstData(p => ({ ...p, state_code: e.target.value }))}
+                    placeholder="27" className="h-8 text-sm font-mono" maxLength={2} />
+                ) : (
+                  <p className="text-sm font-mono text-foreground">{gstData.state_code || <span className="text-muted-foreground italic">Not set</span>}</p>
+                )}
+              </div>
+              {/* Registered Address */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <MapPin className="h-3 w-3" /> Registered Address
+                </Label>
+                {gstEditing ? (
+                  <Input value={gstData.registered_address} onChange={e => setGstData(p => ({ ...p, registered_address: e.target.value }))}
+                    placeholder="123 Hospital Road, Mumbai, Maharashtra 400001" className="h-8 text-sm" />
+                ) : (
+                  <p className="text-sm text-foreground">{gstData.registered_address || <span className="text-muted-foreground italic">Not set</span>}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Info note */}
+            {!gstEditing && !gstData.gstin && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800">
+                  GSTIN is required to generate legally valid GST invoices. Set it here and it will automatically appear on all future invoices as the <strong>seller GSTIN</strong>.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

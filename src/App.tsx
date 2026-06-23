@@ -13,7 +13,6 @@ import { Settings } from "./pages/Settings";
 import { PurchaseOrders } from "./pages/PurchaseOrders";
 import { Inventory } from "./pages/Inventory";
 import { InventoryDashboard } from "./pages/InventoryDashboard";
-// Billing page removed — replaced by Invoices
 import { Diagnostics } from "./pages/Diagnostics";
 import { Patients } from "./pages/Patients";
 import { VendorManagement } from "./pages/VendorManagement";
@@ -26,6 +25,14 @@ import { PatientAdmission } from "./pages/PatientAdmission";
 import { RoomManagement } from "./pages/RoomManagement";
 import { DoctorManagement } from "./pages/DoctorManagement";
 import { Invoices } from "./pages/Invoices";
+import { ChartOfAccounts } from "./pages/ChartOfAccounts";
+import { JournalEntries } from "./pages/JournalEntries";
+import { AgingReport } from "./pages/AgingReport";
+import { PnLStatement } from "./pages/PnLStatement";
+import { BankAccounts } from "./pages/BankAccounts";
+import { Payroll } from "./pages/Payroll";
+import { FixedAssets } from "./pages/FixedAssets";
+import { BalanceSheet } from "./pages/BalanceSheet";
 import { AppLayout } from "./components/layout/AppLayout";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -102,7 +109,7 @@ const App = () => (
               <StockTransfer />
             </AppLayout>
           } />
-          {/* Billing route removed — redirects to Invoices */}
+          {/* /billing → /invoices for any old links */}
           <Route path="/billing" element={<Navigate to="/invoices" replace />} />
           <Route path="/invoices" element={
             <AppLayout>
@@ -152,6 +159,46 @@ const App = () => (
           <Route path="/analytics/distribution" element={
             <AppLayout>
               <DistributionAnalytics />
+            </AppLayout>
+          } />
+          <Route path="/finance/accounts" element={
+            <AppLayout>
+              <ChartOfAccounts />
+            </AppLayout>
+          } />
+          <Route path="/finance/journal" element={
+            <AppLayout>
+              <JournalEntries />
+            </AppLayout>
+          } />
+          <Route path="/finance/aging" element={
+            <AppLayout>
+              <AgingReport />
+            </AppLayout>
+          } />
+          <Route path="/finance/pnl" element={
+            <AppLayout>
+              <PnLStatement />
+            </AppLayout>
+          } />
+          <Route path="/finance/bank-accounts" element={
+            <AppLayout>
+              <BankAccounts />
+            </AppLayout>
+          } />
+          <Route path="/finance/payroll" element={
+            <AppLayout>
+              <Payroll />
+            </AppLayout>
+          } />
+          <Route path="/finance/fixed-assets" element={
+            <AppLayout>
+              <FixedAssets />
+            </AppLayout>
+          } />
+          <Route path="/finance/balance-sheet" element={
+            <AppLayout>
+              <BalanceSheet />
             </AppLayout>
           } />
           <Route path="*" element={<NotFound />} />
