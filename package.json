@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "VITE_DEMO_MODE=true vite",
     "dev:demo": "VITE_DEMO_MODE=true vite",
-    "build": "vite build",
+    "dev:real": "vite",
+    "build": "VITE_DEMO_MODE=true vite build",
     "build:demo": "VITE_DEMO_MODE=true vite build",
-    "build:dev": "vite build --mode development",
+    "build:real": "vite build",
+    "build:dev": "VITE_DEMO_MODE=true vite build --mode development",
+    "preview": "VITE_DEMO_MODE=true vite preview",
+    "preview:real": "vite preview",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e": "VITE_DEMO_MODE=true playwright test",
+    "test:e2e:ui": "VITE_DEMO_MODE=true playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
