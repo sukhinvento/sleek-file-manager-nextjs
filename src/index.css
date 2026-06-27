@@ -3,6 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe-area bottom padding for mobile browsers with home bar */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
 @layer utilities {
   /* Hide scrollbar for WebKit browsers */
   .scrollbar-hide {
@@ -220,9 +225,22 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS bounce scroll on body */
+    overscroll-behavior: none;
   }
   html {
     overflow-x: hidden;
+    /* Support dynamic viewport height for mobile browsers */
+    height: 100%;
+  }
+  /* Prevent iOS Safari zoom on input focus — font-size must be >= 16px */
+  @media (max-width: 1024px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+    .dense-input {
+      font-size: 16px !important;
+    }
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;

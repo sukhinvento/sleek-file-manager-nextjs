@@ -191,12 +191,12 @@ export const AppLayout = ({
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
-  return <div className="flex h-screen w-full bg-background">
+  return <div className="flex h-[100dvh] w-full bg-background">
       {/* Overlay for mobile when sidebar is open */}
       {isMobileMenuOpen && <div className="fixed inset-0 z-40 lg:hidden overlay-backdrop" onClick={() => setIsMobileMenuOpen(false)} />}
       
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 h-12 z-30 flex items-center justify-between px-3 lg:hidden border-b border-border bg-card">
+      <div className="fixed top-0 left-0 right-0 h-12 z-30 flex items-center justify-between px-3 lg:hidden border-b border-border bg-card" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         {/* Left - Hamburger Menu */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -296,13 +296,13 @@ export const AppLayout = ({
       </div>
 
       <div className={`flex-1 transition-all duration-300 ml-0 min-w-0 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-60'}`}>
-        <main className="h-screen pt-12 lg:pt-12 bg-background flex flex-col min-w-0">
+        <main className="h-[100dvh] pt-12 lg:pt-12 bg-background flex flex-col min-w-0">
           {location.pathname === '/patients/admit' ? (
             <div className="flex-1 overflow-hidden min-w-0">
               {children}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 min-w-0">
+            <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 min-w-0 pb-safe">
               {children}
             </div>
           )}
