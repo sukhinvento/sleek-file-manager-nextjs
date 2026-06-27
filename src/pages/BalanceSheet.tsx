@@ -49,7 +49,15 @@ function CollapsibleSection({ title, icon: Icon, iconColor, accounts, total, def
       </button>
       {open && accounts.length > 0 && (
         <div style={{ borderTop: `1px solid ${BORDER}` }}>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              {/* Code column — desktop only, fixed width */}
+              <col className="hidden sm:table-column" style={{ width: 80 }} />
+              {/* Account — fills remaining space */}
+              <col />
+              {/* Balance — fixed width */}
+              <col style={{ width: 110 }} />
+            </colgroup>
             <thead>
               <tr style={{ background: 'hsl(220,16%,97%)' }}>
                 <th className="text-left px-4 py-1.5 font-medium text-xs hidden sm:table-cell" style={{ color: TEXT_MUTE }}>Code</th>
@@ -60,16 +68,18 @@ function CollapsibleSection({ title, icon: Icon, iconColor, accounts, total, def
             <tbody>
               {accounts.map((acc: any, i: number) => (
                 <tr key={i} style={{ borderTop: `1px solid ${BORDER}` }}>
-                  <td className="px-4 py-2 font-mono text-xs hidden sm:table-cell" style={{ color: TEXT_MUTE }}>{acc.account_code || acc.accountCode || ''}</td>
-                  <td className="px-4 py-2 text-xs font-medium" style={{ color: TEXT_MAIN }}>{acc.account_name || acc.accountName || ''}</td>
-                  <td className="px-4 py-2 text-right font-mono text-xs font-semibold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(acc.balance ?? acc.amount ?? 0)}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs hidden sm:table-cell" style={{ color: TEXT_MUTE }}>{acc.account_code || acc.accountCode || ''}</td>
+                  <td className="px-4 py-2.5 text-xs font-medium" style={{ color: TEXT_MAIN }}>{acc.account_name || acc.accountName || ''}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(acc.balance ?? acc.amount ?? 0)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr style={{ borderTop: `2px solid ${BORDER}`, background: 'hsl(220,16%,97%)' }}>
-                <td colSpan={2} className="px-4 py-2 text-xs font-bold uppercase" style={{ color: TEXT_MUTE }}>Total {title}</td>
-                <td className="px-4 py-2 text-right font-mono text-sm font-bold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(total)}</td>
+                {/* Empty Code cell — desktop only — avoids broken colSpan on mobile */}
+                <td className="hidden sm:table-cell" />
+                <td className="px-4 py-2.5 text-xs font-bold uppercase tracking-wide" style={{ color: TEXT_MUTE }}>Total {title}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-sm font-bold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -154,7 +164,7 @@ export function BalanceSheet() {
           </div>
 
           {/* Collapsible sections */}
-          <div>
+          <div className="space-y-3">
             <CollapsibleSection
               title="Assets"
               icon={Landmark}
