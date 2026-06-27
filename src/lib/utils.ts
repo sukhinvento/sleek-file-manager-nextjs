@@ -13,8 +13,8 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Formatted string
  */
 export function formatIndianNumber(value: number, decimals: number = 2): string {
-  if (value === 0) return '0';
-  
+  if (!value || isNaN(value) || !isFinite(value)) return '0';
+
   const absValue = Math.abs(value);
   const sign = value < 0 ? '-' : '';
   

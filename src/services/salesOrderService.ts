@@ -1,229 +1,232 @@
-import { SalesOrder } from '@/types/inventory';
+import apiClient from '@/lib/api-client';
+import { SalesOrder, SalesOrderItem } from '@/types/inventory';
 
-// Mock data - will be replaced with actual API calls
-const mockSalesOrders: SalesOrder[] = [
-  {
-    id: '1',
-    orderNumber: 'SO-2024-001',
-    customerName: 'John Smith',
-    customerEmail: 'john@example.com',
-    customerPhone: '+1-555-0123',
-    customerAddress: '123 Main St, Springfield, IL 62701',
-    orderDate: '2024-01-15',
-    dueDate: '2024-01-22',
-    status: 'Processing',
-    paymentStatus: 'Paid',
-    total: 2500.00,
-    items: [
-      {
-        name: 'Paracetamol 500mg',
-        qty: 100,
-        unitPrice: 10,
-        discount: 10,
-        subtotal: 900,
-        taxSlab: 12,
-        saleUnit: 'Strip'
-      },
-      {
-        name: 'Amoxicillin 250mg',
-        qty: 50,
-        unitPrice: 25,
-        discount: 5,
-        subtotal: 1187.50,
-        taxSlab: 12,
-        saleUnit: 'Strip'
-      },
-      {
-        name: 'Hand Sanitizer 500ml',
-        qty: 20,
-        unitPrice: 85,
-        discount: 0,
-        subtotal: 1700,
-        taxSlab: 18,
-        saleUnit: 'Bottle'
-      }
-    ],
-    deliveryDate: '2024-01-22',
-    paymentMethod: 'Credit Card',
-    shippingAddress: '123 Main St, Springfield, IL 62701',
-    billingAddress: '123 Main St, Springfield, IL 62701',
-    notes: 'Please ensure temperature-controlled delivery.'
-  },
-  {
-    id: '2',
-    orderNumber: 'SO-2024-002',
-    customerName: 'Emily Davis',
-    customerEmail: 'emily@example.com',
-    customerPhone: '+1-555-0124',
-    customerAddress: '456 Oak Ave, Portland, OR 97201',
-    orderDate: '2024-01-16',
-    dueDate: '2024-01-23',
-    status: 'Shipped',
-    paymentStatus: 'Paid',
-    total: 4200.00,
-    items: [
-      {
-        name: 'Surgical Gloves (Box of 100)',
-        qty: 30,
-        unitPrice: 250,
-        discount: 15,
-        subtotal: 6375,
-        taxSlab: 18,
-        saleUnit: 'Box'
-      },
-      {
-        name: 'Face Masks (Pack of 50)',
-        qty: 60,
-        unitPrice: 150,
-        discount: 10,
-        subtotal: 8100,
-        taxSlab: 12,
-        saleUnit: 'Pack'
-      }
-    ],
-    deliveryDate: '2024-01-23',
-    paymentMethod: 'Bank Transfer',
-    shippingAddress: '456 Oak Ave, Portland, OR 97201',
-    billingAddress: '456 Oak Ave, Portland, OR 97201',
-    notes: 'Rush order - deliver before noon'
-  },
-  {
-    id: '3',
-    orderNumber: 'SO-2024-003',
-    customerName: 'Robert Wilson',
-    customerEmail: 'robert@example.com',
-    customerPhone: '+1-555-0125',
-    customerAddress: '789 Pine Rd, Seattle, WA 98101',
-    orderDate: '2024-01-17',
-    dueDate: '2024-01-24',
-    status: 'Delivered',
-    paymentStatus: 'Pending',
-    total: 1800.00,
-    items: [
-      {
-        name: 'Digital Thermometer',
-        qty: 25,
-        unitPrice: 450,
-        discount: 20,
-        subtotal: 9000,
-        taxSlab: 18,
-        saleUnit: 'Single Unit'
-      },
-      {
-        name: 'Blood Pressure Monitor',
-        qty: 10,
-        unitPrice: 1200,
-        discount: 15,
-        subtotal: 10200,
-        taxSlab: 18,
-        saleUnit: 'Single Unit'
-      }
-    ],
-    deliveryDate: '2024-01-24',
-    paymentMethod: 'Cash',
-    shippingAddress: '789 Pine Rd, Seattle, WA 98101',
-    billingAddress: '789 Pine Rd, Seattle, WA 98101',
-    notes: 'Call before delivery'
-  }
-];
+function mapOrderItem(raw: any): SalesOrderItem {
+  return {
+    id:           raw._id      || raw.id           || undefined,
+    item_id:      raw.item_id  || undefined,
+    name:         raw.name     || '',
+    qty:          raw.qty      ?? raw.quantity      ?? 0,
+    unitPrice:    raw.unit_price ?? raw.unitPrice   ?? 0,
+    discount:     raw.discount ?? 0,
+    subtotal:     raw.subtotal ?? 0,
+    taxSlab:      raw.tax_slab  ?? raw.taxSlab      ?? undefined,
+    saleUnit:     raw.sale_unit || raw.saleUnit     || undefined,
+    fulfilledQty: raw.fulfilled_qty ?? raw.fulfilledQty ?? undefined,
+    returnedQty:  raw.returned_qty  ?? raw.returnedQty  ?? undefined,
+    damagedQty:   raw.damaged_qty   ?? raw.damagedQty   ?? undefined,
+  };
+}
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function toBackendItem(item: SalesOrderItem): Record<string, any> {
+  const out: Record<string, any> = {
+    name:       item.name,
+    qty:        item.qty,
+    unit_price: item.unitPrice,
+    discount:   item.discount,
+    subtotal:   item.subtotal,
+  };
+  if (item.id)                         out.id           = item.id;
+  if (item.item_id)                    out.item_id      = item.item_id;
+  if (item.taxSlab  !== undefined)     out.tax_slab     = item.taxSlab;
+  if (item.saleUnit !== undefined)     out.sale_unit    = item.saleUnit;
+  if (item.fulfilledQty !== undefined) out.fulfilled_qty = item.fulfilledQty;
+  if (item.returnedQty  !== undefined) out.returned_qty  = item.returnedQty;
+  if (item.damagedQty   !== undefined) out.damaged_qty   = item.damagedQty;
+  return out;
+}
+
+const STATUS_MAP: Record<string, SalesOrder['status']> = {
+  draft: 'Pending',
+  pending: 'Pending',
+  processing: 'Processing',
+  Processing: 'Processing',
+  shipped: 'Shipped',
+  Shipped: 'Shipped',
+  delivered: 'Delivered',
+  Delivered: 'Delivered',
+  invoiced: 'Delivered',
+  Invoiced: 'Delivered',
+  cancelled: 'Cancelled',
+  Cancelled: 'Cancelled',
+  partial: 'Partially Shipped',
+  partially_shipped: 'Partially Shipped',
+};
+
+const PAYMENT_STATUS_MAP: Record<string, SalesOrder['paymentStatus']> = {
+  paid: 'Paid',
+  Paid: 'Paid',
+  pending: 'Pending',
+  Pending: 'Pending',
+  partial: 'Partial',
+  overdue: 'Overdue',
+};
+
+const extractName = (v: any): string => {
+  if (!v) return '';
+  if (typeof v === 'object') return String(v.name || v.full_name || v.username || v.email || '');
+  if (typeof v === 'string' && /^[0-9a-f]{24}$/i.test(v)) return '';
+  return String(v);
+};
+
+function mapSalesOrder(raw: any): SalesOrder {
+  const status = STATUS_MAP[String(raw.status || '').trim()] || 'Pending';
+  const paymentStatus = PAYMENT_STATUS_MAP[String(raw.payment_status || raw.paymentStatus || '').trim()] || 'Pending';
+  const rawCustomerId = raw.customer_id;
+  const customerIdStr = rawCustomerId && typeof rawCustomerId === 'string' && /^[0-9a-f]{24}$/i.test(rawCustomerId)
+    ? rawCustomerId
+    : (rawCustomerId && typeof rawCustomerId === 'object' ? String(rawCustomerId._id || rawCustomerId.id || '') : undefined);
+  return {
+    id: raw._id || raw.id || '',
+    orderNumber: raw.so_number || raw.orderNumber || '',
+    customerId: customerIdStr || undefined,
+    customerName: raw.customer_name || raw.customerName || '',
+    customerEmail: raw.customer_email || raw.customerEmail || '',
+    customerPhone: raw.customer_phone || raw.customerPhone || '',
+    customerAddress: raw.customer_address || raw.customerAddress || '',
+    orderDate: raw.order_date || raw.orderDate || (raw.createdAt ? raw.createdAt.split('T')[0] : ''),
+    deliveryDate: raw.delivery_date || raw.deliveryDate || '',
+    dueDate: raw.due_date || raw.dueDate || '',
+    status,
+    paymentStatus,
+    items: Array.isArray(raw.items) ? raw.items.map(mapOrderItem) : [],
+    total: raw.grand_total ?? raw.total ?? 0,
+    paymentMethod: raw.payment_method || raw.paymentMethod || '',
+    shippingAddress: raw.shipping_address || raw.shippingAddress || '',
+    billingAddress: raw.billing_address || raw.billingAddress || '',
+    notes: raw.notes || '',
+    paidAmount: raw.paid_amount ?? raw.paidAmount ?? 0,
+    createdBy: extractName(raw.created_by) || extractName(raw.createdBy) || '',
+    actor: raw.actor || raw.created_by_username || raw.created_by_user || '',
+  };
+}
+
+function toBackendPayload(orderData: Partial<SalesOrder>): Record<string, any> {
+  const payload: Record<string, any> = {};
+  if (orderData.orderNumber !== undefined)  payload.so_number    = orderData.orderNumber;
+  if (orderData.customerId !== undefined)   payload.customer_id  = orderData.customerId;
+  if (orderData.customerName !== undefined) payload.customer_name = orderData.customerName;
+  if (orderData.customerEmail !== undefined)   payload.customer_email    = orderData.customerEmail;
+  if (orderData.customerPhone !== undefined)   payload.customer_phone    = orderData.customerPhone;
+  if (orderData.customerAddress !== undefined) payload.customer_address  = orderData.customerAddress;
+  if (orderData.shippingAddress !== undefined) payload.shipping_address  = orderData.shippingAddress;
+  if (orderData.billingAddress !== undefined)  payload.billing_address   = orderData.billingAddress;
+  if (orderData.orderDate !== undefined)       payload.order_date        = orderData.orderDate;
+  if (orderData.deliveryDate !== undefined)    payload.delivery_date     = orderData.deliveryDate;
+  if (orderData.dueDate !== undefined)         payload.due_date          = orderData.dueDate;
+  if (orderData.items !== undefined)           payload.items             = orderData.items.map(toBackendItem);
+  if (orderData.total !== undefined)           payload.grand_total       = orderData.total;
+  if (orderData.paidAmount !== undefined)       payload.paid_amount       = orderData.paidAmount;
+  if (orderData.paymentMethod !== undefined)   payload.payment_method    = orderData.paymentMethod;
+  if (orderData.paymentStatus !== undefined)   payload.payment_status    = orderData.paymentStatus;
+  if (orderData.notes !== undefined)           payload.notes             = orderData.notes;
+  if (orderData.status !== undefined)          payload.status            = orderData.status;
+  if (orderData.actor !== undefined)           payload.actor             = orderData.actor;
+  return payload;
+}
 
 /**
  * Fetch all sales orders
- * TODO: Replace with actual API call: GET /api/sales-orders
+ * GET /sales-orders?limit=200
  */
-export const fetchSalesOrders = async (): Promise<SalesOrder[]> => {
-  await delay(500); // Simulate network delay
-  return [...mockSalesOrders];
+export const fetchSalesOrders = async (page = 1, limit = 25): Promise<{ data: SalesOrder[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/sales-orders', { params: { page, limit, sort: 'createdAt_desc' } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapSalesOrder),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**
  * Fetch a single sales order by ID
- * TODO: Replace with actual API call: GET /api/sales-orders/:id
+ * GET /sales-orders/:id
  */
 export const fetchSalesOrderById = async (id: string): Promise<SalesOrder | null> => {
-  await delay(300);
-  return mockSalesOrders.find(order => order.id === id) || null;
+  try {
+    const response = await apiClient.get(`/sales-orders/${id}`);
+    return mapSalesOrder(response.data);
+  } catch {
+    return null;
+  }
 };
 
 /**
  * Create a new sales order
- * TODO: Replace with actual API call: POST /api/sales-orders
+ * POST /sales-orders
  */
 export const createSalesOrder = async (orderData: Omit<SalesOrder, 'id'>): Promise<SalesOrder> => {
-  await delay(800);
-  const newOrder: SalesOrder = {
-    ...orderData,
-    id: `so-${Date.now()}`,
-  };
-  mockSalesOrders.push(newOrder);
-  return newOrder;
+  const payload = toBackendPayload(orderData);
+  console.log('[SO CREATE] payload →', JSON.stringify(payload, null, 2));
+  const response = await apiClient.post('/sales-orders', payload);
+  console.log('[SO CREATE] response ←', JSON.stringify(response.data, null, 2));
+  return mapSalesOrder(response.data);
 };
 
 /**
  * Update an existing sales order
- * TODO: Replace with actual API call: PUT /api/sales-orders/:id
+ * PATCH /sales-orders/:id
  */
 export const updateSalesOrder = async (id: string, orderData: Partial<SalesOrder>): Promise<SalesOrder> => {
-  await delay(800);
-  const index = mockSalesOrders.findIndex(order => order.id === id);
-  if (index === -1) {
-    throw new Error('Sales order not found');
-  }
-  mockSalesOrders[index] = { ...mockSalesOrders[index], ...orderData };
-  return mockSalesOrders[index];
+  const response = await apiClient.patch(`/sales-orders/${id}`, toBackendPayload(orderData));
+  return mapSalesOrder(response.data);
 };
 
 /**
  * Delete a sales order
- * TODO: Replace with actual API call: DELETE /api/sales-orders/:id
+ * DELETE /sales-orders/:id
  */
 export const deleteSalesOrder = async (id: string): Promise<void> => {
-  await delay(500);
-  const index = mockSalesOrders.findIndex(order => order.id === id);
-  if (index === -1) {
-    throw new Error('Sales order not found');
-  }
-  mockSalesOrders.splice(index, 1);
+  await apiClient.delete(`/sales-orders/${id}`);
 };
 
 /**
  * Fetch sales orders statistics
- * TODO: Replace with actual API call: GET /api/sales-orders/stats
+ * GET /sales-orders/stats
  */
 export const fetchSalesOrderStats = async () => {
-  await delay(400);
-  
-  const totalOrders = mockSalesOrders.length;
-  const totalRevenue = mockSalesOrders.reduce((sum, order) => sum + order.total, 0);
-  const processingOrders = mockSalesOrders.filter(order => order.status === 'Processing').length;
-  const deliveredOrders = mockSalesOrders.filter(order => order.status === 'Delivered').length;
-  const pendingPayments = mockSalesOrders
-    .filter(order => order.paymentStatus === 'Pending')
-    .reduce((sum, order) => sum + order.total, 0);
-  
+  const response = await apiClient.get('/sales-orders/stats');
+  const raw = response.data || {};
   return {
-    totalOrders,
-    totalRevenue,
-    processingOrders,
-    deliveredOrders,
-    pendingPayments,
-    averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+    totalOrders:     raw.totalOrders     ?? raw.total_orders     ?? 0,
+    pendingOrders:   raw.pendingOrders   ?? raw.pending_orders   ?? 0,
+    processingOrders:raw.processingOrders?? raw.processing_orders?? 0,
+    shippedOrders:   raw.shippedOrders   ?? raw.shipped_orders   ?? 0,
+    deliveredOrders: raw.deliveredOrders ?? raw.delivered_orders ?? 0,
+    cancelledOrders: raw.cancelledOrders ?? raw.cancelled_orders ?? 0,
+    totalRevenue:    raw.totalRevenue    ?? raw.total_revenue    ?? 0,
+    pendingRevenue:  raw.pendingRevenue  ?? raw.pending_revenue  ?? 0,
+    pendingPayments: raw.pendingPayments ?? raw.pending_payments ?? 0,
+    // pass through any extra fields the backend may return
+    ...raw,
   };
 };
 
 /**
+ * Ship a sales order
+ * POST /sales-orders/:id/ship
+ */
+export const shipSalesOrder = async (id: string): Promise<SalesOrder> => {
+  const response = await apiClient.post(`/sales-orders/${id}/ship`);
+  return mapSalesOrder(response.data);
+};
+
+/**
+ * Invoice a sales order — POST /sales-orders/:id/invoice
+ */
+export const invoiceSalesOrder = async (id: string): Promise<SalesOrder> => {
+  const response = await apiClient.post(`/sales-orders/${id}/invoice`);
+  return mapSalesOrder(response.data);
+};
+
+/**
  * Search sales orders
- * TODO: Replace with actual API call: GET /api/sales-orders/search?q=...
+ * GET /sales-orders?search=X
  */
 export const searchSalesOrders = async (query: string): Promise<SalesOrder[]> => {
-  await delay(300);
-  const lowerQuery = query.toLowerCase();
-  return mockSalesOrders.filter(order =>
-    order.orderNumber.toLowerCase().includes(lowerQuery) ||
-    order.customerName.toLowerCase().includes(lowerQuery) ||
-    order.customerEmail.toLowerCase().includes(lowerQuery)
-  );
+  const response = await apiClient.get('/sales-orders', { params: { search: query, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapSalesOrder);
 };

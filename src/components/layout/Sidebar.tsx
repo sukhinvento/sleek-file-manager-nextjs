@@ -1,6 +1,6 @@
-import { useState, Dispatch, SetStateAction } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import medSystemLogo from '@/assets/medsystem-logo.svg';
+import { useState, useMemo, Dispatch, SetStateAction } from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
   LineChart,
@@ -20,8 +20,95 @@ import {
   Package,
   Receipt,
   Users,
-  Activity
+  Activity,
+  BedDouble,
+  Stethoscope,
+  BookOpen,
+  BookMarked,
+  Hourglass,
+  BarChart2,
+  Landmark,
+  Banknote,
+  Building2,
+  Scale,
+  LucideIcon
 } from 'lucide-react';
+
+// --- Scope-to-nav mapping ---
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  /** Scopes required to see this item (any match = visible). Empty/undefined = always visible. */
+  scopes?: string[];
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Main',
+    items: [
+      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // always visible
+      { path: '/patients', label: 'Patients', icon: Users, scopes: ['patients'] },
+      { path: '/rooms', label: 'Rooms', icon: BedDouble, scopes: ['rooms'] },
+      { path: '/doctors', label: 'Doctors', icon: Stethoscope, scopes: ['doctors'] },
+    ],
+  },
+  {
+    title: 'Inventory & Orders',
+    items: [
+      { path: '/inventory-dashboard', label: 'Inventory Dashboard', icon: LayoutDashboard, scopes: ['inventory'] },
+      { path: '/inventory', label: 'Inventory', icon: Package, scopes: ['inventory'] },
+      { path: '/purchase-orders', label: 'Purchase Orders', icon: ShoppingCart, scopes: ['purchase-orders'] },
+      { path: '/sales-orders', label: 'Sales Orders', icon: Receipt, scopes: ['sales-orders'] },
+      { path: '/vendors', label: 'Vendors', icon: Users, scopes: ['vendors'] },
+      { path: '/stock-transfer', label: 'Stock Transfer', icon: TrendingUp, scopes: ['inventory'] },
+    ],
+  },
+  {
+    title: 'Billing & Finance',
+    items: [
+      { path: '/invoices', label: 'Invoices', icon: FileText, scopes: ['invoices'] },
+      { path: '/diagnostics', label: 'Diagnostics', icon: Activity, scopes: ['diagnostics'] },
+    ],
+  },
+  {
+    title: 'Financial Reporting',
+    items: [
+      { path: '/finance/accounts', label: 'Chart of Accounts', icon: BookOpen, scopes: ['finance'] },
+      { path: '/finance/journal', label: 'Journal Entries', icon: BookMarked, scopes: ['finance'] },
+      { path: '/finance/aging', label: 'AR/AP Aging', icon: Hourglass, scopes: ['finance'] },
+      { path: '/finance/pnl', label: 'P&L Statement', icon: BarChart2, scopes: ['finance'] },
+      { path: '/finance/bank-accounts', label: 'Bank Accounts', icon: Landmark, scopes: ['finance'] },
+      { path: '/finance/payroll', label: 'Payroll', icon: Banknote, scopes: ['finance'] },
+      { path: '/finance/fixed-assets', label: 'Fixed Assets', icon: Building2, scopes: ['finance'] },
+      { path: '/finance/balance-sheet', label: 'Balance Sheet', icon: Scale, scopes: ['finance'] },
+    ],
+  },
+  {
+    title: 'File Management',
+    items: [
+      { path: '/files-dashboard', label: 'File Dashboard', icon: LayoutDashboard },
+      { path: '/upload', label: 'Upload Files', icon: FileUp },
+      { path: '/files', label: 'View Files', icon: FileText },
+      { path: '/edit', label: 'Edit Files', icon: Edit },
+      { path: '/consolidated', label: 'Consolidated Data', icon: Database },
+    ],
+  },
+  {
+    title: 'Analytics',
+    items: [
+      { path: '/analytics/usage', label: 'Usage Stats', icon: BarChart3 },
+      { path: '/analytics/trends', label: 'Trends', icon: TrendingUp },
+      { path: '/analytics/distribution', label: 'Distribution', icon: PieChart },
+    ],
+  },
+];
 
 interface SidebarProps {
   isMobileMenuOpen: boolean;
@@ -30,312 +117,148 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-export const Sidebar = ({ 
-  isMobileMenuOpen, 
-  setIsMobileMenuOpen, 
+export const Sidebar = ({
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
   isCollapsed = false,
-  toggleSidebar 
+  toggleSidebar
 }: SidebarProps) => {
-  const navigate = useNavigate();
   const location = useLocation();
+  const { hasScope, hasRole, logout } = useAuth();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const isSubmenuActive = (basePath: string) => {
-    return location.pathname.startsWith(basePath);
-  };
+  // Filter nav items based on user scopes.
+  // Items without scopes are always visible.
+  // Items with scopes are visible if the user has ANY of the listed scopes.
+  // Admin role bypasses scope checks and sees everything.
+  const isAdmin = hasRole('admin');
 
-  const toggleSubmenu = (menu: string) => {
-    setOpenSubmenu(openSubmenu === menu ? null : menu);
-  };
+  const visibleSections = useMemo(() => {
+    return NAV_SECTIONS
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (!item.scopes || item.scopes.length === 0) return true; // no scope required
+          if (isAdmin) return true; // admin sees all
+          return item.scopes.some((scope) => hasScope(scope));
+        }),
+      }))
+      .filter((section) => section.items.length > 0); // hide empty sections
+  }, [isAdmin, hasScope]);
+
+  // Settings visible to admin or users with settings/system-admin scope
+  const canSeeSettings = isAdmin || hasScope('settings') || hasScope('system-admin');
 
   return (
-    <div 
+    <div
       className={`enterprise-sidebar fixed top-0 bottom-0 transform transition-all duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } ${isCollapsed ? 'lg:w-14' : 'w-56'} z-50`}
+      } ${isCollapsed ? 'lg:w-16' : 'w-60'} z-50`}
     >
-      <div className="flex items-center h-12 px-3" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
-        <div className="flex-1 overflow-hidden flex items-center gap-2">
-          <img src={medSystemLogo} alt="MedSystem" className="h-7 w-7 flex-shrink-0 rounded-md" />
-          <div className={`text-sm font-semibold tracking-tight whitespace-nowrap nav-text transition-opacity ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} style={{ color: 'hsl(0 0% 100%)' }}>
-            MedSystem
-          </div>
-        </div>
-        <div className="flex items-center flex-shrink-0">
-          <button 
+      <div className="flex items-center h-13 px-3 py-3" style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}>
+        {isCollapsed ? (
+          /* Collapsed: just the logo mark centered, click to expand */
+          <button
             onClick={toggleSidebar}
-            className="hidden lg:flex p-1 rounded-md transition-colors"
-            style={{ color: 'hsl(var(--sidebar-text))' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--sidebar-hover))'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="mx-auto flex items-center justify-center w-8 h-8 rounded-lg"
+            style={{ background: 'linear-gradient(135deg, hsl(220 52% 48%), hsl(222 55% 30%))' }}
+            aria-label="Expand sidebar"
           >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="20" height="20">
+              <path d="M16 2.5 L25.5 7.5 L25.5 18.5 Q25.5 26.5 16 30.5 Q6.5 26.5 6.5 18.5 L6.5 7.5 Z"
+                    stroke="white" strokeWidth="1.75" strokeLinejoin="round"/>
+              <polyline points="8,18 11,18 13,14 16,22 19,15 21,18 24,18"
+                        stroke="#4dd8c8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
-          
-          <button 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden ml-2"
-            style={{ color: 'hsl(var(--sidebar-text))' }}
-          >
-            &times;
-          </button>
-        </div>
+        ) : (
+          /* Expanded: logo + name + collapse button */
+          <>
+            <div className="flex-1 overflow-hidden flex items-center gap-2.5">
+              <div className="h-8 w-8 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, hsl(220 52% 48%), hsl(222 55% 30%))' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" width="20" height="20">
+                  <path d="M16 2.5 L25.5 7.5 L25.5 18.5 Q25.5 26.5 16 30.5 Q6.5 26.5 6.5 18.5 L6.5 7.5 Z"
+                        stroke="white" strokeWidth="1.75" strokeLinejoin="round"/>
+                  <polyline points="8,18 11,18 13,14 16,22 19,15 21,18 24,18"
+                            stroke="#4dd8c8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="text-sm font-bold tracking-tight whitespace-nowrap" style={{ color: 'hsl(0 0% 100%)' }}>
+                MedSystem
+              </div>
+            </div>
+            <div className="flex items-center flex-shrink-0 gap-1">
+              <button
+                onClick={toggleSidebar}
+                className="hidden lg:flex p-1.5 rounded-md transition-colors"
+                style={{ color: 'hsl(var(--sidebar-text))' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--sidebar-hover))'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                aria-label="Collapse sidebar"
+              >
+                <ChevronLeft size={15} />
+              </button>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="lg:hidden p-1.5 rounded-md"
+                style={{ color: 'hsl(var(--sidebar-text))' }}
+              >
+                &times;
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3rem)]">
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Main</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link 
-              to="/dashboard" 
-              className={`nav-item ${isActive('/dashboard') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Dashboard</span>
-            </Link>
-            
-            <Link 
-              to="/patients" 
-              className={`nav-item ${isActive('/patients') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Patients"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Patients</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Inventory & Orders</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link 
-              to="/inventory-dashboard" 
-              className={`nav-item ${isActive('/inventory-dashboard') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Inventory Dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <LayoutDashboard className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Dashboard</span>
-            </Link>
-            
-            <Link 
-              to="/inventory" 
-              className={`nav-item ${isActive('/inventory') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Inventory Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Package className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Inventory Management</span>
-            </Link>
-            
-            <Link 
-              to="/purchase-orders" 
-              className={`nav-item ${isActive('/purchase-orders') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Purchase Orders"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <ShoppingCart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Purchase Orders</span>
-            </Link>
-
-            <Link 
-              to="/sales-orders" 
-              className={`nav-item ${isActive('/sales-orders') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Sales Orders"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Sales Orders</span>
-            </Link>
-
-            <Link 
-              to="/vendors" 
-              className={`nav-item ${isActive('/vendors') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Vendor Management"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Users className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Vendors</span>
-            </Link>
-
-            <Link 
-              to="/stock-transfer" 
-              className={`nav-item ${isActive('/stock-transfer') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Stock Transfer"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Stock Transfer</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Billing & Finance</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link 
-              to="/billing" 
-              className={`nav-item ${isActive('/billing') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Billing"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Receipt className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Billing</span>
-            </Link>
-            <Link 
-              to="/diagnostics" 
-              className={`nav-item ${isActive('/diagnostics') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Diagnostics"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Activity className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Diagnostics</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">File Management</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link 
-              to="/upload" 
-              className={`nav-item ${isActive('/upload') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Upload Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <FileUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Upload Files</span>
-            </Link>
-            <Link 
-              to="/files" 
-              className={`nav-item ${isActive('/files') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="View Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <FileText className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>View Files</span>
-            </Link>
-            <Link 
-              to="/edit" 
-              className={`nav-item ${isActive('/edit') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Edit Files"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Edit className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Edit Files</span>
-            </Link>
-            <Link 
-              to="/consolidated" 
-              className={`nav-item ${isActive('/consolidated') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Consolidated Data View"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Database className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Consolidated Data</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="nav-section">
-          {!isCollapsed && <p className="nav-section-title">Analytics</p>}
-          <nav className="mt-1 space-y-0.5">
-            <Link 
-              to="/analytics/usage" 
-              className={`nav-item ${isActive('/analytics/usage') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Usage Stats"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <BarChart3 className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Usage Stats</span>
-            </Link>
-            <Link 
-              to="/analytics/trends" 
-              className={`nav-item ${isActive('/analytics/trends') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Trends"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <TrendingUp className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Trends</span>
-            </Link>
-            <Link 
-              to="/analytics/distribution" 
-              className={`nav-item ${isActive('/analytics/distribution') ? 'active' : ''} ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-              title="Distribution"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <PieChart className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-              <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Distribution</span>
-            </Link>
-          </nav>
-        </div>
+      <div className="px-2 py-2 overflow-y-auto scrollbar-hide max-h-[calc(100vh-3.25rem)]">
+        {visibleSections.map((section) => (
+          <div className="nav-section" key={section.title}>
+            {!isCollapsed && <p className="nav-section-title">{section.title}</p>}
+            <nav className="mt-1 space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`nav-item ${isActive(item.path) ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+                    title={item.label}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+                    {!isCollapsed && <span className="nav-text truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
 
         <div className="mt-4 pt-3" style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
-          <Link 
-            to="/settings" 
-            className={`nav-item ${isActive('/settings') ? 'active' : ''} ${
-              isCollapsed ? 'justify-center px-2' : ''
-            }`}
-            title="Settings"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Settings className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-            <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Settings</span>
-          </Link>
-          
-          <Link 
-            to="/login" 
-            className={`nav-item ${isCollapsed ? 'justify-center px-2' : ''}`}
+          {canSeeSettings && (
+            <Link
+              to="/settings"
+              className={`nav-item ${isActive('/settings') ? 'active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+              title="Settings"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Settings className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+              {!isCollapsed && <span className="nav-text truncate">Settings</span>}
+            </Link>
+          )}
+
+          <button
+            className={`nav-item w-full ${isCollapsed ? 'justify-center' : ''}`}
             title="Logout"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/login');
-            }}
+            onClick={() => logout()}
           >
-            <LogOut className={`${isCollapsed ? 'mx-auto' : 'mr-3'} h-4 w-4 flex-shrink-0`} />
-            <span className={`nav-text truncate w-full ${isCollapsed ? 'opacity-0 absolute left-0 pointer-events-none' : 'opacity-100'}`}>Logout</span>
-          </Link>
+            <LogOut className={`${isCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0`} />
+            {!isCollapsed && <span className="nav-text truncate">Logout</span>}
+          </button>
         </div>
       </div>
     </div>

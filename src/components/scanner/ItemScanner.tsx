@@ -6,16 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  ResponsiveDialog, 
-  ResponsiveDialogContent, 
-  ResponsiveDialogHeader, 
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
   ResponsiveDialogTitle,
   ResponsiveDialogBody
 } from "@/components/ui/responsive-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 import { InventoryItem } from '@/types/inventory';
+import { fetchInventoryItems } from '@/services/inventoryService';
 import { CameraScanner } from './CameraScanner';
 
 interface ItemScannerProps {
@@ -37,6 +38,7 @@ export const ItemScanner = ({
   const [quantity, setQuantity] = useState(1);
   const [showCamera, setShowCamera] = useState(false);
   const [scanMode, setScanMode] = useState<'manual' | 'camera' | 'samples'>('manual');
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   // Auto-focus input when dialog opens
   useEffect(() => {
@@ -49,79 +51,19 @@ export const ItemScanner = ({
     }
   }, [isOpen]);
 
-  // Simulated inventory database - in real app, this would be an API call
-  const mockInventoryDatabase: InventoryItem[] = [
-    {
-      id: 'INV-001',
-      name: 'Paracetamol 500mg',
-      category: 'Medicines',
-      sku: 'MED-PAR-500',
-      currentStock: 150,
-      minStock: 50,
-      maxStock: 500,
-      unitPrice: 5.99,
-      supplier: 'PharmaCorp',
-      location: 'Shelf A-12',
-      description: 'Pain relief medication',
-      batchNumber: 'BATCH-2025-001',
-      saleUnit: 'Strip',
-      barcode: '1234567890128',
-      barcodeType: 'EAN-13',
-      qrCode: 'QR-INV-001',
-      rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
-      trackingEnabled: true
-    },
-    {
-      id: 'INV-002',
-      name: 'Amoxicillin 250mg',
-      category: 'Antibiotics',
-      sku: 'MED-AMX-250',
-      currentStock: 200,
-      minStock: 75,
-      maxStock: 600,
-      unitPrice: 12.50,
-      supplier: 'MediSupply Co',
-      location: 'Shelf B-05',
-      description: 'Antibiotic medication',
-      batchNumber: 'BATCH-2025-002',
-      saleUnit: 'Strip',
-      barcode: '9876543210987',
-      barcodeType: 'EAN-13',
-      qrCode: 'QR-INV-002',
-      rfidTag: 'B2C3D4E5F6G78901BCDEF123',
-      trackingEnabled: true
-    },
-    {
-      id: 'INV-003',
-      name: 'Ibuprofen 400mg',
-      category: 'Medicines',
-      sku: 'MED-IBU-400',
-      currentStock: 300,
-      minStock: 100,
-      maxStock: 800,
-      unitPrice: 8.75,
-      supplier: 'PharmaCorp',
-      location: 'Shelf A-15',
-      description: 'Anti-inflammatory medication',
-      batchNumber: 'BATCH-2025-003',
-      saleUnit: 'Strip',
-      barcode: '5555666677778',
-      barcodeType: 'EAN-13',
-      qrCode: 'QR-INV-003',
-      rfidTag: 'C3D4E5F6G7H89012CDEF1234',
-      trackingEnabled: true
-    }
-  ];
+  // Load inventory from backend on mount
+  useEffect(() => {
+    fetchInventoryItems().then(res => setInventoryItems(res.data || [])).catch(() => {});
+  }, []);
 
   const findItemByCode = (code: string, method: 'barcode' | 'qr' | 'rfid'): InventoryItem | null => {
     const trimmedCode = code.trim();
-    
-    return mockInventoryDatabase.find(item => {
+
+    return inventoryItems.find(item => {
       switch (method) {
         case 'barcode':
           return item.barcode === trimmedCode;
         case 'qr':
-          // QR codes can contain full item data, so we check if the code contains the item ID
           try {
             const decoded = atob(trimmedCode);
             const data = JSON.parse(decoded);
@@ -139,11 +81,7 @@ export const ItemScanner = ({
 
   const handleScan = async () => {
     if (!scanInput.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter or scan a code",
-        variant: "destructive"
-      });
+      toast({ title: 'Input Required', description: 'Please enter or scan a code', variant: 'destructive' });
       return;
     }
 
@@ -157,11 +95,7 @@ export const ItemScanner = ({
     if (item) {
       // Check if item already exists
       if (existingItems.includes(item.id)) {
-        toast({
-          title: "Item Already Added",
-          description: `${item.name} is already in the list`,
-          variant: "destructive"
-        });
+        toast({ title: 'Item Already Added', description: `${item.name} is already in the list`, variant: 'destructive' });
         setIsScanning(false);
         return;
       }
@@ -169,15 +103,7 @@ export const ItemScanner = ({
       setLastScanned(item.id);
       onItemScanned(item, quantity);
       
-      toast({
-        title: "Item Scanned Successfully",
-        description: (
-          <div className="space-y-1">
-            <div className="font-medium">{item.name}</div>
-            <div className="text-xs">SKU: {item.sku} | Qty: {quantity}</div>
-          </div>
-        )
-      });
+      toast({ title: 'Item Scanned Successfully', description: `${item.name} — SKU: ${item.sku} | Qty: ${quantity}`, variant: 'success' });
 
       // Reset for next scan
       setScanInput('');
@@ -189,11 +115,7 @@ export const ItemScanner = ({
         input?.focus();
       }, 100);
     } else {
-      toast({
-        title: "Item Not Found",
-        description: `No item found with ${scanMethod.toUpperCase()} code: ${scanInput}`,
-        variant: "destructive"
-      });
+      toast({ title: 'Item Not Found', description: `No item found with ${scanMethod.toUpperCase()} code: ${scanInput}`, variant: 'destructive' });
     }
 
     setIsScanning(false);
@@ -355,79 +277,42 @@ export const ItemScanner = ({
                 </AlertDescription>
               </Alert>
 
-              {/* Sample Codes for Testing */}
-              <Card className="border-dashed">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Sample Codes for Testing</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid gap-2 text-xs">
-                    <div className="flex items-center justify-between p-2 bg-muted rounded">
-                      <div>
-                        <div className="font-medium">Paracetamol 500mg</div>
-                        <div className="text-muted-foreground font-mono">
-                          {scanMethod === 'barcode' && '1234567890128'}
-                          {scanMethod === 'qr' && 'QR-INV-001'}
-                          {scanMethod === 'rfid' && 'A1B2C3D4E5F67890ABCDEF12'}
-                        </div>
+              {/* Sample Codes from Inventory */}
+              {(() => {
+                const sampleItems = inventoryItems
+                  .filter(item =>
+                    scanMethod === 'barcode' ? !!item.barcode :
+                    scanMethod === 'qr' ? !!item.qrCode :
+                    !!item.rfidTag
+                  )
+                  .slice(0, 3);
+                if (sampleItems.length === 0) return null;
+                return (
+                  <Card className="border-dashed">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium">Items with {scanMethod === 'barcode' ? 'Barcode' : scanMethod === 'qr' ? 'QR Code' : 'RFID Tag'}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="grid gap-2 text-xs">
+                        {sampleItems.map(item => {
+                          const code = scanMethod === 'barcode' ? item.barcode! : scanMethod === 'qr' ? item.qrCode! : item.rfidTag!;
+                          return (
+                            <div key={item.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                              <div>
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-muted-foreground font-mono">{code}</div>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => setScanInput(code)}>
+                                Use
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setScanInput(
-                          scanMethod === 'barcode' ? '1234567890128' :
-                          scanMethod === 'qr' ? 'QR-INV-001' :
-                          'A1B2C3D4E5F67890ABCDEF12'
-                        )}
-                      >
-                        Use
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted rounded">
-                      <div>
-                        <div className="font-medium">Amoxicillin 250mg</div>
-                        <div className="text-muted-foreground font-mono">
-                          {scanMethod === 'barcode' && '9876543210987'}
-                          {scanMethod === 'qr' && 'QR-INV-002'}
-                          {scanMethod === 'rfid' && 'B2C3D4E5F6G78901BCDEF123'}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setScanInput(
-                          scanMethod === 'barcode' ? '9876543210987' :
-                          scanMethod === 'qr' ? 'QR-INV-002' :
-                          'B2C3D4E5F6G78901BCDEF123'
-                        )}
-                      >
-                        Use
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted rounded">
-                      <div>
-                        <div className="font-medium">Ibuprofen 400mg</div>
-                        <div className="text-muted-foreground font-mono">
-                          {scanMethod === 'barcode' && '5555666677778'}
-                          {scanMethod === 'qr' && 'QR-INV-003'}
-                          {scanMethod === 'rfid' && 'C3D4E5F6G7H89012CDEF1234'}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setScanInput(
-                          scanMethod === 'barcode' ? '5555666677778' :
-                          scanMethod === 'qr' ? 'QR-INV-003' :
-                          'C3D4E5F6G7H89012CDEF1234'
-                        )}
-                      >
-                        Use
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         </ResponsiveDialogBody>

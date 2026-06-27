@@ -108,102 +108,105 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
+    /* Surfaces */
+    --background: 200 25% 98%;
+    --foreground: 215 28% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 215 28% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
-    --primary: 220 26% 22%;
+    --popover-foreground: 215 28% 14%;
+
+    /* Brand — steel blue navy */
+    --primary: 220 48% 42%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 220 20% 18%;
-    --muted: 210 14% 95%;
-    --muted-foreground: 215 14% 46%;
-    --accent: 220 26% 94%;
-    --accent-foreground: 220 26% 22%;
-    --destructive: 0 72% 51%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 30% 18%;
+    --muted: 220 18% 96%;
+    --muted-foreground: 220 12% 46%;
+    --accent: 220 50% 94%;
+    --accent-foreground: 220 48% 30%;
+    --destructive: 354 70% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 220 26% 22%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 220 48% 42%;
     --radius: 0.625rem;
-    
-    /* Sidebar */
-    --sidebar-bg: 220 26% 14%;
-    --sidebar-hover: 220 20% 20%;
-    --sidebar-active: 199 89% 38%;
-    --sidebar-text: 215 20% 65%;
+
+    /* Sidebar — slate-blue with bright blue active rail */
+    --sidebar-bg: 220 28% 20%;
+    --sidebar-hover: 220 26% 27%;
+    --sidebar-active: 210 50% 90%;
+    --sidebar-text: 220 18% 72%;
     --sidebar-text-active: 0 0% 100%;
-    --sidebar-section: 215 14% 40%;
-    --sidebar-border: 220 20% 20%;
-    
-    /* Inventory Management Colors */
-    --success: 160 84% 39%;
+    --sidebar-section: 220 16% 52%;
+    --sidebar-border: 220 24% 26%;
+
+    /* Semantic */
+    --success: 158 70% 36%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 20%;
-    --info: 199 89% 48%;
+    --warning: 33 92% 48%;
+    --warning-foreground: 33 92% 18%;
+    --info: 200 80% 44%;
     --info-foreground: 0 0% 100%;
-    
-    /* Status Colors */
-    --status-pending: 38 92% 50%;
-    --status-pending-bg: 40 100% 96%;
-    --status-approved: 199 89% 48%;
-    --status-approved-bg: 199 100% 96%;
-    --status-delivered: 160 84% 39%;
-    --status-delivered-bg: 160 76% 95%;
-    --status-cancelled: 0 72% 51%;
-    --status-cancelled-bg: 0 86% 96%;
-    
-    /* Inventory Status Colors */
-    --stock-critical: 0 72% 51%;
-    --stock-critical-bg: 0 86% 96%;
-    --stock-low: 38 92% 50%;
-    --stock-low-bg: 40 100% 96%;
-    --stock-normal: 160 84% 39%;
-    --stock-normal-bg: 160 76% 95%;
-    
+
+    /* Status (orders) — coordinated saturation */
+    --status-pending: 33 92% 46%;
+    --status-pending-bg: 38 100% 96%;
+    --status-approved: 200 80% 44%;
+    --status-approved-bg: 200 90% 96%;
+    --status-delivered: 158 70% 36%;
+    --status-delivered-bg: 158 60% 94%;
+    --status-cancelled: 354 70% 50%;
+    --status-cancelled-bg: 354 80% 96%;
+
+    /* Stock */
+    --stock-critical: 354 70% 50%;
+    --stock-critical-bg: 354 80% 96%;
+    --stock-low: 33 92% 46%;
+    --stock-low-bg: 38 100% 96%;
+    --stock-normal: 158 70% 36%;
+    --stock-normal-bg: 158 60% 94%;
+
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 26% 22%), hsl(220 26% 14%));
-    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 29%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 52% 48%), hsl(222 55% 30%));
+    --gradient-success: linear-gradient(135deg, hsl(158 70% 40%), hsl(162 72% 28%));
     --gradient-subtle: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)));
-    
+
     /* Shadows */
-    --shadow-elegant: 0 4px 24px -4px hsl(220 26% 14% / 0.2);
+    --shadow-elegant: 0 4px 24px -4px hsl(220 48% 42% / 0.2);
     --shadow-card: 0 1px 3px 0 hsl(220 20% 10% / 0.04), 0 1px 2px -1px hsl(220 20% 10% / 0.04);
     --shadow-card-hover: 0 4px 12px -2px hsl(220 20% 10% / 0.08), 0 2px 4px -2px hsl(220 20% 10% / 0.04);
     --shadow-overlay: 0 20px 60px -15px hsl(220 20% 10% / 0.2);
   }
  
   .dark {
-    --background: 222 47% 6%;
+    --background: 215 30% 7%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
+    --card: 215 30% 9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
+    --popover: 215 30% 9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 220 26% 65%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
+    --primary: 220 55% 60%;
+    --primary-foreground: 220 38% 8%;
+    --secondary: 220 24% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 220 26% 75%;
-    --destructive: 0 62% 30%;
+    --muted: 220 24% 14%;
+    --muted-foreground: 220 18% 65%;
+    --accent: 220 40% 18%;
+    --accent-foreground: 220 55% 80%;
+    --destructive: 354 65% 42%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 220 26% 65%;
-    
-    --sidebar-bg: 222 47% 5%;
-    --sidebar-hover: 222 40% 12%;
-    --sidebar-active: 199 89% 48%;
-    --sidebar-text: 215 20% 55%;
+    --border: 220 24% 16%;
+    --input: 220 24% 16%;
+    --ring: 220 55% 60%;
+
+    --sidebar-bg: 220 40% 8%;
+    --sidebar-hover: 220 32% 14%;
+    --sidebar-active: 210 90% 65%;
+    --sidebar-text: 220 16% 58%;
     --sidebar-text-active: 0 0% 100%;
-    --sidebar-section: 215 14% 35%;
-    --sidebar-border: 222 40% 12%;
+    --sidebar-section: 215 14% 38%;
+    --sidebar-border: 220 28% 14%;
   }
 }
 
@@ -257,13 +260,13 @@
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 0.375rem 0.625rem;
+  padding: 0.375rem 0.75rem;
   margin: 0 0.25rem;
   color: hsl(var(--sidebar-text));
   border-radius: 0.375rem;
   transition: all 0.15s ease;
-  height: 32px;
-  font-size: 0.8125rem;
+  height: 36px;
+  font-size: 0.875rem;
   font-weight: 450;
   position: relative;
 }
@@ -274,8 +277,8 @@
 }
 
 .nav-item.active {
-  background: hsl(0 0% 100% / 0.1);
-  color: hsl(0 0% 100%);
+  background: hsl(var(--sidebar-active) / 0.12);
+  color: hsl(var(--sidebar-active));
   font-weight: 500;
 }
 
@@ -287,7 +290,7 @@
   transform: translateY(-50%);
   width: 2px;
   height: 16px;
-  background: hsl(0 0% 100%);
+  background: hsl(var(--sidebar-active));
   border-radius: 0 2px 2px 0;
 }
 
@@ -315,7 +318,47 @@
   width: 100%;
 }
 
-/* Overlay & Modal Enhancements */
+/* ── Table base styles ──────────────────────────────────── */
+/* Every table wrapper gets a white card surface */
+[class*="rounded"] table,
+.table-container table,
+table {
+  background: hsl(var(--card));
+}
+
+/* Shadcn TableHeader rows get a light primary-tinted background */
+thead tr,
+[role="rowgroup"]:first-child [role="row"] {
+  background: hsl(var(--primary) / 0.06) !important;
+  border-bottom: 1.5px solid hsl(var(--primary) / 0.14) !important;
+}
+
+thead th,
+[role="rowgroup"]:first-child [role="columnheader"] {
+  color: hsl(var(--primary)) !important;
+  font-weight: 600 !important;
+  font-size: 0.6875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Table body rows on white */
+tbody tr,
+[role="rowgroup"]:not(:first-child) [role="row"] {
+  background: hsl(var(--card));
+}
+
+tbody tr:nth-child(even),
+[role="rowgroup"]:not(:first-child) [role="row"]:nth-child(even) {
+  background: hsl(var(--primary) / 0.025);
+}
+
+tbody tr:hover,
+[role="rowgroup"]:not(:first-child) [role="row"]:hover {
+  background: hsl(var(--primary) / 0.05) !important;
+}
+
+/* ── Overlay & Modal Enhancements ───────────────────────── */
 .overlay-content {
   @apply bg-card border rounded-xl;
   box-shadow: var(--shadow-overlay);
@@ -375,6 +418,30 @@
   box-shadow: var(--shadow-card-hover);
 }
 
+/* ── Clickable stat cards ───────────────────────────────── */
+/* The scroll-container needs vertical room so the ring doesn't clip */
+.stat-cards-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 6px 8px 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.stat-cards-scroll::-webkit-scrollbar { display: none; }
+
+.stat-card-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.stat-card-clickable:hover {
+  box-shadow: 0 0 0 1.5px hsl(var(--primary) / 0.38), 0 8px 24px -4px hsl(220 48% 42% / 0.18), 0 2px 8px -2px hsl(220 48% 42% / 0.1) !important;
+  transform: translateY(-2px);
+}
+.stat-card-active {
+  /* ring via box-shadow — not clipped by overflow:hidden unlike outline */
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 0 5px hsl(var(--primary) / 0.12), 0 6px 20px -4px hsl(220 48% 42% / 0.2) !important;
+}
+
 .action-button-primary {
   @apply text-primary-foreground transition-all duration-200 font-medium;
   background: hsl(var(--primary));
@@ -382,7 +449,7 @@
 }
 
 .action-button-primary:hover {
-  background: hsl(220 26% 18%);
+  background: hsl(220 52% 34%);
   box-shadow: 0 4px 12px -2px hsl(var(--primary) / 0.3);
   transform: translateY(-1px);
 }
@@ -482,6 +549,151 @@ input[type="date"]:focus::-webkit-datetime-edit {
 
 ::-webkit-calendar-picker-indicator:hover {
   filter: opacity(1);
+}
+
+/* Dense form pattern — PO / SO / Stock Transfer
+ * Targets ~24 visible rows on a 13" laptop (vs ~10 with shadcn defaults)
+ */
+.dense-table-wrap {
+  overflow: auto;
+  flex: 1;
+}
+
+.dense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.dense-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: hsl(var(--muted));
+}
+
+.dense-table th {
+  height: 28px;
+  padding: 0 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
+  white-space: nowrap;
+}
+
+.dense-table th.text-right,
+.dense-table td.text-right { text-align: right; }
+
+.dense-table td {
+  height: 36px;
+  padding: 0 10px;
+  border-bottom: 1px solid hsl(var(--border) / 0.6);
+  vertical-align: middle;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+}
+
+.dense-table td.item-name {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.dense-table tr:hover td {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.dense-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.dense-input {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 4px);
+  background: transparent;
+  font-size: 12.5px;
+  font-family: 'JetBrains Mono', monospace;
+  width: 100%;
+  color: hsl(var(--foreground));
+  transition: all 0.1s;
+}
+
+.dense-input:hover {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.dense-input:focus {
+  outline: 2px solid hsl(var(--ring) / 0.35);
+  outline-offset: 0;
+  border-color: hsl(var(--ring));
+  background: hsl(var(--background));
+}
+
+.dense-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  height: 36px;
+  background: hsl(var(--muted));
+  border-top: 1px solid hsl(var(--border));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.dense-footer .total-label {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.dense-footer .total-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.po-meta-strip {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  font-size: 12.5px;
+  flex-wrap: wrap;
+}
+
+.po-meta-cell {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px;
+  border-right: 1px solid hsl(var(--border));
+  min-width: 110px;
+}
+
+.po-meta-cell:last-child {
+  border-right: 0;
+}
+
+.po-meta-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--muted-foreground));
+  font-weight: 600;
+  margin-bottom: 1px;
+}
+
+.po-meta-value {
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
 }
 
 /* Print Styles for Modal/Overlay Content */

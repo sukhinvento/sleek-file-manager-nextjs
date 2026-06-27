@@ -1,18 +1,23 @@
 // Patient Service - Handles all patient-related API calls
-// This service provides CRUD operations and statistics for patient management
+import apiClient from '@/lib/api-client';
 
 export interface Patient {
   id: string;
   patientId: string;
   name: string;
-  age: number;
+  dob?: string;             // ISO date string "YYYY-MM-DD" — source of truth for age
+  age: number;              // computed from dob on read
   gender: string;
   phone: string;
   email: string;
   address: string;
   bloodGroup: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  allergies?: string[] | string;
+  existingConditions?: string[] | string;
   lastVisit: string;
-  status: 'Active' | 'Admitted' | 'Discharged' | 'Critical';
+  status: 'Active' | 'Admitted' | 'Discharged' | 'Critical' | 'Registered';
   doctor: string;
   department: string;
   // Tracking codes
@@ -28,258 +33,219 @@ export interface Patient {
   admissionDate?: string;
 }
 
-// Mock data for development
-const mockPatients: Patient[] = [
-  {
-    id: '1',
-    patientId: 'P001',
-    name: 'John Smith',
-    age: 45,
-    gender: 'Male',
-    phone: '+1-555-0123',
-    email: 'john.smith@email.com',
-    address: '123 Main St, City, State 12345',
-    bloodGroup: 'O+',
-    lastVisit: '2024-01-15',
-    status: 'Active',
-    doctor: 'Dr. Sarah Johnson',
-    department: 'Cardiology',
-    barcode: '1001234567890',
-    barcodeType: 'CODE-128',
-    qrCode: 'QR-PAT-001',
-    rfidTag: 'RFID1234567890ABCDEF01',
-    trackingEnabled: true
-  },
-  {
-    id: '2',
-    patientId: 'P002',
-    name: 'Emily Davis',
-    age: 32,
-    gender: 'Female',
-    phone: '+1-555-0124',
-    email: 'emily.davis@email.com',
-    address: '456 Oak Ave, City, State 12345',
-    bloodGroup: 'A-',
-    lastVisit: '2024-01-16',
-    status: 'Active',
-    doctor: 'Dr. Michael Brown',
-    department: 'Orthopedics'
-  },
-  {
-    id: '3',
-    patientId: 'P003',
-    name: 'Robert Wilson',
-    age: 67,
-    gender: 'Male',
-    phone: '+1-555-0125',
-    email: 'robert.wilson@email.com',
-    address: '789 Pine St, City, State 12345',
-    bloodGroup: 'B+',
-    lastVisit: '2024-01-17',
-    status: 'Discharged',
-    doctor: 'Dr. Lisa Anderson',
-    department: 'Emergency'
-  },
-  {
-    id: '4',
-    patientId: 'P004',
-    name: 'Sarah Miller',
-    age: 28,
-    gender: 'Female',
-    phone: '+1-555-0126',
-    email: 'sarah.miller@email.com',
-    address: '321 Elm St, City, State 12345',
-    bloodGroup: 'AB+',
-    lastVisit: '2024-01-18',
-    status: 'Admitted',
-    doctor: 'Dr. James Wilson',
-    department: 'General Medicine'
-  },
-  {
-    id: '5',
-    patientId: 'P005',
-    name: 'Michael Brown',
-    age: 55,
-    gender: 'Male',
-    phone: '+1-555-0127',
-    email: 'michael.brown@email.com',
-    address: '654 Maple Ave, City, State 12345',
-    bloodGroup: 'O-',
-    lastVisit: '2024-01-19',
-    status: 'Critical',
-    doctor: 'Dr. Emma Thompson',
-    department: 'ICU'
-  }
-];
+const STATUS_MAP: Record<string, Patient['status']> = {
+  active: 'Active',
+  admitted: 'Admitted',
+  discharged: 'Discharged',
+  deceased: 'Critical',
+  critical: 'Critical',
+  registered: 'Registered',
+};
 
-// Helper function to simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function computeAge(dob: string): number {
+  if (!dob) return 0;
+  const birth = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function mapPatient(raw: any): Patient {
+  const status = STATUS_MAP[String(raw.status || '').toLowerCase()] || 'Active';
+  return {
+    id: raw._id || raw.id || '',
+    patientId: raw.patient_id || '',
+    name: [raw.first_name, raw.last_name].filter(Boolean).join(' '),
+    dob: raw.dob || '',
+    age: computeAge(raw.dob),
+    gender: raw.gender || '',
+    phone: raw.phone || '',
+    email: raw.email || '',
+    address: raw.address || '',
+    bloodGroup: raw.blood_group || '',
+    emergencyContactName: raw.emergency_contact_name || raw.emergency_contact || '',
+    emergencyContactPhone: raw.emergency_contact_phone || raw.emergency_phone || '',
+    allergies: Array.isArray(raw.allergies) ? raw.allergies : (raw.allergies ? [raw.allergies] : []),
+    existingConditions: Array.isArray(raw.existing_conditions) ? raw.existing_conditions : (raw.existing_conditions ? [raw.existing_conditions] : []),
+    lastVisit: raw.updatedAt ? raw.updatedAt.split('T')[0] : '',
+    status,
+    doctor: '',
+    department: raw.department || '',
+    barcode: raw.barcode,
+    rfidTag: raw.rfid_tag,
+    trackingEnabled: !!(raw.barcode || raw.rfid_tag),
+  };
+}
 
 /**
- * Fetch all patients
- * TODO: Replace with actual API call
+ * Fetch patients with pagination
+ * GET /patients?page=1&limit=50
  */
-export const fetchPatients = async (): Promise<Patient[]> => {
-  await delay(500);
-  // TODO: Replace with actual API call
-  // const response = await fetch('/api/patients');
-  // return response.json();
-  return [...mockPatients];
+export const fetchPatients = async (page = 1, limit = 25, search?: string): Promise<{ data: Patient[]; total: number; page: number; limit: number }> => {
+  const params: Record<string, any> = { page, limit };
+  if (search?.trim()) params.search = search.trim();
+  const response = await apiClient.get('/patients', { params });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapPatient),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
+
 
 /**
  * Fetch a single patient by ID
- * TODO: Replace with actual API call
+ * GET /patients/:id
  */
 export const fetchPatientById = async (id: string): Promise<Patient | null> => {
-  await delay(300);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients/${id}`);
-  // return response.json();
-  return mockPatients.find(patient => patient.id === id) || null;
+  try {
+    const response = await apiClient.get(`/patients/${id}`);
+    return mapPatient(response.data);
+  } catch {
+    return null;
+  }
 };
 
 /**
  * Create a new patient
- * TODO: Replace with actual API call
+ * POST /patients
  */
 export const createPatient = async (patient: Omit<Patient, 'id'>): Promise<Patient> => {
-  await delay(400);
-  // TODO: Replace with actual API call
-  // const response = await fetch('/api/patients', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(patient)
-  // });
-  // return response.json();
-  
-  const newPatient: Patient = {
-    ...patient,
-    id: `${mockPatients.length + 1}`
+  const nameParts = patient.name.trim().split(/\s+/);
+  const body: Record<string, any> = {
+    first_name: nameParts[0] || '',
+    last_name: nameParts.slice(1).join(' ') || '',
+    gender: patient.gender,
+    phone: patient.phone,
+    email: patient.email || undefined,
+    address: patient.address || undefined,
+    blood_group: patient.bloodGroup || undefined,
+    department: patient.department || undefined,
+    barcode: patient.barcode || undefined,
+    rfid_tag: patient.rfidTag || undefined,
   };
-  mockPatients.push(newPatient);
-  return newPatient;
+  // Date of birth — pass through if provided
+  if (patient.dob) body.dob = patient.dob;
+  // Emergency contact
+  if (patient.emergencyContactName) body.emergency_contact_name = patient.emergencyContactName;
+  if (patient.emergencyContactPhone) body.emergency_contact_phone = patient.emergencyContactPhone;
+  // Medical history
+  if (patient.allergies) {
+    body.allergies = Array.isArray(patient.allergies)
+      ? patient.allergies
+      : patient.allergies.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+  if (patient.existingConditions) {
+    body.existing_conditions = Array.isArray(patient.existingConditions)
+      ? patient.existingConditions
+      : patient.existingConditions.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+  const response = await apiClient.post('/patients', body);
+  return mapPatient(response.data);
 };
 
 /**
  * Update an existing patient
- * TODO: Replace with actual API call
+ * PATCH /patients/:id
  */
 export const updatePatient = async (id: string, patient: Partial<Patient>): Promise<Patient | null> => {
-  await delay(400);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients/${id}`, {
-  //   method: 'PUT',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(patient)
-  // });
-  // return response.json();
-  
-  const index = mockPatients.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockPatients[index] = { ...mockPatients[index], ...patient };
-    return mockPatients[index];
+  try {
+    const body: any = {};
+    if (patient.name !== undefined) {
+      const parts = patient.name.split(' ');
+      body.first_name = parts[0] || '';
+      body.last_name = parts.slice(1).join(' ') || '';
+    }
+    if (patient.gender !== undefined) body.gender = patient.gender;
+    if (patient.phone !== undefined) body.phone = patient.phone;
+    if (patient.email !== undefined) body.email = patient.email;
+    if (patient.address !== undefined) body.address = patient.address;
+    if (patient.bloodGroup !== undefined) body.blood_group = patient.bloodGroup;
+    if (patient.department !== undefined) body.department = patient.department;
+    if (patient.barcode !== undefined) body.barcode = patient.barcode;
+    if (patient.rfidTag !== undefined) body.rfid_tag = patient.rfidTag;
+    if (patient.status !== undefined) {
+      const reverseStatus: Record<string, string> = {
+        Active: 'active', Admitted: 'admitted', Discharged: 'discharged', Critical: 'critical',
+      };
+      body.status = reverseStatus[patient.status] || patient.status.toLowerCase();
+    }
+    const response = await apiClient.patch(`/patients/${id}`, body);
+    return mapPatient(response.data);
+  } catch {
+    return null;
   }
-  return null;
 };
 
 /**
  * Delete a patient
- * TODO: Replace with actual API call
+ * DELETE /patients/:id
  */
 export const deletePatient = async (id: string): Promise<boolean> => {
-  await delay(300);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
-  // return response.ok;
-  
-  const index = mockPatients.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockPatients.splice(index, 1);
+  try {
+    await apiClient.delete(`/patients/${id}`);
     return true;
+  } catch {
+    return false;
   }
-  return false;
 };
 
 /**
  * Fetch patient statistics
- * TODO: Replace with actual API call
+ * GET /patients/stats
  */
 export const fetchPatientStats = async () => {
-  await delay(400);
-  // TODO: Replace with actual API call
-  // const response = await fetch('/api/patients/stats');
-  // return response.json();
-  
-  const totalPatients = mockPatients.length;
-  const activePatients = mockPatients.filter(p => p.status === 'Active').length;
-  const admittedPatients = mockPatients.filter(p => p.status === 'Admitted').length;
-  const dischargedPatients = mockPatients.filter(p => p.status === 'Discharged').length;
-  const criticalPatients = mockPatients.filter(p => p.status === 'Critical').length;
-  
-  const departments = [...new Set(mockPatients.map(p => p.department))];
-  const totalDepartments = departments.length;
-  
-  const bloodGroups = [...new Set(mockPatients.map(p => p.bloodGroup))];
-  
-  const averageAge = mockPatients.reduce((sum, p) => sum + p.age, 0) / totalPatients;
-  
+  const response = await apiClient.get('/patients/stats');
+  const raw = response.data;
+  const byStatus: { _id: string | null; count: number }[] = raw.byStatus ?? [];
+  const get = (status: string) => byStatus.find(s => s._id === status)?.count ?? 0;
   return {
-    totalPatients,
-    activePatients,
-    admittedPatients,
-    dischargedPatients,
-    criticalPatients,
-    totalDepartments,
-    averageAge: Math.round(averageAge),
-    bloodGroups: bloodGroups.length
+    totalPatients:     byStatus.reduce((sum, s) => sum + s.count, 0),
+    activePatients:    get('active'),
+    admittedPatients:  get('admitted'),
+    dischargedPatients:get('discharged'),
+    criticalPatients:  get('critical'),
+    totalDepartments:  (raw.byDepartment ?? []).length,
+    averageAge: 0,
+    bloodGroups: 0,
   };
 };
 
 /**
  * Search patients by query
- * TODO: Replace with actual API call
+ * GET /patients?search=X
  */
 export const searchPatients = async (query: string): Promise<Patient[]> => {
-  await delay(300);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients/search?q=${query}`);
-  // return response.json();
-  
-  const lowerQuery = query.toLowerCase();
-  return mockPatients.filter(patient =>
-    patient.name.toLowerCase().includes(lowerQuery) ||
-    patient.patientId.toLowerCase().includes(lowerQuery) ||
-    patient.phone.includes(query) ||
-    patient.email.toLowerCase().includes(lowerQuery)
-  );
+  const response = await apiClient.get('/patients', { params: { search: query, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapPatient);
 };
 
 /**
  * Get patients by status
- * TODO: Replace with actual API call
+ * GET /patients?status=X
  */
 export const getPatientsByStatus = async (status: string): Promise<Patient[]> => {
-  await delay(300);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients?status=${status}`);
-  // return response.json();
-  
-  if (status === 'All') {
-    return [...mockPatients];
-  }
-  return mockPatients.filter(patient => patient.status === status);
+  if (status === 'All') return fetchPatients(1, 100);
+  const reverseStatus: Record<string, string> = {
+    Active: 'active', Admitted: 'admitted', Discharged: 'discharged', Critical: 'critical',
+  };
+  const backendStatus = reverseStatus[status] || status.toLowerCase();
+  const response = await apiClient.get('/patients', { params: { status: backendStatus, page: 1, limit: 100 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapPatient);
 };
 
 /**
  * Get patients by department
- * TODO: Replace with actual API call
+ * GET /patients?department=X
  */
 export const getPatientsByDepartment = async (department: string): Promise<Patient[]> => {
-  await delay(300);
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/patients?department=${department}`);
-  // return response.json();
-  
-  return mockPatients.filter(patient => patient.department === department);
+  const response = await apiClient.get('/patients', { params: { department, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapPatient);
 };

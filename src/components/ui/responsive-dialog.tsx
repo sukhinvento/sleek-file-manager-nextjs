@@ -102,7 +102,7 @@ export function ResponsiveDialogHeader({
     return (
       <DrawerHeader 
         className={cn(
-          "bg-[#1a202c] px-6 py-6 rounded-t-[24px] border-b border-gray-700 flex-shrink-0 text-left p-0 pt-0",
+          "bg-primary px-6 py-6 rounded-t-[24px] border-b border-primary/30 flex-shrink-0 text-left p-0 pt-0",
           className
         )}
       >
@@ -116,7 +116,7 @@ export function ResponsiveDialogHeader({
   return (
     <DialogHeader 
       className={cn(
-        "bg-[#1a202c] px-6 py-7 !rounded-t-3xl rounded-t-3xl border-b border-gray-700 flex-shrink-0 min-h-[64px] text-left",
+        "bg-primary px-6 py-7 !rounded-t-3xl rounded-t-3xl border-b border-primary/30 flex-shrink-0 min-h-[64px] text-left",
         className
       )}
     >
@@ -171,7 +171,7 @@ export function ResponsiveDialogDescription({
   if (isMobile) {
     return (
       <DrawerDescription 
-        className={cn("text-gray-400", className)}
+        className={cn("text-primary-foreground/70", className)}
       >
         {children}
       </DrawerDescription>
@@ -180,7 +180,7 @@ export function ResponsiveDialogDescription({
 
   return (
     <DialogDescription 
-      className={cn("text-gray-400", className)}
+      className={cn("text-primary-foreground/70", className)}
     >
       {children}
     </DialogDescription>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
 interface CameraScannerProps {
   onScan: (code: string) => void;
@@ -122,10 +122,7 @@ export const CameraScanner = ({ onScan, onClose, scanType }: CameraScannerProps)
       setLastScan(code);
       onScan(code);
       
-      toast({
-        title: "Code Scanned!",
-        description: `${scanType === 'barcode' ? 'Barcode' : 'QR Code'}: ${code}`,
-      });
+      toast({ title: 'Code Scanned!', description: `${scanType === 'barcode' ? 'Barcode' : 'QR Code'}: ${code}`, variant: 'success' });
       
       // Vibrate if supported
       if ('vibrate' in navigator) {

@@ -15,21 +15,47 @@ import {
   Eye,
   Edit,
   Trash2,
-  Tag
+  Tag,
+  ShoppingCart
 } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTableView } from '@/components/ui/mobile-table-view';
 import { InventoryFilterModal } from '@/components/inventory/InventoryFilterModal';
 import { InventorySortModal } from '@/components/inventory/InventorySortModal';
-import { InventoryFormOverlay } from '@/components/inventory/InventoryFormOverlay';
+import InventorySheet from '@/components/inventory/InventorySheet';
+import PurchaseOrderSheet from '@/components/purchase-orders/PurchaseOrderSheet';
 import { InventoryItem } from '@/types/inventory';
+import { PurchaseOrder } from '@/types/purchaseOrder';
+import { EntityOption } from '@/types/shared';
+import * as purchaseOrderService from '@/services/purchaseOrderService';
+import * as vendorService from '@/services/vendorService';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import { formatIndianCurrency, formatIndianQuantity } from '@/lib/utils';
 import { countActiveFilters } from '@/lib/filterUtils';
 import * as inventoryService from '@/services/inventoryService';
+import { StatCard, STAT_ACCENTS } from '@/components/ui/stat-card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+// ── Design tokens ────────────────────────────────────────────────────────────
+const PRIMARY   = STAT_ACCENTS.PRIMARY;
+const SUCCESS   = STAT_ACCENTS.SUCCESS;
+const WARNING   = STAT_ACCENTS.WARNING;
+const DANGER    = STAT_ACCENTS.DANGER;
+const CYAN      = STAT_ACCENTS.CYAN;
+const TEXT_MAIN = 'hsl(215,28%,14%)';
+const TEXT_MUTE = 'hsl(220,12%,54%)';
+const BORDER    = 'hsl(220,16%,90%)';
+
+// ── Category colour map ──────────────────────────────────────────────────────
+const CAT_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  Pharmaceuticals:    { bg: `${STAT_ACCENTS.DANGER}14`,  text: STAT_ACCENTS.DANGER,   border: `${STAT_ACCENTS.DANGER}33`  },
+  Equipment:          { bg: `${STAT_ACCENTS.CYAN}14`,    text: STAT_ACCENTS.CYAN,     border: `${STAT_ACCENTS.CYAN}33`    },
+  Consumables:        { bg: `${STAT_ACCENTS.WARNING}14`, text: STAT_ACCENTS.WARNING,  border: `${STAT_ACCENTS.WARNING}33` },
+  'Medical Supplies': { bg: `${STAT_ACCENTS.PRIMARY}14`, text: STAT_ACCENTS.PRIMARY,  border: `${STAT_ACCENTS.PRIMARY}33` },
+  Surgical:           { bg: `${STAT_ACCENTS.PURPLE}14`,  text: STAT_ACCENTS.PURPLE,   border: `${STAT_ACCENTS.PURPLE}33`  },
+  Diagnostics:        { bg: `${STAT_ACCENTS.SUCCESS}14`, text: STAT_ACCENTS.SUCCESS,  border: `${STAT_ACCENTS.SUCCESS}33` },
+};
+const catStyle = (cat: string) => CAT_COLORS[cat] ?? { bg: 'hsl(220,12%,54%/0.08)', text: TEXT_MUTE, border: BORDER };
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
@@ -43,14 +69,61 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border pointer-events-none`}>
+    <Badge className={`${getStatusColor(status)} border text-[11px] pointer-events-none`}>
       {status}
     </Badge>
   );
 };
 
+const InventoryMobileCard = ({ item, onClick }: { item: InventoryItem; onClick?: () => void }) => {
+  const getStatus = (item: InventoryItem) => {
+    if (item.currentStock === 0) return 'Out of Stock';
+    if (item.currentStock <= item.minStock * 0.5) return 'Critical';
+    if (item.currentStock <= item.minStock) return 'Low';
+    return 'Normal';
+  };
+  const statusColorMap: Record<string, string> = {
+    'Normal': 'bg-green-100 text-green-800 border-green-200',
+    'Low': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'Critical': 'bg-red-100 text-red-800 border-red-200',
+    'Out of Stock': 'bg-red-100 text-red-800 border-red-200',
+  };
+  const status = getStatus(item);
+  return (
+    <Card className="w-full cursor-pointer active:scale-[0.99] transition-all duration-150 hover:shadow-md" style={{ borderColor: BORDER }} onClick={onClick}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: `${PRIMARY}15` }}>
+              <Package size={15} style={{ color: PRIMARY }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: TEXT_MAIN }}>{item.name}</p>
+              <p className="text-xs truncate leading-tight mt-0.5" style={{ color: TEXT_MUTE }}>SKU: {item.sku} • {item.category}</p>
+            </div>
+          </div>
+          <Badge className={`${statusColorMap[status] ?? 'bg-gray-100 text-gray-800 border-gray-200'} border pointer-events-none text-xs`}>{status}</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Stock</p>
+            <p className="text-xs font-medium" style={{ color: TEXT_MAIN }}>{item.currentStock} / {item.minStock} min</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide font-semibold mb-1" style={{ color: TEXT_MUTE }}>Unit Price</p>
+            <p className="text-sm font-bold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(item.unitPrice)}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: BORDER }}>
+          <span className="text-xs" style={{ color: TEXT_MUTE }}>{item.location || '—'}</span>
+          <span className="text-xs" style={{ color: TEXT_MUTE }}>{item.supplier || '—'}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const Inventory = () => {
-  const isMobile = useIsMobile();
   
   // Data state
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -70,16 +143,22 @@ export const Inventory = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   
-  // Modal states
+  // Sheet states
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'view' | 'edit' | 'add'>('view');
+
+  // Raise-PO-from-inventory state
+  const [poSeed, setPoSeed] = useState<PurchaseOrder | null>(null);
+  const [vendorOptions, setVendorOptions] = useState<EntityOption[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-  
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25;
 
   // Filter states
   const [selectedFilters, setSelectedFilters] = useState({
@@ -99,18 +178,15 @@ export const Inventory = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
 
   // Load inventory items from service
-  const loadInventoryItems = async () => {
+  const loadInventoryItems = async (page = currentPage) => {
     try {
       setIsLoadingData(true);
-      const data = await inventoryService.fetchInventoryItems();
-      setInventoryItems(data);
+      const result = await inventoryService.fetchInventoryItems(page, itemsPerPage);
+      setInventoryItems(result.data);
+      setTotalItems(result.total);
     } catch (error) {
       console.error('Error loading inventory items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load inventory items. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to load inventory items. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoadingData(false);
     }
@@ -126,10 +202,32 @@ export const Inventory = () => {
     }
   };
 
+  // Load vendors for the Raise-PO autosuggest
+  const loadVendors = async () => {
+    try {
+      const { vendors: list } = await vendorService.fetchVendors({ limit: 200 });
+      setVendorOptions(
+        list.map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          phone: v.phone || '',
+          email: v.email || '',
+          address: v.address || v.city || '',
+          contactPerson: v.contactPerson || '',
+          category: v.category || '',
+        }))
+      );
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+    }
+  };
+
+  useEffect(() => { loadInventoryItems(currentPage); }, [currentPage]);
+
   // Load data on mount
   useEffect(() => {
-    loadInventoryItems();
     loadStats();
+    loadVendors();
   }, []);
 
   // Listen for global create modal events
@@ -197,18 +295,9 @@ export const Inventory = () => {
     });
   }, [inventoryItems, searchTerm, selectedCategory, selectedStatus, selectedFilters]);
 
-  // Infinite scroll for mobile
-  const { displayedItems: mobileDisplayedItems, hasMoreItems, isLoading, loadMoreItems } = useInfiniteScroll({
-    data: filteredItems,
-    itemsPerPage: 10,
-    enabled: isMobile
-  });
-
   // Pagination logic
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const currentPageData = isMobile 
-    ? mobileDisplayedItems
-    : filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentPageData = filteredItems;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -226,14 +315,61 @@ export const Inventory = () => {
     setIsSortModalOpen(false);
   };
 
+  // Raise a Purchase Order pre-filled from a (low-stock) inventory item
+  const handleRaisePO = (item: InventoryItem) => {
+    const it = item as any;
+    const target = it.maxStock && it.maxStock > 0 ? it.maxStock : item.minStock * 2;
+    const reorderQty = Math.max(1, Math.round(target - item.currentStock) || item.minStock || 1);
+    const unitPrice = item.unitPrice || 0;
+    const seed = {
+      id: `po-${Date.now()}`,
+      poNumber: '',
+      vendorId: it.supplierId || '',
+      vendorName: item.supplier || '',
+      vendorContact: it.supplierContact || '',
+      vendorPhone: it.supplierPhone || '',
+      vendorEmail: it.supplierEmail || '',
+      vendorAddress: it.supplierAddress || '',
+      shippingAddress: '',
+      orderDate: new Date().toISOString().split('T')[0],
+      deliveryDate: '',
+      status: 'Pending',
+      items: [{
+        item_id: item.id,
+        name: item.name,
+        qty: reorderQty,
+        unitPrice,
+        discount: 0,
+        subtotal: reorderQty * unitPrice,
+        saleUnit: it.saleUnit,
+      }],
+      total: reorderQty * unitPrice,
+      paidAmount: 0,
+      paymentMethod: '',
+      notes: `Reorder for low stock — ${item.name} (current ${item.currentStock}, min ${item.minStock})`,
+    } as unknown as PurchaseOrder;
+    setPoSeed(seed);
+  };
+
+  const handleCreatePOFromInventory = async (po: PurchaseOrder) => {
+    try {
+      await purchaseOrderService.createPurchaseOrder(po);
+      toast({ title: 'Purchase Order Created', description: `PO raised for ${po.vendorName || 'vendor'}.`, variant: 'success' });
+      setPoSeed(null);
+    } catch (error) {
+      console.error('Error creating PO from inventory:', error);
+      toast({ title: 'Error', description: 'Failed to create purchase order. Please try again.', variant: 'destructive' });
+    }
+  };
+
   const handleViewItem = (item: InventoryItem) => {
     setEditingItem(item);
-    setIsEditMode(false);
+    setSheetMode('view');
   };
 
   const handleEditItem = (item: InventoryItem) => {
     setEditingItem(item);
-    setIsEditMode(true);
+    setSheetMode('edit');
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -241,36 +377,23 @@ export const Inventory = () => {
       await inventoryService.deleteInventoryItem(itemId);
       await loadInventoryItems();
       await loadStats();
-      toast({
-        title: "Success",
-        description: "Inventory item deleted successfully.",
-      });
+      toast({ title: 'Success', description: 'Inventory item deleted successfully.', variant: 'success' });
     } catch (error) {
       console.error('Error deleting inventory item:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete inventory item. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to delete inventory item. Please try again.', variant: 'destructive' });
     }
   };
 
   const handleSaveItem = async (itemData: InventoryItem) => {
     try {
-      if (itemData.id && (itemData.id.startsWith('inv-') || itemData.id.match(/^\d+$/))) {
-        // Update existing item
+      // MongoDB ObjectIds are 24-char hex strings
+      const isRealId = /^[0-9a-f]{24}$/i.test(itemData.id);
+      if (isRealId) {
         await inventoryService.updateInventoryItem(itemData.id, itemData);
-        toast({
-          title: "Success",
-          description: "Inventory item updated successfully.",
-        });
+        toast({ title: 'Success', description: 'Inventory item updated successfully.', variant: 'success' });
       } else {
-        // Create new item
         await inventoryService.createInventoryItem(itemData);
-        toast({
-          title: "Success",
-          description: "Inventory item created successfully.",
-        });
+        toast({ title: 'Success', description: 'Inventory item created successfully.', variant: 'success' });
       }
       await loadInventoryItems();
       await loadStats();
@@ -278,557 +401,231 @@ export const Inventory = () => {
       setEditingItem(null);
     } catch (error) {
       console.error('Error saving inventory item:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save inventory item. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save inventory item. Please try again.', variant: 'destructive' });
     }
   };
 
   return (
     <div className="space-y-4">
       {/* Summary Cards Section */}
-      <section className="bg-card space-y-3 lg:space-y-0 overflow-hidden sm:mx-0">
-        <div className="h-scroll py-4">
-          <div className="flex flex-nowrap gap-3 sm:gap-4 w-max">
-            {/* Total Items Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Items</p>
-                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalItems}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center z-10">
-                      <Package className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Mini Chart */}
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1">
-                    <div className="flex items-end gap-px h-4">
-                      {[3, 5, 4, 6, 8, 7, 9, 8].map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-blue-400 rounded-sm flex-1 opacity-70"
-                          style={{ height: `${height * 2}px` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    +8%
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <Package className="absolute bottom-0 right-0 h-12 w-12 text-blue-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Critical Items Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">Critical</p>
-                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">{stats.criticalItems}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center z-10">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Progress Circle */}
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="relative w-8 h-8 flex items-center justify-center">
-                    <svg className="w-8 h-8 transform -rotate-90">
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        className="text-red-200"
-                      />
-                      <circle
-                        cx="16"
-                        cy="16"
-                        r="12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="transparent"
-                        strokeDasharray={`${(stats.criticalItems / stats.totalItems) * 75.4} 75.4`}
-                        className="text-red-500"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-red-700 leading-none">
-                        {Math.round((stats.criticalItems / stats.totalItems) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-red-800">Urgent</p>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <AlertTriangle className="absolute bottom-0 right-0 h-12 w-12 text-red-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Low Stock Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Low Stock</p>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">{stats.lowStockItems}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center z-10">
-                      <Clock className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Status Indicators */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-amber-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(stats.lowStockItems / stats.totalItems) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-amber-700">{Math.round((stats.lowStockItems / stats.totalItems) * 100)}%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <Clock className="absolute bottom-0 right-0 h-12 w-12 text-amber-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Total Value Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Value</p>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                      {formatIndianCurrency(stats.totalValue)}
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center z-10">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Value Breakdown */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center gap-1 text-xs">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    <span className="text-emerald-600">Items: {stats.totalItems}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+12%</span>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <DollarSign className="absolute bottom-0 right-0 h-12 w-12 text-emerald-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-            
-            {/* Out of Stock Card */}
-            <Card className="flex-shrink-0 w-36 sm:w-40 md:w-44 animate-fade-in hover-scale shadow-lg border-none bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/20 dark:to-gray-950/20 relative overflow-hidden">
-              <CardContent className="p-3 relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Out of Stock</p>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.outOfStockItems}</div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-slate-500/10 rounded-full flex items-center justify-center z-10">
-                      <Tag className="h-5 w-5 text-slate-600" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Performance Metrics */}
-                <div className="space-y-1 mb-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600">Critical</span>
-                    <span className="text-xs font-bold text-slate-700">{stats.outOfStockItems}</span>
-                  </div>
-                  <div className="grid grid-cols-6 gap-px">
-                    {[2, 1, 3, 0, 1, 2].map((height, i) => (
-                      <div 
-                        key={i} 
-                        className="bg-slate-400 rounded-sm h-1"
-                        style={{ opacity: height > 0 ? 0.7 : 0.2 }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Background Icon */}
-              <Tag className="absolute bottom-0 right-0 h-12 w-12 text-slate-500/5 transform translate-x-3 translate-y-3" />
-            </Card>
-          </div>
+      <div className="stat-cards-scroll">
+        <div className="flex flex-nowrap gap-3 w-max">
+          <StatCard label="Total" value={stats.totalItems} icon={Package} accent={STAT_ACCENTS.PRIMARY}
+            active={selectedStatus === 'All'} onClick={() => setSelectedStatus('All')} />
+          <StatCard label="Critical" value={stats.criticalItems} icon={AlertTriangle} accent={STAT_ACCENTS.DANGER}
+            active={selectedStatus === 'Critical'} onClick={() => setSelectedStatus(selectedStatus === 'Critical' ? 'All' : 'Critical')} />
+          <StatCard label="Low Stock" value={stats.lowStockItems} icon={Clock} accent={STAT_ACCENTS.WARNING}
+            active={selectedStatus === 'Low'} onClick={() => setSelectedStatus(selectedStatus === 'Low' ? 'All' : 'Low')} />
+          <StatCard label="Out of Stock" value={stats.outOfStockItems} icon={Tag} accent={STAT_ACCENTS.CYAN}
+            active={selectedStatus === 'Out of Stock'} onClick={() => setSelectedStatus(selectedStatus === 'Out of Stock' ? 'All' : 'Out of Stock')} />
+          <StatCard label="Value" value={formatIndianCurrency(stats.totalValue)} icon={DollarSign} accent={STAT_ACCENTS.SUCCESS} />
         </div>
-      </section>
+      </div>
+
+
 
       {/* Filters Section - Sticky */}
-      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-4 space-y-3 lg:space-y-0 overflow-hidden sm:mx-0 mt-4 lg:mt-6">
-        {/* Desktop Layout - All in one line */}
-        <div className="hidden lg:flex lg:items-center lg:gap-4 lg:justify-between">
-          {/* Category Filter Pills */}
+      <div className="sticky top-0 z-10 bg-card rounded-xl border shadow-sm p-3 overflow-hidden">
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-3">
           <div className="flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-0">
+            <div className="flex gap-1.5 w-max">
               {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={category}
                   onClick={() => setSelectedCategory(category)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedCategory === category ? PRIMARY : 'transparent',
+                    color: selectedCategory === category ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedCategory === category ? PRIMARY : BORDER,
+                  }}>
                   {category}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
-          
-          {/* Search and Action Buttons */}
-          <div className="flex gap-3 flex-shrink-0 min-w-0">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search items, SKU, or supplier..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <div className="flex gap-2 flex-shrink-0">
+            <div className="relative w-60">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search items, SKU, supplier…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsFilterModalOpen(true)}
-              className={hasFilters ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-            >
-              <Filter className="mr-1 h-4 w-4" /> 
-              Filters
-              {hasFilters && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasFilters ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsFilterModalOpen(true)}>
+              <Filter size={13} /> Filters
+              {hasFilters && <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: PRIMARY, color: '#fff' }}>{activeFilterCount}</span>}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsSortModalOpen(true)}
-              className={hasSort ? "bg-primary/10 border-primary/20 hover:bg-primary/20" : ""}
-            >
-              <ArrowUpDown className="mr-1 h-4 w-4" /> 
-              Sort
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasSort ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown size={13} /> Sort
             </Button>
           </div>
         </div>
 
-        {/* Mobile/Tablet Layout - Stacked */}
-        <div className="lg:hidden space-y-3">
-          {/* Search and Action Buttons */}
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search items..."
-                className="pl-8 text-sm h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+        {/* Mobile */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="search" placeholder="Search items…"
+                className="pl-8 text-xs h-8" value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="px-2 sm:px-3"
-              onClick={() => setIsFilterModalOpen(true)}
-              {...(hasFilters && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
-            >
-              <Filter className="h-4 w-4 sm:mr-1" /> 
-              <span className="hidden sm:inline">Filters</span>
-              {hasFilters && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasFilters ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsFilterModalOpen(true)}>
+              <Filter size={13} />
+              {hasFilters && <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ background: PRIMARY, color: '#fff' }}>{activeFilterCount}</span>}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="px-2 sm:px-3"
-              onClick={() => setIsSortModalOpen(true)}
-              {...(hasSort && { className: "px-2 sm:px-3 bg-primary/10 border-primary/20 hover:bg-primary/20" })}
-            >
-              <ArrowUpDown className="h-4 w-4 sm:mr-1" /> 
-              <span className="hidden sm:inline">Sort</span>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+              style={hasSort ? { background: `${PRIMARY}10`, borderColor: `${PRIMARY}30` } : {}}
+              onClick={() => setIsSortModalOpen(true)}>
+              <ArrowUpDown size={13} />
             </Button>
           </div>
-
-          {/* Category Filter Pills */}
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="flex gap-2 w-max min-w-full">
+            <div className="flex gap-1.5 w-max">
               {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap text-xs px-2.5 h-7 lg:h-9 lg:text-sm lg:px-3 animate-fade-in"
+                <button key={category}
                   onClick={() => setSelectedCategory(category)}
-                >
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
+                  style={{
+                    background: selectedCategory === category ? PRIMARY : 'transparent',
+                    color: selectedCategory === category ? '#fff' : TEXT_MUTE,
+                    borderColor: selectedCategory === category ? PRIMARY : BORDER,
+                  }}>
                   {category}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Data Table Section */}
-      <div className="space-y-4">
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <Card className="border-border/50 shadow-sm">
-            {isLoadingData ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                  <p className="text-sm text-muted-foreground">Loading inventory items...</p>
-                </div>
-              </div>
-            ) : currentPageData.length === 0 ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-2">
-                  <Package className="h-12 w-12 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">No inventory items found</p>
-                </div>
-              </div>
-            ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold w-[22%]">Item Details</TableHead>
-                    <TableHead className="font-semibold w-[15%]">Category</TableHead>
-                    <TableHead className="font-semibold w-[20%]">Stock Status</TableHead>
-                    <TableHead className="font-semibold w-[18%]">Pricing</TableHead>
-                    <TableHead className="font-semibold w-[20%]">Location</TableHead>
-                    <TableHead className="font-semibold w-[5%]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentPageData.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {item.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <StatusBadge status={getItemStatus(item)} />
-                          <div className="text-sm text-muted-foreground">
-                            {item.currentStock} / {item.minStock} min
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{formatIndianCurrency(item.unitPrice)}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Total: {formatIndianCurrency(item.currentStock * item.unitPrice)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.location}</div>
-                          <div className="text-sm text-muted-foreground">{item.supplier}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleViewItem(item)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditItem(item)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            )}
-          </Card>
-
-          {/* Desktop Pagination */}
-          {!isMobile && !isLoadingData && totalPages > 1 && (
-            <div className="flex justify-center">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                  {Array.from({length: Math.min(5, totalPages)}, (_, i) => {
-                    const page = i + Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+      {/* Table + Cards */}
+      {isLoadingData ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">Loading inventory items...</p>
+          </div>
         </div>
+      ) : currentPageData.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-2">
+            <Package className="h-12 w-12 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">No inventory items found</p>
+          </div>
+        </div>
+      ) : (
+        <MobileTableView
+          stickyHeader={true}
+          data={currentPageData}
+          renderMobileItem={(item, onView) => <InventoryMobileCard item={item as InventoryItem} onClick={onView} />}
+          columns={[
+            {
+              key: 'name',
+              label: 'Item',
+              width: 'w-[22%]',
+              render: (value, item) => (
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{value}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>SKU: {(item as any).sku}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'category',
+              label: 'Category',
+              width: 'w-[14%]',
+              render: (value) => {
+                const cs = catStyle(value as string);
+                return (
+                  <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full border inline-block"
+                    style={{ background: cs.bg, color: cs.text, borderColor: cs.border }}>
+                    {value}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'currentStock',
+              label: 'Stock',
+              width: 'w-[18%]',
+              render: (value, item) => {
+                const status = getItemStatus(item as any);
+                const col = status === 'Normal' ? SUCCESS : status === 'Low' ? WARNING : DANGER;
+                return (
+                  <div>
+                    <StatusBadge status={status} />
+                    <p className="text-[11px] mt-1" style={{ color: TEXT_MUTE }}>
+                      <span style={{ color: col, fontWeight: 600 }}>{value as number}</span> / {(item as any).minStock} min
+                    </p>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'unitPrice',
+              label: 'Pricing',
+              width: 'w-[18%]',
+              render: (value, item) => (
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: TEXT_MAIN }}>{formatIndianCurrency(value as number)}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>Total: {formatIndianCurrency((item as any).currentStock * (value as number))}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'location',
+              label: 'Location',
+              width: 'w-[22%]',
+              render: (value, item) => (
+                <div>
+                  <p className="text-sm" style={{ color: TEXT_MAIN }}>{(value as string) || '—'}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_MUTE }}>{(item as any).supplier || '—'}</p>
+                </div>
+              ),
+            },
+          ]}
+          onRowClick={(item) => handleViewItem(item)}
+          getActions={(item) => [
+            { label: 'View', onClick: () => handleViewItem(item), icon: Eye },
+            { label: 'Edit', onClick: () => handleEditItem(item), icon: Edit },
+            ...(getItemStatus(item) !== 'Normal'
+              ? [{ label: 'Raise PO', onClick: () => handleRaisePO(item), icon: ShoppingCart }]
+              : []),
+            { label: 'Delete', onClick: () => setDeleteTarget(item.id), variant: 'destructive' as const, icon: Trash2 }
+          ]}
+        />
+      )}
 
-        {/* Mobile Cards View */}
-        <div className="md:hidden">
-          {mobileDisplayedItems.map((item: InventoryItem) => (
-              <Card key={item.id} className="mb-3 animate-fade-in hover-scale cursor-pointer transition-all duration-200 shadow-lg" onClick={() => handleViewItem(item)}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-base">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
-                    </div>
-                    <div className="flex gap-1 ml-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewItem(item);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditItem(item);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteItem(item.id);
-                        }}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Category</p>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                        {item.category}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Status</p>
-                      <StatusBadge status={getItemStatus(item)} />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Stock Level</p>
-                      <p className="font-medium">{item.currentStock} / {item.minStock} min</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Unit Price</p>
-                      <p className="font-medium">{formatIndianCurrency(item.unitPrice)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Location</p>
-                      <p className="font-medium">{item.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Supplier</p>
-                      <p className="font-medium">{item.supplier}</p>
-                    </div>
-                  </div>
-                 </CardContent>
-               </Card>
-             ))}
-         </div>
-      </div>
+      {/* Pagination */}
+      {!isLoadingData && totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const page = i + Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink onClick={() => setCurrentPage(page)} isActive={currentPage === page} className="cursor-pointer">{page}</PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              <PaginationItem>
+                <PaginationNext onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {/* Filter and Sort Modals */}
       <InventoryFilterModal
@@ -847,19 +644,49 @@ export const Inventory = () => {
         onApplySort={handleApplySort}
       />
 
-      {/* Inventory Item Modal */}
-      <InventoryFormOverlay
-        item={editingItem}
-        isOpen={isNewItemOpen || !!editingItem}
-        onClose={() => {
-          setIsNewItemOpen(false);
-          setEditingItem(null);
-          setIsEditMode(false);
-        }}
-        isEdit={isEditMode}
-        onSave={handleSaveItem}
-        onUpdate={handleSaveItem}
-        onDelete={handleDeleteItem}
+      {/* Inventory Sheet (view / edit / add) */}
+      {(isNewItemOpen || editingItem) && (
+        <InventorySheet
+          key={editingItem?.id ?? 'new'}
+          item={editingItem}
+          mode={isNewItemOpen ? 'add' : sheetMode}
+          onClose={() => {
+            setIsNewItemOpen(false);
+            setEditingItem(null);
+            setSheetMode('view');
+          }}
+          onSave={(savedItem) => {
+            // If view-mode edit button was clicked, reopen in edit mode
+            if (sheetMode === 'view' && editingItem) {
+              setSheetMode('edit');
+              return;
+            }
+            handleSaveItem(savedItem);
+          }}
+          onDelete={(id: string) => setDeleteTarget(id)}
+        />
+      )}
+
+      {/* Raise PO from a low-stock item (opens the Purchase Order sheet in add mode) */}
+      {poSeed && (
+        <PurchaseOrderSheet
+          key={poSeed.id}
+          order={poSeed}
+          vendors={vendorOptions}
+          mode="add"
+          onClose={() => setPoSeed(null)}
+          onSave={handleCreatePOFromInventory}
+        />
+      )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete inventory item?"
+        description="This will permanently remove this inventory item. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget ? handleDeleteItem(deleteTarget) : Promise.resolve()}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
-import { vendorsData } from '@/data/inventoryData';
 import { Vendor } from '@/types/inventory';
+import { fetchVendors } from '@/services/vendorService';
 
 interface VendorAutosuggestInputProps {
   onSelect: (vendor: Vendor) => void;
@@ -13,6 +13,7 @@ interface VendorAutosuggestInputProps {
 
 export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onChange, disabled = false }: VendorAutosuggestInputProps) => {
   const [query, setQuery] = useState(value);
+  const [allVendors, setAllVendors] = useState<Vendor[]>([]);
   const [suggestions, setSuggestions] = useState<Vendor[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -23,6 +24,10 @@ export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onCh
   useEffect(() => {
     setQuery(value);
   }, [value]);
+
+  useEffect(() => {
+    fetchVendors({ limit: 500 }).then(result => setAllVendors(result.vendors || [])).catch(() => {});
+  }, []);
 
   // Update dropdown position when shown
   useEffect(() => {
@@ -55,7 +60,7 @@ export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onCh
     setSelectedIndex(-1);
     
     if (inputValue.length > 0) {
-      const filtered = vendorsData.filter(vendor =>
+      const filtered = allVendors.filter(vendor =>
         vendor.name.toLowerCase().includes(inputValue.toLowerCase()) ||
         vendor.category.toLowerCase().includes(inputValue.toLowerCase()) ||
         vendor.contactPerson.toLowerCase().includes(inputValue.toLowerCase())
@@ -79,7 +84,7 @@ export const VendorAutosuggestInput = ({ onSelect, placeholder, value = '', onCh
   const handleInputFocus = () => {
     setIsFocused(true);
     if (query.length > 0) {
-      const filtered = vendorsData.filter(vendor =>
+      const filtered = allVendors.filter(vendor =>
         vendor.name.toLowerCase().includes(query.toLowerCase()) ||
         vendor.category.toLowerCase().includes(query.toLowerCase()) ||
         vendor.contactPerson.toLowerCase().includes(query.toLowerCase())

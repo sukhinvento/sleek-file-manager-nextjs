@@ -17,7 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
 export interface OrderItem {
   id: string;
@@ -125,10 +125,7 @@ export const PartialFulfillmentDialog = ({
 
     onSave(itemsWithNotes, overallStatus);
     
-    toast({
-      title: `${orderType} Updated`,
-      description: `Order status: ${overallStatus}`,
-    });
+    toast({ title: `${orderType} Updated`, description: `Order status: ${overallStatus}`, variant: 'success' });
 
     onClose();
   };

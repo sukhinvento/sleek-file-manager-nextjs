@@ -1,6 +1,7 @@
 // Sales Order Types
 export interface SalesOrderItem {
   id?: string;
+  item_id?: string;
   name: string;
   qty: number;
   unitPrice: number;
@@ -16,6 +17,7 @@ export interface SalesOrderItem {
 export interface SalesOrder {
   id: string;
   orderNumber: string;
+  customerId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -31,6 +33,9 @@ export interface SalesOrder {
   shippingAddress: string;
   billingAddress: string;
   notes: string;
+  paidAmount: number;
+  createdBy: string;
+  actor?: string;
 }
 
 // Stock Transfer Types
@@ -124,10 +129,42 @@ export type StockStatus = 'critical' | 'low' | 'normal';
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 // Location Types
+export interface SubLocation {
+  name: string;
+  type: 'shelf' | 'drawer' | 'rack' | 'bin';
+  capacity?: number;
+}
+
 export interface Location {
   id: string;
   name: string;
-  type: 'Warehouse' | 'Department' | 'Room';
-  capacity?: number;
-  manager?: string;
+  code: string;
+  type: 'warehouse' | 'pharmacy' | 'clinic' | 'hospital' | 'store';
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+  subLocations: SubLocation[];
+}
+
+export interface LocationLookupOption {
+  value: string;
+  label: string;
+  code: string;
+  type: string;
+  address: string;
+  sub_locations: SubLocation[];
+}
+
+export interface InventoryLocationStock {
+  id: string;
+  inventoryItemId: string;
+  locationId: string;
+  locationName: string;
+  subLocation: string;
+  quantity: number;
 }

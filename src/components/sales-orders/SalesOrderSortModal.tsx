@@ -1,9 +1,9 @@
 import { useState, memo } from 'react';
-import { 
-  ResponsiveDialog, 
-  ResponsiveDialogContent, 
-  ResponsiveDialogFooter, 
-  ResponsiveDialogHeader, 
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
   ResponsiveDialogTitle,
   ResponsiveDialogBody
 } from "@/components/ui/responsive-dialog";
@@ -46,64 +46,66 @@ const SalesOrderSortModalComponent = ({ isOpen, onClose, onApplySort }: SalesOrd
     setSortDirection('asc');
   };
 
-  const SortContent = () => (
-    <div className="space-y-6 py-4">
-      <div className="space-y-2">
-        <Label htmlFor="sortField">Sort By</Label>
-        <Select value={sortField} onValueChange={setSortField}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select field to sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-3">
-        <Label>Sort Direction</Label>
-        <RadioGroup value={sortDirection} onValueChange={(value) => setSortDirection(value as 'asc' | 'desc')}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="asc" id="asc" />
-            <Label htmlFor="asc" className="flex items-center gap-2 cursor-pointer">
-              <ArrowUp className="h-4 w-4" />
-              Ascending (A-Z, 1-9, Oldest first)
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="desc" id="desc" />
-            <Label htmlFor="desc" className="flex items-center gap-2 cursor-pointer">
-              <ArrowDown className="h-4 w-4" />
-              Descending (Z-A, 9-1, Newest first)
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-    </div>
-  );
-
   return (
     <ResponsiveDialog open={isOpen} onOpenChange={onClose}>
-      <ResponsiveDialogContent className="sm:max-w-[425px]">
+      <ResponsiveDialogContent className="sm:max-w-[360px]">
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle className="flex items-center gap-2">
-            <ArrowUpDown className="h-5 w-5" />
-            Sort Sales Orders
+          <ResponsiveDialogTitle>
+            <ArrowUpDown className="h-4 w-4" />
+            Sort
           </ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
+
         <ResponsiveDialogBody>
-          <SortContent />
+          <div className="space-y-4 py-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Sort By</Label>
+              <Select value={sortField} onValueChange={setSortField}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select field" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="text-xs">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Direction</Label>
+              <RadioGroup
+                value={sortDirection}
+                onValueChange={(value) => setSortDirection(value as 'asc' | 'desc')}
+                className="space-y-1.5"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="asc" id="asc" className="h-3.5 w-3.5" />
+                  <Label htmlFor="asc" className="text-xs font-normal cursor-pointer flex items-center gap-1.5">
+                    <ArrowUp className="h-3 w-3" />
+                    Ascending (A–Z, oldest first)
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="desc" id="desc" className="h-3.5 w-3.5" />
+                  <Label htmlFor="desc" className="text-xs font-normal cursor-pointer flex items-center gap-1.5">
+                    <ArrowDown className="h-3 w-3" />
+                    Descending (Z–A, newest first)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
         </ResponsiveDialogBody>
+
         <ResponsiveDialogFooter>
-          <Button variant="outline" onClick={handleClear}>
+          <Button variant="outline" size="sm" onClick={handleClear} className="h-8 text-xs">
             Clear
           </Button>
-          <Button onClick={handleApply} disabled={!sortField}>
-            Apply Sort
+          <Button size="sm" onClick={handleApply} disabled={!sortField} className="h-8 text-xs">
+            Apply
           </Button>
         </ResponsiveDialogFooter>
       </ResponsiveDialogContent>

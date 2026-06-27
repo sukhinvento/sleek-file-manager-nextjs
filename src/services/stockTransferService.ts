@@ -1,191 +1,170 @@
-import { StockTransfer } from '@/types/inventory';
+import apiClient from '@/lib/api-client';
+import { StockTransfer, StockTransferItem } from '@/types/inventory';
 
-// Mock data
-let mockStockTransfers: StockTransfer[] = [
-  {
-    id: '1',
-    transferId: 'ST-2024-001',
-    fromLocation: 'Main Warehouse',
-    toLocation: 'City Hospital',
-    items: [
-      { name: 'Surgical Masks', quantity: 500, availableStock: 2000, saleUnit: 'Box' },
-      { name: 'Hand Sanitizer', quantity: 100, availableStock: 500, saleUnit: 'Bottle' }
-    ],
-    status: 'Completed',
-    requestDate: '2024-01-15',
-    completedDate: '2024-01-17',
-    requestedBy: 'John Doe',
-    priority: 'High',
-    reason: 'Stock replenishment',
-    expectedDate: '2024-01-17'
-  },
-  {
-    id: '2',
-    transferId: 'ST-2024-002',
-    fromLocation: 'Main Warehouse',
-    toLocation: 'Metro Clinic',
-    items: [
-      { name: 'Disposable Gloves', quantity: 300, availableStock: 1000, saleUnit: 'Pack' }
-    ],
-    status: 'In Transit',
-    requestDate: '2024-01-18',
-    requestedBy: 'Jane Smith',
-    priority: 'Medium',
-    reason: 'Regular transfer',
-    expectedDate: '2024-01-20'
-  },
-  {
-    id: '3',
-    transferId: 'ST-2024-003',
-    fromLocation: 'City Hospital',
-    toLocation: 'Main Warehouse',
-    items: [
-      { name: 'IV Fluid Bags', quantity: 50, availableStock: 200, saleUnit: 'Pack' }
-    ],
-    status: 'Pending',
-    requestDate: '2024-01-19',
-    requestedBy: 'Mike Johnson',
-    priority: 'Low',
-    reason: 'Excess inventory return',
-    expectedDate: '2024-01-22'
-  }
-];
+const STATUS_MAP: Record<string, StockTransfer['status']> = {
+  draft: 'Pending',
+  pending: 'Pending',
+  in_transit: 'In Transit',
+  'in transit': 'In Transit',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  partially_received: 'Partially Received',
+};
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function mapTransferItem(raw: any): StockTransferItem {
+  return {
+    id: raw._id || raw.item_id || raw.id,
+    name: raw.name || '',
+    quantity: raw.quantity ?? raw.qty ?? 0,
+    availableStock: raw.available_stock ?? raw.availableStock,
+    saleUnit: raw.sale_unit || raw.saleUnit,
+  };
+}
+
+function toBackendItem(item: StockTransferItem): Record<string, any> {
+  const out: Record<string, any> = {
+    name: item.name,
+    quantity: item.quantity,
+  };
+  if (item.id && /^[0-9a-f]{24}$/i.test(item.id)) out.item_id = item.id;
+  if (item.saleUnit) out.sale_unit = item.saleUnit;
+  return out;
+}
+
+const extractName = (v: any): string => {
+  if (!v) return '';
+  if (typeof v === 'object') return String(v.name || v.full_name || v.username || v.email || '');
+  if (typeof v === 'string' && /^[0-9a-f]{24}$/i.test(v)) return '';
+  return String(v);
+};
+
+function mapStockTransfer(raw: any): StockTransfer {
+  const status = STATUS_MAP[String(raw.status || '').toLowerCase()] || 'Pending';
+  return {
+    id: raw._id || raw.id || '',
+    transferId: raw.transfer_number || raw.transferId || '',
+    fromLocation: raw.from_location || raw.from_location_id || raw.fromLocation || '',
+    toLocation: raw.to_location || raw.to_location_id || raw.toLocation || '',
+    items: Array.isArray(raw.items) ? raw.items.map(mapTransferItem) : [],
+    status,
+    requestDate: raw.createdAt ? raw.createdAt.split('T')[0] : (raw.requestDate || ''),
+    completedDate: raw.completed_date || raw.completedDate,
+    requestedBy: extractName(raw.requested_by) || extractName(raw.createdBy) || extractName(raw.requestedBy) || '',
+    reason: raw.notes || raw.reason,
+    priority: raw.priority ? (raw.priority.charAt(0).toUpperCase() + raw.priority.slice(1).toLowerCase()) : 'Low',
+    expectedDate: raw.expected_date || raw.expectedDate,
+    approvedBy: extractName(raw.approved_by) || extractName(raw.approvedBy) || undefined,
+  };
+}
 
 /**
  * Fetch all stock transfers
- * TODO: Replace with actual API call: GET /api/stock-transfers
+ * GET /stock/transfers?limit=200
  */
-export const fetchStockTransfers = async (): Promise<StockTransfer[]> => {
-  await delay(500);
-  return [...mockStockTransfers];
+export const fetchStockTransfers = async (page = 1, limit = 25): Promise<{ data: StockTransfer[]; total: number; page: number; limit: number }> => {
+  const response = await apiClient.get('/stock/transfers', { params: { page, limit, sort: 'createdAt_desc' } });
+  const raw = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return {
+    data: raw.map(mapStockTransfer),
+    total: response.data?.total ?? raw.length,
+    page: response.data?.page ?? page,
+    limit: response.data?.limit ?? limit,
+  };
 };
 
 /**
  * Fetch a single stock transfer by ID
- * TODO: Replace with actual API call: GET /api/stock-transfers/:id
+ * GET /stock/transfers/:id
  */
 export const fetchStockTransferById = async (id: string): Promise<StockTransfer | null> => {
-  await delay(300);
-  return mockStockTransfers.find(transfer => transfer.id === id) || null;
+  try {
+    const response = await apiClient.get(`/stock/transfers/${id}`);
+    return mapStockTransfer(response.data);
+  } catch {
+    return null;
+  }
 };
 
 /**
  * Create a new stock transfer
- * TODO: Replace with actual API call: POST /api/stock-transfers
+ * POST /stock/transfers
  */
 export const createStockTransfer = async (transferData: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => {
-  await delay(800);
-  const newTransfer: StockTransfer = {
-    ...transferData,
-    id: `st-${Date.now()}`,
+  const body: any = {
+    from_location: transferData.fromLocation,
+    to_location: transferData.toLocation,
+    items: transferData.items.map(toBackendItem),
+    notes: transferData.reason,
   };
-  mockStockTransfers.push(newTransfer);
-  return newTransfer;
+  if (transferData.priority) body.priority = transferData.priority.toLowerCase();
+  if (transferData.expectedDate) body.expected_date = transferData.expectedDate;
+  const response = await apiClient.post('/stock/transfers', body);
+  return mapStockTransfer(response.data);
 };
 
 /**
  * Update an existing stock transfer
- * TODO: Replace with actual API call: PUT /api/stock-transfers/:id
+ * PATCH /stock/transfers/:id
  */
 export const updateStockTransfer = async (id: string, transferData: Partial<StockTransfer>): Promise<StockTransfer> => {
-  await delay(800);
-  const index = mockStockTransfers.findIndex(transfer => transfer.id === id);
-  if (index === -1) {
-    throw new Error('Stock transfer not found');
-  }
-  mockStockTransfers[index] = { ...mockStockTransfers[index], ...transferData };
-  return mockStockTransfers[index];
+  const body: any = {};
+  if (transferData.fromLocation !== undefined) body.from_location = transferData.fromLocation;
+  if (transferData.toLocation !== undefined) body.to_location = transferData.toLocation;
+  if (transferData.items !== undefined) body.items = transferData.items.map(toBackendItem);
+  if (transferData.status !== undefined) body.status = transferData.status.toLowerCase().replace(/ /g, '_');
+  if (transferData.reason !== undefined) body.notes = transferData.reason;
+  if (transferData.priority !== undefined) body.priority = transferData.priority.toLowerCase();
+  if (transferData.expectedDate !== undefined) body.expected_date = transferData.expectedDate;
+  if (transferData.completedDate !== undefined) body.completed_date = transferData.completedDate;
+  if (transferData.requestedBy !== undefined) body.requested_by = transferData.requestedBy;
+  if (transferData.approvedBy !== undefined) body.approved_by = transferData.approvedBy;
+  const response = await apiClient.patch(`/stock/transfers/${id}`, body);
+  return mapStockTransfer(response.data);
 };
 
 /**
  * Delete a stock transfer
- * TODO: Replace with actual API call: DELETE /api/stock-transfers/:id
+ * DELETE /stock/transfers/:id
  */
 export const deleteStockTransfer = async (id: string): Promise<void> => {
-  await delay(500);
-  const index = mockStockTransfers.findIndex(transfer => transfer.id === id);
-  if (index === -1) {
-    throw new Error('Stock transfer not found');
-  }
-  mockStockTransfers.splice(index, 1);
+  await apiClient.delete(`/stock/transfers/${id}`);
 };
 
 /**
  * Fetch stock transfer statistics
- * TODO: Replace with actual API call: GET /api/stock-transfers/stats
+ * GET /stock/transfers/stats
  */
 export const fetchStockTransferStats = async () => {
-  await delay(400);
-  
-  const totalTransfers = mockStockTransfers.length;
-  const pendingTransfers = mockStockTransfers.filter(t => t.status === 'Pending').length;
-  const inTransitTransfers = mockStockTransfers.filter(t => t.status === 'In Transit').length;
-  const completedTransfers = mockStockTransfers.filter(t => t.status === 'Completed').length;
-  const highPriorityTransfers = mockStockTransfers.filter(t => t.priority === 'High').length;
-  const totalItems = mockStockTransfers.reduce((sum, t) => sum + t.items.length, 0);
-  
-  return {
-    totalTransfers,
-    pendingTransfers,
-    inTransitTransfers,
-    completedTransfers,
-    highPriorityTransfers,
-    totalItems,
-    averageItems: totalTransfers > 0 ? totalItems / totalTransfers : 0,
-    averageCompletionTime: 0, // Placeholder - would need date calculations
-  };
+  const response = await apiClient.get('/stock/transfers/stats');
+  return response.data;
 };
 
 /**
  * Approve a stock transfer
- * TODO: Replace with actual API call: POST /api/stock-transfers/:id/approve
+ * PATCH /stock/transfers/:id with status=in_transit
  */
 export const approveStockTransfer = async (id: string, approvedBy: string): Promise<StockTransfer> => {
-  await delay(600);
-  const index = mockStockTransfers.findIndex(transfer => transfer.id === id);
-  if (index === -1) {
-    throw new Error('Stock transfer not found');
-  }
-  mockStockTransfers[index] = {
-    ...mockStockTransfers[index],
-    status: 'In Transit',
-    approvedBy,
-  };
-  return mockStockTransfers[index];
+  const body: Record<string, any> = { status: 'in_transit' };
+  if (approvedBy) body.approved_by = approvedBy;
+  const response = await apiClient.patch(`/stock/transfers/${id}`, body);
+  return mapStockTransfer(response.data);
 };
 
 /**
  * Mark stock transfer as completed
- * TODO: Replace with actual API call: POST /api/stock-transfers/:id/complete
+ * PUT /stock/transfers/:id/complete
  */
 export const completeStockTransfer = async (id: string, completedDate: string): Promise<StockTransfer> => {
-  await delay(600);
-  const index = mockStockTransfers.findIndex(transfer => transfer.id === id);
-  if (index === -1) {
-    throw new Error('Stock transfer not found');
-  }
-  mockStockTransfers[index] = {
-    ...mockStockTransfers[index],
-    status: 'Completed',
-    completedDate,
-  };
-  return mockStockTransfers[index];
+  const response = await apiClient.put(`/stock/transfers/${id}/complete`);
+  return mapStockTransfer(response.data);
 };
 
 /**
  * Search stock transfers
- * TODO: Replace with actual API call: GET /api/stock-transfers/search?q=...
+ * GET /stock/transfers?search=X
  */
 export const searchStockTransfers = async (query: string): Promise<StockTransfer[]> => {
-  await delay(300);
-  const lowerQuery = query.toLowerCase();
-  return mockStockTransfers.filter(transfer =>
-    transfer.transferId.toLowerCase().includes(lowerQuery) ||
-    transfer.fromLocation.toLowerCase().includes(lowerQuery) ||
-    transfer.toLocation.toLowerCase().includes(lowerQuery) ||
-    transfer.requestedBy.toLowerCase().includes(lowerQuery)
-  );
+  const response = await apiClient.get('/stock/transfers', { params: { search: query, limit: 200 } });
+  const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+  return data.map(mapStockTransfer);
 };

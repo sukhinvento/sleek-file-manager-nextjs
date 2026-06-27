@@ -1,5 +1,6 @@
 export interface PurchaseOrderItem {
   id?: string;
+  item_id?: string;
   name: string;
   qty: number;
   unitPrice: number;
@@ -21,6 +22,7 @@ export interface PurchaseOrderRemark {
 export interface PurchaseOrder {
   id: string;
   poNumber: string;
+  vendorId?: string;
   vendorName: string;
   vendorContact: string;
   vendorPhone: string;
@@ -36,6 +38,7 @@ export interface PurchaseOrder {
   paidAmount: number;
   createdBy: string;
   approvedBy: string;
+  actor?: string;
   notes: string;
   attachments: number;
   paymentMethod: string;
@@ -43,7 +46,7 @@ export interface PurchaseOrder {
 }
 
 export interface StockItem {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   stock: number;

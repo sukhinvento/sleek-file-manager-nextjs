@@ -50,6 +50,24 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
   VariantProps<typeof sheetVariants> { }
 
+// Returns true when an "outside" interaction should NOT close the sheet —
+// i.e. it targets a form field or a portal-rendered popper (calendar, select, dropdown).
+const shouldIgnoreOutsideInteraction = (target: HTMLElement | null): boolean => {
+  if (!target) return false;
+  if (
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.closest('input') ||
+    target.closest('textarea')
+  ) {
+    return true;
+  }
+  // Radix popovers/selects and react-day-picker render in portals outside the sheet.
+  return !!target.closest(
+    '[data-radix-popper-content-wrapper],[data-radix-popover-content],[data-radix-select-content],[role="listbox"],.rdp'
+  );
+};
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
@@ -60,26 +78,14 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
       onPointerDownOutside={(e) => {
-        // Prevent accidental closure when interacting with inputs
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.closest('input') ||
-          target.closest('textarea')
-        ) {
+        // Keep the sheet open when interacting with inputs or portal'd poppers
+        // (date pickers, selects, dropdowns) that render outside the sheet DOM.
+        if (shouldIgnoreOutsideInteraction(e.target as HTMLElement)) {
           e.preventDefault();
         }
       }}
       onInteractOutside={(e) => {
-        // Allow normal interaction inside the sheet
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.closest('input') ||
-          target.closest('textarea')
-        ) {
+        if (shouldIgnoreOutsideInteraction(e.target as HTMLElement)) {
           e.preventDefault();
         }
       }}

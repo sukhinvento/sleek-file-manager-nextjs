@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from '@/hooks/use-toast';
 import {
   Pagination,
   PaginationContent,
@@ -70,7 +70,6 @@ interface AuditEntry {
 }
 
 export const EditFiles = () => {
-  const { toast } = useToast();
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("all");
@@ -177,13 +176,9 @@ export const EditFiles = () => {
     const isDateValid = validateDate(editedData.date);
 
     if (!isValueValid || !isDateValid) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: !isValueValid 
-          ? "Please enter a valid value (e.g., $1234.56)" 
-          : "Please enter a valid date (YYYY-MM-DD)",
-      });
+      toast({ title: 'Validation Error', description: !isValueValid
+          ? 'Please enter a valid value (e.g., $1234.56)'
+          : 'Please enter a valid date (YYYY-MM-DD)', variant: 'destructive' });
       return;
     }
 
@@ -199,10 +194,7 @@ export const EditFiles = () => {
       return row;
     }));
 
-    toast({
-      title: "Changes saved successfully",
-      description: "The row has been updated with the new values.",
-    });
+    toast({ title: 'Changes saved successfully', description: 'The row has been updated with the new values.', variant: 'success' });
     
     setEditingRow(null);
     setEditedData(null);

@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const { login } = useAuth();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,27 +16,30 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock login - replace with actual authentication logic
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await login(username, password);
+      toast({ title: "Login successful!", variant: 'success' });
+      navigate("/inventory-dashboard");
+    } catch (error: any) {
+      console.error('Login error:', error);
 
-      if (email === "admin@example.com" && password === "password") {
-        toast.success("Login successful!");
-        navigate("/dashboard");
+      if (error.response?.status === 401) {
+        toast({ title: "Invalid username or password", variant: 'destructive' });
+      } else if (error.response?.status === 400) {
+        toast({ title: "Please provide valid credentials", variant: 'destructive' });
+      } else if (!error.response) {
+        toast({ title: "Cannot connect to server. Please check if backend is running.", variant: 'destructive' });
       } else {
-        toast.error("Invalid credentials. Try admin@example.com / password");
-        setIsLoading(false);
+        toast({ title: error.response?.data?.message || "An error occurred during login", variant: 'destructive' });
       }
-    } catch (error) {
-      toast.error("An error occurred during login.");
+
       setIsLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#556B2F] items-center justify-center relative overflow-hidden">
+      <div className="hidden md:flex w-full md:w-1/2 items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(220 52% 48%), hsl(222 55% 22%))' }}>
         <div className="absolute inset-0 w-full h-full overflow-hidden opacity-20">
           <svg className="absolute top-10 left-10" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="60" cy="60" r="60" fill="white" />
@@ -95,17 +100,18 @@ export const Login = () => {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username / Email
                 </label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="mt-1"
+                  autoComplete="username"
                 />
               </div>
               <div>
@@ -115,11 +121,12 @@ export const Login = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="mt-1"
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -130,14 +137,14 @@ export const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-slate-600 focus:ring-slate-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary/50 border-border rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
+                <a href="#" className="font-medium text-primary hover:text-primary/80">
                   Forgot your password?
                 </a>
               </div>
@@ -154,8 +161,8 @@ export const Login = () => {
             <div className="mt-4 text-center text-sm">
               <p className="text-gray-600">
                 Don't have an account?{" "}
-                <a href="#" className="font-medium text-slate-600 hover:text-slate-500">
-                  Sign up
+                <a href="#" className="font-medium text-primary hover:text-primary/80">
+                  Contact Administrator
                 </a>
               </p>
             </div>

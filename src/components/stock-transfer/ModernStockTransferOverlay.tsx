@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Plus, Edit3, X, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, Box, TrendingUp, FileText, Send, Smartphone, CheckCircle } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Save, Plus, Edit3, Package, MapPin, Clock, User, ArrowRight, Trash2, Calendar, AlertCircle, TrendingUp, FileText, Send, CheckCircle, ArrowRightLeft, MessageSquare, History, Navigation } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 import { ModernInventoryOverlay } from '../inventory/ModernInventoryOverlay';
 import { ItemScanner } from '../scanner/ItemScanner';
 import { StockTransfer, StockTransferItem, InventoryItem } from '@/types/inventory';
@@ -16,6 +18,11 @@ import { OrderStatusDialog, StatusUpdateData } from '../orders/OrderStatusDialog
 import { AutosuggestInput } from '../purchase-orders/AutosuggestInput';
 import { DatePicker } from "@/components/ui/date-picker";
 import { StockItem } from '@/types/purchaseOrder';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { DeletePopover } from '@/components/ui/delete-popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { fetchInventoryItems, fetchItemLocations, updateInventoryStock, InventoryLocationStock } from '@/services/inventoryService';
+import { fetchLocationLookup } from '@/services/locationService';
 
 interface ModernStockTransferOverlayProps {
   transfer: StockTransfer | null;
@@ -34,88 +41,6 @@ const statusColors = {
   'Cancelled': 'cancelled' as const
 };
 
-const locations = [
-  'Main Warehouse',
-  'Eastern Warehouse', 
-  'Western Warehouse',
-  'Emergency Room',
-  'ICU',
-  'Pharmacy',
-  'Surgery Department'
-];
-
-const sampleItems = [
-  { name: 'Bandages', availableStock: 500, saleUnit: 'Box' },
-  { name: 'Syringes', availableStock: 1000, saleUnit: 'Pack' },
-  { name: 'IV Fluids', availableStock: 250, saleUnit: 'Bottle' },
-  { name: 'Oxygen Masks', availableStock: 150, saleUnit: 'Single Unit' },
-  { name: 'Antibiotics', availableStock: 300, saleUnit: 'Strip' },
-  { name: 'Pain Relievers', availableStock: 200, saleUnit: 'Strip' }
-];
-
-// Mock inventory database for scanner
-const mockInventory: InventoryItem[] = [
-  {
-    id: 'INV-001',
-    name: 'Paracetamol 500mg',
-    category: 'Medicines',
-    sku: 'MED-PAR-500',
-    currentStock: 150,
-    minStock: 50,
-    maxStock: 500,
-    unitPrice: 5.99,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-12',
-    description: 'Pain relief medication',
-    batchNumber: 'BATCH-2025-001',
-    saleUnit: 'Strip',
-    barcode: '1234567890128',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-001',
-    rfidTag: 'A1B2C3D4E5F67890ABCDEF12',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-002',
-    name: 'Amoxicillin 250mg',
-    category: 'Antibiotics',
-    sku: 'MED-AMX-250',
-    currentStock: 200,
-    minStock: 75,
-    maxStock: 600,
-    unitPrice: 12.50,
-    supplier: 'MediSupply Co',
-    location: 'Shelf B-05',
-    description: 'Antibiotic medication',
-    batchNumber: 'BATCH-2025-002',
-    saleUnit: 'Strip',
-    barcode: '9876543210987',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-002',
-    rfidTag: 'B2C3D4E5F6G78901BCDEF123',
-    trackingEnabled: true
-  },
-  {
-    id: 'INV-003',
-    name: 'Ibuprofen 400mg',
-    category: 'Medicines',
-    sku: 'MED-IBU-400',
-    currentStock: 300,
-    minStock: 100,
-    maxStock: 800,
-    unitPrice: 8.75,
-    supplier: 'PharmaCorp',
-    location: 'Shelf A-15',
-    description: 'Anti-inflammatory medication',
-    batchNumber: 'BATCH-2025-003',
-    saleUnit: 'Strip',
-    barcode: '5555666677778',
-    barcodeType: 'EAN-13',
-    qrCode: 'QR-INV-003',
-    rfidTag: 'C3D4E5F6G7H89012CDEF1234',
-    trackingEnabled: true
-  }
-];
 
 export const ModernStockTransferOverlay = ({ 
   transfer, 
@@ -126,40 +51,25 @@ export const ModernStockTransferOverlay = ({
   onUpdate, 
   onDelete 
 }: ModernStockTransferOverlayProps) => {
-  const [items, setItems] = useState<StockTransferItem[]>([]);
-  const [fromLocation, setFromLocation] = useState<string>('');
-  const [toLocation, setToLocation] = useState<string>('');
-  const [requestedBy, setRequestedBy] = useState<string>('');
-  const [priority, setPriority] = useState<string>('Medium');
-  const [reason, setReason] = useState<string>('');
-  const [expectedDate, setExpectedDate] = useState<string>('');
-  const [isEditMode, setIsEditMode] = useState<boolean>(isEdit);
+  const { displayName } = useCurrentUser();
+  const [items, setItems] = useState<StockTransferItem[]>(transfer?.items || []);
+  const [fromLocation, setFromLocation] = useState<string>(transfer?.fromLocation || '');
+  const [toLocation, setToLocation] = useState<string>(transfer?.toLocation || '');
+  const [requestedBy, setRequestedBy] = useState<string>(transfer?.requestedBy || displayName);
+  const [priority, setPriority] = useState<string>(transfer?.priority || 'Medium');
+  const [reason, setReason] = useState<string>(transfer?.reason || '');
+  const [expectedDate, setExpectedDate] = useState<string>(transfer?.expectedDate || '');
+  const [isEditMode, setIsEditMode] = useState<boolean>(isEdit || !transfer);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [isNarrowLayout, setIsNarrowLayout] = useState<boolean>(false);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  // Per-item location stock cache: itemName → array of InventoryLocationStock
+  const [itemLocationStocks, setItemLocationStocks] = useState<Map<string, InventoryLocationStock[]>>(new Map());
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (transfer) {
-      setItems(transfer.items || []);
-      setFromLocation(transfer.fromLocation || '');
-      setToLocation(transfer.toLocation || '');
-      setRequestedBy(transfer.requestedBy || '');
-      setPriority(transfer.priority || 'Medium');
-      setReason(transfer.reason || '');
-      setExpectedDate(transfer.expectedDate || '');
-    } else {
-      setItems([]);
-      setFromLocation('');
-      setToLocation('');
-      setRequestedBy('');
-      setPriority('Medium');
-      setReason('');
-      setExpectedDate('');
-    }
-    setIsEditMode(isEdit || !transfer);
-  }, [transfer, isEdit]);
 
   // Responsive layout detection
   useEffect(() => {
@@ -192,6 +102,51 @@ export const ModernStockTransferOverlay = ({
     };
   }, [isOpen]);
 
+  // Load locations and inventory items
+  useEffect(() => {
+    fetchLocationLookup().then(locs => setLocations(locs.map(l => l.label))).catch(() => setLocations([]));
+    fetchInventoryItems(1, 200).then(res => {
+      const loaded = res.data || [];
+      setInventoryItems(loaded);
+      // Pre-fetch location stocks for items already on the transfer
+      if (transfer?.items?.length) {
+        transfer.items.forEach(ti => {
+          const inv = loaded.find(i => i.name === ti.name);
+          if (inv) fetchAndCacheItemLocations(inv.id, ti.name);
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Fetch per-location stock for a single inventory item and cache by name
+  const fetchAndCacheItemLocations = (inventoryItemId: string, itemName: string) => {
+    if (!inventoryItemId) return;
+    fetchItemLocations(inventoryItemId).then(locs => {
+      if (locs.length > 0) {
+        setItemLocationStocks(prev => new Map(prev).set(itemName, locs));
+      }
+    }).catch(() => {});
+  };
+
+  // Returns stock at the fromLocation for a specific item name using per-item cache
+  const getStockAtFromLocation = (itemName: string): number | undefined => {
+    if (!fromLocation) return undefined;
+    const locs = itemLocationStocks.get(itemName);
+    if (locs) {
+      const match = locs.find(l => l.locationName === fromLocation);
+      return match?.quantity ?? 0;
+    }
+    return undefined;
+  };
+
+  // Returns stock at the toLocation for a specific item name using per-item cache
+  const getStockAtToLocation = (itemName: string): number | undefined => {
+    if (!toLocation) return undefined;
+    const locs = itemLocationStocks.get(itemName);
+    if (!locs) return undefined;
+    return locs.find(l => l.locationName === toLocation)?.quantity ?? 0;
+  };
+
   const isReadOnly = transfer?.status === 'Completed' || transfer?.status === 'Cancelled';
 
   const addItem = (stockItem?: StockItem) => {
@@ -212,10 +167,7 @@ export const ModernStockTransferOverlay = ({
     // Add new item at the beginning to push existing items down
     setItems([newItem, ...items]);
     
-    toast({
-      title: "Item Added",
-      description: "New item has been added to the transfer.",
-    });
+    toast({ title: 'Item Added', description: 'New item has been added to the transfer.', variant: 'success' });
   };
 
   const handleItemScanned = (item: InventoryItem, quantity?: number) => {
@@ -227,23 +179,18 @@ export const ModernStockTransferOverlay = ({
       availableStock: item.currentStock || 0,
       saleUnit: item.saleUnit || 'Single Unit'
     };
-    
-    setItems([...items, newItem]);
-    
-    toast({
-      title: "Item Added via Scanner",
-      description: `${item.name} - Qty: ${quantity || 1}`,
-    });
+
+    setItems(prev => [...prev, newItem]);
+    fetchAndCacheItemLocations(item.id, item.name);
+
+    toast({ title: 'Item Added via Scanner', description: `${item.name} - Qty: ${quantity || 1}`, variant: 'success' });
   };
 
   const removeItem = (index: number) => {
     if (isReadOnly) return;
     setItems(items.filter((_, i: number) => i !== index));
     
-    toast({
-      title: "Item Removed",
-      description: "Item has been removed from the transfer.",
-    });
+    toast({ title: 'Item Removed', description: 'Item has been removed from the transfer.', variant: 'success' });
   };
 
   const updateItem = (index: number, field: string, value: any) => {
@@ -252,12 +199,12 @@ export const ModernStockTransferOverlay = ({
     const updatedItems = [...items];
     (updatedItems[index] as any)[field] = value;
     
-    // If item name is selected, update available stock and sale unit
     if (field === 'name') {
-      const selectedItem = sampleItems.find(item => item.name === value);
-      if (selectedItem) {
-        updatedItems[index].availableStock = selectedItem.availableStock;
-        updatedItems[index].saleUnit = selectedItem.saleUnit as any;
+      const globalItem = inventoryItems.find(item => item.name === value);
+      if (globalItem) {
+        updatedItems[index].availableStock = globalItem.currentStock ?? 0;
+        updatedItems[index].saleUnit = globalItem.saleUnit as any;
+        fetchAndCacheItemLocations(globalItem.id, value);
       }
     }
     
@@ -266,29 +213,17 @@ export const ModernStockTransferOverlay = ({
 
   const handleSaveTransfer = async () => {
     if (!items.length) {
-      toast({
-        title: "Validation Error",
-        description: "Please add at least one item to the transfer.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please add at least one item to the transfer.', variant: 'destructive' });
       return;
     }
 
     if (!fromLocation || !toLocation) {
-      toast({
-        title: "Validation Error",
-        description: "Please select both source and destination locations.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please select both source and destination locations.', variant: 'destructive' });
       return;
     }
 
     if (!requestedBy.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter the requester name.",
-        variant: "destructive",
-      });
+      toast({ title: 'Validation Error', description: 'Please enter the requester name.', variant: 'destructive' });
       return;
     }
 
@@ -311,78 +246,69 @@ export const ModernStockTransferOverlay = ({
 
       if (transfer && onUpdate) {
         await onUpdate(transferData);
-        toast({
-          title: "Transfer Updated",
-          description: `Stock transfer ${transferData.transferId} has been updated successfully.`,
-        });
+        toast({ title: 'Transfer Updated', description: `Stock transfer ${transferData.transferId} has been updated successfully.`, variant: 'success' });
       } else if (onSave) {
         await onSave(transferData);
-        toast({
-          title: "Transfer Created",
-          description: `Stock transfer ${transferData.transferId} has been created successfully.`,
-        });
+        toast({ title: 'Transfer Created', description: `Stock transfer ${transferData.transferId} has been created successfully.`, variant: 'success' });
       }
-      
+
       onClose();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save transfer. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save transfer. Please try again.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const quickActions = (
+  const quickActions = transfer ? (
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-        <Package className="h-4 w-4 mr-1" />
+      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setShowTrack(true)}>
+        <Navigation className="h-4 w-4 mr-1" />
         Track
       </Button>
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-        <Clock className="h-4 w-4 mr-1" />
+      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setShowHistory(true)}>
+        <History className="h-4 w-4 mr-1" />
         History
       </Button>
     </div>
-  );
+  ) : null;
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showTrack, setShowTrack] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleDeleteTransfer = () => {
     if (transfer && onDelete) {
-      if (confirm(`Are you sure you want to delete stock transfer ${transfer.transferId}?\n\nThis action cannot be undone.`)) {
-        onDelete(transfer.transferId);
-        toast({
-          title: "Transfer Deleted",
-          description: `Stock transfer ${transfer.transferId} has been removed.`,
-        });
-        onClose();
-      }
+      onDelete(transfer.transferId);
+      toast({ title: 'Transfer Deleted', description: `Stock transfer ${transfer.transferId} has been removed.`, variant: 'success' });
+      onClose();
     }
   };
 
-  const handleStatusUpdate = (statusData: StatusUpdateData) => {
+  const handleStatusUpdate = async (statusData: StatusUpdateData) => {
     if (!transfer || !onUpdate) return;
 
     // Validate and map status to allowed values
     const validStatuses = ['Pending', 'In Transit', 'Completed', 'Cancelled', 'Partially Received'] as const;
-    const mappedStatus = validStatuses.includes(statusData.status as any) 
+    const mappedStatus = validStatuses.includes(statusData.status as any)
       ? statusData.status as typeof validStatuses[number]
       : 'Pending';
 
     // Update the transfer with new status and item fulfillment data
+    const isProcessed = mappedStatus === 'In Transit' || mappedStatus === 'Completed';
     const updatedTransfer: StockTransfer = {
       ...transfer,
       status: mappedStatus,
+      ...(isProcessed && displayName ? { approvedBy: displayName } : {}),
     };
 
     // Update items with fulfillment data if provided
     if (statusData.items) {
       updatedTransfer.items = items.map((item, index) => {
-        const statusItem = statusData.items?.find(si => 
+        const statusItem = statusData.items?.find(si =>
           (item.id && si.id === item.id) || si.name === item.name
         ) || statusData.items?.[index];
-        
+
         if (statusItem) {
           return {
             ...item,
@@ -397,36 +323,46 @@ export const ModernStockTransferOverlay = ({
       setItems(updatedTransfer.items);
     }
 
-    // Update the transfer (dialog already closed by this point)
+    // 1. Save the transfer status first (critical — must not be blocked by inventory updates)
     try {
       onUpdate(updatedTransfer);
-      
-      toast({
-        title: "Status Updated",
-        description: `Transfer ${transfer.transferId} status changed to ${statusData.status}`,
-      });
+      toast({ title: 'Status Updated', description: `Transfer ${transfer.transferId} status changed to ${statusData.status}`, variant: 'success' });
 
-      // If there are damaged or returned items, show additional info
       if (statusData.items) {
         const damagedTotal = statusData.items.reduce((sum, item) => sum + (item.damagedQty || 0), 0);
         const returnedTotal = statusData.items.reduce((sum, item) => sum + (item.returnedQty || 0), 0);
-        
         if (damagedTotal > 0 || returnedTotal > 0) {
           setTimeout(() => {
-            toast({
-              title: "Transfer Summary",
-              description: `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`,
-              variant: damagedTotal > 0 ? "destructive" : "default",
-            });
-          }, 1000);
+            const msg = `${returnedTotal > 0 ? `Returned: ${returnedTotal} items. ` : ''}${damagedTotal > 0 ? `Damaged: ${damagedTotal} items.` : ''}`;
+            toast({ title: 'Transfer Summary', description: msg, variant: damagedTotal > 0 ? 'destructive' : 'success' });
+          }, 800);
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to update transfer status. Please try again.', variant: 'destructive' });
+      return;
+    }
+
+    // 2. Best-effort inventory location adjustment (non-blocking, never surfaces errors to the user)
+    if (mappedStatus === 'Completed' && fromLocation && toLocation) {
+      const inventoryMap = new Map(inventoryItems.map(inv => [inv.name, inv]));
+
+      for (const item of updatedTransfer.items) {
+        const inv = inventoryMap.get(item.name);
+        if (!inv?.id) continue;
+
+        const fulfilledQty = item.fulfilledQty ?? item.quantity;
+
+        // Deduct from source location
+        updateInventoryStock(inv.id, fromLocation, -(item.quantity)).catch(e =>
+          console.warn(`Could not deduct ${item.name} from ${fromLocation}:`, e)
+        );
+
+        // Add to destination location
+        updateInventoryStock(inv.id, toLocation, fulfilledQty).catch(e =>
+          console.warn(`Could not add ${item.name} to ${toLocation}:`, e)
+        );
+      }
     }
   };
 
@@ -450,7 +386,7 @@ export const ModernStockTransferOverlay = ({
             size="sm"
             onClick={handleSaveTransfer}
             disabled={isSaving || isReadOnly}
-            className="bg-slate-600 hover:bg-slate-700 text-white"
+            className=""
           >
             {isSaving ? (
               <>
@@ -473,7 +409,7 @@ export const ModernStockTransferOverlay = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDeleteTransfer}
+              onClick={() => setShowDeleteConfirm(true)}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1" />
@@ -493,370 +429,647 @@ export const ModernStockTransferOverlay = ({
     </div>
   );
 
+  const editable = isEditMode || !transfer;
+
+  const itemsTableContent = (
+    <>
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+          No items added yet. Click "Add Item" to get started.
+        </div>
+      ) : !editable && isNarrowLayout ? (
+        /* ── Mobile view mode: item cards ─────────────────────── */
+        <div className="space-y-3">
+          {items.map((item, index) => {
+            const fromStock = getStockAtFromLocation(item.name);
+            const toStock = getStockAtToLocation(item.name);
+            const hasFromData = fromLocation && fromStock !== undefined;
+            const displayFromStock = fromStock ?? item.availableStock ?? 0;
+            const isOver = hasFromData && item.quantity > displayFromStock;
+            const fromBadgeClass = isOver
+              ? 'bg-red-50 text-red-700 border-red-200'
+              : hasFromData
+              ? 'bg-blue-50 text-blue-700 border-blue-200'
+              : 'bg-muted text-muted-foreground border-border';
+            const toBadgeClass = toStock !== undefined
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-muted text-muted-foreground border-border';
+            return (
+              <div key={index} className="rounded-xl border border-border bg-muted/30 p-3 space-y-2.5">
+                {/* Item name row */}
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="text-sm font-semibold text-foreground leading-tight">{item.name}</span>
+                </div>
+                {/* Qty + stock flow */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">Transfer:</span>
+                    <span className="font-bold text-sm text-foreground">{item.quantity}</span>
+                    <Badge variant="outline" className="text-[10px]">{item.saleUnit || 'Unit'}</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap pt-0.5 border-t border-border">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">From Stock</span>
+                    <Badge variant="outline" className={`text-xs w-fit ${fromBadgeClass}`}>
+                      {hasFromData ? `${displayFromStock}` : (fromLocation ? '…' : '—')}
+                      {hasFromData && <span className="ml-0.5 font-normal opacity-70 text-[9px]">avail</span>}
+                    </Badge>
+                    {isOver && (
+                      <span className="text-[10px] text-red-600 font-medium">-{item.quantity - displayFromStock} over</span>
+                    )}
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">To Stock</span>
+                    <Badge variant="outline" className={`text-xs w-fit ${toBadgeClass}`}>
+                      {toStock !== undefined ? `${toStock}` : (toLocation ? '…' : '—')}
+                      {toStock !== undefined && <span className="ml-0.5 font-normal opacity-70 text-[9px]">there</span>}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* ── Edit mode: keep table with inputs ─────────────────── */
+        <div className="h-full overflow-auto" style={{ height: isNarrowLayout ? 'auto' : '58vh' }}>
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead className="w-[35%]">Item Name</TableHead>
+                <TableHead className="w-[17%]">Transfer Qty</TableHead>
+                <TableHead className="w-[18%]">
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-blue-600 dark:text-blue-400">From Stock</span>
+                    {fromLocation && <span className="text-[10px] font-normal text-muted-foreground truncate max-w-[100px]">{fromLocation}</span>}
+                  </div>
+                </TableHead>
+                <TableHead className="w-[18%]">
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-emerald-600 dark:text-emerald-400">To Stock</span>
+                    {toLocation && <span className="text-[10px] font-normal text-muted-foreground truncate max-w-[100px]">{toLocation}</span>}
+                  </div>
+                </TableHead>
+                {editable && !isReadOnly && <TableHead className="w-[12%]" />}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item, index) => {
+                const fromStock = getStockAtFromLocation(item.name);
+                const toStock = getStockAtToLocation(item.name);
+                const hasFromData = fromLocation && fromStock !== undefined;
+                const displayFromStock = fromStock ?? item.availableStock ?? 0;
+                const isOver = hasFromData && item.quantity > displayFromStock;
+                const isAtLimit = hasFromData && !isOver && item.quantity === displayFromStock;
+                const fromBadgeClass = isOver
+                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800'
+                  : isAtLimit
+                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800'
+                  : hasFromData
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800'
+                  : 'bg-muted text-muted-foreground border-border';
+                const toBadgeClass = toStock !== undefined
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800'
+                  : 'bg-muted text-muted-foreground border-border';
+                return (
+                  <TableRow key={index} className={isOver ? 'bg-red-50/30 dark:bg-red-950/10' : ''}>
+                    <TableCell className="relative overflow-visible p-2 break-words">
+                      {editable ? (
+                        <AutosuggestInput
+                          value={item.name}
+                          onChange={(value) => updateItem(index, 'name', value)}
+                          onSelect={(stockItem: any) => {
+                            const id = stockItem.id || stockItem._id;
+                            updateItem(index, 'name', stockItem.name);
+                            updateItem(index, 'availableStock', stockItem.currentStock || stockItem.stock || 0);
+                            updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
+                            updateItem(index, 'quantity', 1);
+                            if (id) fetchAndCacheItemLocations(id, stockItem.name);
+                            if (index === items.length - 1) addItem();
+                          }}
+                          placeholder="Search items..."
+                        />
+                      ) : (
+                        <span className="font-medium text-sm whitespace-normal break-words leading-tight">{item.name}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="p-2">
+                      {editable ? (
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                            className={`w-16 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isOver ? 'border-red-300 focus-visible:ring-red-300' : ''}`}
+                            min={1}
+                          />
+                          <Badge variant="outline" className="text-[10px] whitespace-nowrap">{item.saleUnit || 'Unit'}</Badge>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold">{item.quantity}</span>
+                          <Badge variant="outline" className="text-xs">{item.saleUnit || 'Unit'}</Badge>
+                        </div>
+                      )}
+                    </TableCell>
+
+                    {/* From-location stock */}
+                    <TableCell className="p-2">
+                      <div className="flex flex-col gap-0.5">
+                        <Badge variant="outline" className={`text-xs w-fit ${fromBadgeClass}`}>
+                          {hasFromData ? `${displayFromStock}` : (fromLocation ? '…' : '—')}
+                          {hasFromData && <span className="ml-0.5 font-normal opacity-70 text-[9px]">avail</span>}
+                        </Badge>
+                        {isOver && (
+                          <span className="text-[10px] text-red-600 dark:text-red-400 font-medium">
+                            -{item.quantity - displayFromStock} over
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* To-location stock */}
+                    <TableCell className="p-2">
+                      <Badge variant="outline" className={`text-xs w-fit ${toBadgeClass}`}>
+                        {toStock !== undefined ? `${toStock}` : (toLocation ? '…' : '—')}
+                        {toStock !== undefined && <span className="ml-0.5 font-normal opacity-70 text-[9px]">there</span>}
+                      </Badge>
+                    </TableCell>
+
+                    {editable && !isReadOnly && (
+                      <TableCell className="p-2">
+                        <DeletePopover
+                          onConfirm={() => removeItem(index)}
+                          title="Remove this item?"
+                          description="It will be removed from the transfer."
+                        />
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </>
+  );
+
+
   return (
     <>
     <ModernInventoryOverlay
       isOpen={isOpen}
       onClose={onClose}
-      title={transfer ? `Stock Transfer ${transfer.transferId}` : 'New Stock Transfer'}
-      subtitle={transfer ? `Requested on ${transfer.requestDate}` : 'Create a new stock transfer request'}
+      title={transfer ? `Transfer ${transfer.transferId.length > 16 ? transfer.transferId.slice(0, 16) + '…' : transfer.transferId}` : 'New Stock Transfer'}
+      subtitle={transfer ? `Requested on ${transfer.requestDate}${transfer.requestedBy ? ` · ${transfer.requestedBy}` : ''}` : 'Create a new stock transfer request'}
+      icon={<ArrowRightLeft className="h-5 w-5 text-primary" />}
       status={transfer?.status}
       statusColor={transfer?.status ? statusColors[transfer.status] : 'pending'}
       headerActions={headerActions}
       quickActions={quickActions}
       size="wide"
     >
-      {/* Responsive Layout */}
-      <div 
-        ref={containerRef}
-        className={isNarrowLayout ? "flex flex-col gap-4 overflow-y-auto" : "grid h-full"} 
-        style={isNarrowLayout ? {} : { gridTemplateColumns: '30% 70%' }}
-      >
+      <div ref={containerRef} className="h-full min-h-0">
 
-        {/* Left Column / Top Section - Transfer Information */}
-        <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 overflow-y-auto"}>
+        {/* Read-only banner for completed/cancelled transfers */}
+        {isReadOnly && (
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
+            <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              This transfer is <span className="font-bold">{transfer?.status}</span> and cannot be edited or deleted.
+            </p>
+          </div>
+        )}
 
-          {/* Location Information */}
-          <Card className="border-border/50 shadow-sm">
+      {!isNarrowLayout ? (
+        /* ── WIDE: two-column layout matching SO/PO ── */
+        <div className="grid h-full" style={{ gridTemplateColumns: '30% 70%' }}>
+
+          {/* Left Column */}
+          <div className="flex flex-col gap-4 p-6 overflow-y-auto">
+
+            {/* Transfer Summary (like SO/PO Order Summary) */}
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Transfer Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Items</span>
+                  <span className="font-medium">{items.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Qty</span>
+                  <span className="font-medium">{items.reduce((s, i) => s + (i.quantity || 0), 0)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Status</span>
+                  <span className="text-sm capitalize">{transfer?.status || 'New'}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Transfer Route (like Customer Info in SO) */}
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ArrowRightLeft className="h-5 w-5 text-primary" />
+                  Transfer Route
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <Send className="h-3 w-3 text-blue-600" />
+                    From Location
+                  </Label>
+                  {editable ? (
+                    <Select value={fromLocation} onValueChange={setFromLocation} disabled={isReadOnly}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select source location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 border border-border/40">
+                      <Send className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                      <span className="text-sm font-medium">{fromLocation || '—'}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-center">
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-emerald-600" />
+                    To Location
+                  </Label>
+                  {editable ? (
+                    <Select value={toLocation} onValueChange={setToLocation} disabled={isReadOnly}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select destination location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 border border-border/40">
+                      <MapPin className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-sm font-medium">{toLocation || '—'}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Transfer Details (like Order Details in SO) */}
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Transfer Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <User className="h-3 w-3 text-muted-foreground" />
+                    Requested By
+                  </Label>
+                  {editable ? (
+                    <Input
+                      value={requestedBy}
+                      onChange={e => setRequestedBy(e.target.value)}
+                      className="mt-1"
+                      placeholder="Enter requester name"
+                    />
+                  ) : (
+                    <div className="mt-1 px-3 py-2 rounded-md bg-muted/50 border border-border/40 text-sm font-medium">{requestedBy || '—'}</div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                    Priority
+                  </Label>
+                  {editable ? (
+                    <Select value={priority} onValueChange={setPriority}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" />Low</div></SelectItem>
+                        <SelectItem value="Medium"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" />Medium</div></SelectItem>
+                        <SelectItem value="High"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500" />High</div></SelectItem>
+                        <SelectItem value="Urgent"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" />Urgent</div></SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-1 px-3 py-2 rounded-md bg-muted/50 border border-border/40 text-sm font-medium">{priority || '—'}</div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                    Expected Completion
+                  </Label>
+                  {editable ? (
+                    <div className="mt-1">
+                      <DatePicker
+                        date={expectedDate ? new Date(expectedDate) : undefined}
+                        onDateChange={date => setExpectedDate(date ? date.toISOString().split('T')[0] : '')}
+                        placeholder="Select expected date"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-1 px-3 py-2 rounded-md bg-muted/50 border border-border/40 text-sm font-medium">{expectedDate || '—'}</div>
+                  )}
+                </div>
+                {transfer && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Request Date</span>
+                        <span className="font-medium">{transfer.requestDate || '—'}</span>
+                      </div>
+                      {transfer.approvedBy && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Approved By</span>
+                          <span className="font-medium">{transfer.approvedBy}</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column — Items Table + Reason (like SO: Products + Additional Notes) */}
+          <div className="flex flex-col gap-4 p-6 h-full">
+            <Card className="flex flex-col border-border/50 shadow-sm" style={{ height: '75vh' }}>
+              <CardHeader className="pb-3 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Transfer Items ({items.length})
+                  </CardTitle>
+                  {editable && !isReadOnly && (
+                    <div className="flex gap-2">
+                      <ItemScanner onItemScanned={handleItemScanned} existingItems={[]} disabled={isReadOnly} />
+                      <Button onClick={() => addItem()} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Item
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-hidden px-6 pb-4 pt-0">
+                {itemsTableContent}
+              </CardContent>
+            </Card>
+
+            {/* Reason for Transfer (like SO's Additional Notes) */}
+            <Card className="flex-shrink-0 border-border/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Reason for Transfer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {editable ? (
+                  <Textarea
+                    value={reason}
+                    onChange={e => setReason(e.target.value)}
+                    placeholder="Add any reason or notes for this stock transfer…"
+                    className="resize-none min-h-[60px]"
+                    disabled={isReadOnly}
+                  />
+                ) : (
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap min-h-[40px]">
+                    {reason || <span className="text-muted-foreground italic">No reason provided.</span>}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+      ) : !editable ? (
+        /* ── NARROW VIEW MODE: Doctor-style sections ── */
+        <div className="flex flex-col gap-4 p-4">
+
+          {/* Stat cards row — Items / Total Qty / Status */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Items', val: items.length, icon: Package },
+              { label: 'Total Qty', val: items.reduce((s, i) => s + (i.quantity || 0), 0), icon: TrendingUp },
+              { label: 'Status', val: transfer?.status || 'New', icon: CheckCircle, small: true },
+            ].map(s => (
+              <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
+                <s.icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className={`font-bold text-foreground ${s.small ? 'text-xs mt-1' : 'text-xl'}`}>{s.val}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Transfer Route section */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Transfer Route</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+              <span className="text-sm text-muted-foreground">From</span>
+              <span className="text-sm font-semibold text-foreground text-right">{fromLocation || '—'}</span>
+            </div>
+            <div className="flex justify-center py-2 bg-primary/[0.025]">
+              <ArrowRight className="h-4 w-4 text-primary/40" />
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 bg-card">
+              <span className="text-sm text-muted-foreground">To</span>
+              <span className="text-sm font-semibold text-foreground text-right">{toLocation || '—'}</span>
+            </div>
+          </div>
+
+          {/* Transfer Details section */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Transfer Details</span>
+            </div>
+            {[
+              { label: 'Requested By', value: requestedBy || '—' },
+              { label: 'Priority', value: priority || '—' },
+              { label: 'Expected Date', value: expectedDate || '—' },
+              { label: 'Request Date', value: transfer?.requestDate || '—' },
+              ...(transfer?.approvedBy ? [{ label: 'Approved By', value: transfer.approvedBy }] : []),
+            ].map(({ label, value }, i) => (
+              <div key={label} className={`flex items-center justify-between px-4 py-2.5 border-b border-border last:border-0 ${i % 2 === 0 ? 'bg-card' : 'bg-primary/[0.025]'}`}>
+                <span className="text-sm text-muted-foreground">{label}</span>
+                <span className="text-sm font-semibold text-foreground text-right">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Transfer Items section */}
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+              <Package className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Transfer Items ({items.length})</span>
+            </div>
+            <div className="p-3 space-y-3">
+              {itemsTableContent}
+            </div>
+          </div>
+
+          {/* Reason section */}
+          {reason && (
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="bg-primary/[0.06] px-4 py-2.5 border-b border-border flex items-center gap-2">
+                <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">Reason for Transfer</span>
+              </div>
+              <p className="px-4 py-3 text-sm text-foreground leading-relaxed whitespace-pre-wrap">{reason}</p>
+            </div>
+          )}
+        </div>
+
+      ) : (
+        /* ── NARROW EDIT MODE: stacked inputs ── */
+        <div className="flex flex-col gap-4 p-4">
+
+          {/* Transfer Route */}
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Transfer Locations
+                <ArrowRightLeft className="h-4 w-4 text-primary" />
+                Transfer Route
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
-                <Label htmlFor="from-location" className="text-xs font-medium flex items-center gap-1">
-                  <Send className="h-3 w-3 text-blue-600" />
-                  From Location
-                </Label>
-                <Select value={fromLocation} onValueChange={setFromLocation} disabled={!isEditMode}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue placeholder="Select source location" />
-                  </SelectTrigger>
+                <Label className="text-xs font-medium text-muted-foreground">From Location</Label>
+                <Select value={fromLocation} onValueChange={setFromLocation} disabled={isReadOnly}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select source location" /></SelectTrigger>
                   <SelectContent>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>{location}</SelectItem>
-                    ))}
+                    {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="flex items-center justify-center py-2">
-                <ArrowRight className="h-5 w-5 text-green-600" />
-              </div>
-              
+              <div className="flex justify-center"><ArrowRight className="h-4 w-4 text-primary" /></div>
               <div>
-                <Label htmlFor="to-location" className="text-xs font-medium flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-green-600" />
-                  To Location
-                </Label>
-                <Select value={toLocation} onValueChange={setToLocation} disabled={!isEditMode}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue placeholder="Select destination location" />
-                  </SelectTrigger>
+                <Label className="text-xs font-medium text-muted-foreground">To Location</Label>
+                <Select value={toLocation} onValueChange={setToLocation} disabled={isReadOnly}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select destination location" /></SelectTrigger>
                   <SelectContent>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>{location}</SelectItem>
-                    ))}
+                    {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
           </Card>
 
-          {/* Request Information */}
-          <Card className="border-border/50 shadow-sm">
+          {/* Transfer Details */}
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Request Details
+                <Calendar className="h-4 w-4 text-primary" />
+                Transfer Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label htmlFor="requested-by" className="text-xs font-medium flex items-center gap-1">
-                  <User className="h-3 w-3 text-muted-foreground" />
-                  Requested By
-                </Label>
-                <Input
-                  id="requested-by"
-                  value={requestedBy}
-                  onChange={(e) => setRequestedBy(e.target.value)}
-                  disabled={!isEditMode}
-                  className="h-8 text-sm mt-1"
-                  placeholder="Enter requester name"
-                />
+                <Label className="text-xs font-medium text-muted-foreground">Requested By</Label>
+                <Input value={requestedBy} onChange={e => setRequestedBy(e.target.value)} className="mt-1" placeholder="Enter requester name" />
               </div>
               <div>
-                <Label htmlFor="priority" className="text-xs font-medium flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3 text-muted-foreground" />
-                  Priority
-                </Label>
-                <Select value={priority} onValueChange={setPriority} disabled={!isEditMode}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label className="text-xs font-medium text-muted-foreground">Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Low">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        Low
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="Medium">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                        Medium
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="High">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-orange-500" />
-                        High
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="Urgent">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-red-500" />
-                        Urgent
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="expected-date" className="text-xs font-medium flex items-center gap-1">
-                  <Calendar className="h-3 w-3 text-muted-foreground" />
-                  Expected Completion
-                </Label>
+                <Label className="text-xs font-medium text-muted-foreground">Expected Completion</Label>
                 <div className="mt-1">
                   <DatePicker
                     date={expectedDate ? new Date(expectedDate) : undefined}
-                    onDateChange={(date) => setExpectedDate(date ? date.toISOString().split('T')[0] : '')}
+                    onDateChange={date => setExpectedDate(date ? date.toISOString().split('T')[0] : '')}
                     placeholder="Select expected date"
-                    disabled={!isEditMode}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Reason for Transfer */}
-          <Card className="border-border/50 shadow-sm">
+          {/* Transfer Items */}
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Reason for Transfer
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                id="reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={!isEditMode}
-                className="text-sm resize-none"
-                placeholder="Enter reason for transfer..."
-                rows={4}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column / Bottom Section - Transfer Items Table */}
-        <div className={isNarrowLayout ? "flex flex-col gap-4 p-4" : "flex flex-col gap-4 p-6 h-full"}>
-
-          {/* Items Table */}
-          <Card className={isNarrowLayout ? "flex flex-col border-border/50 shadow-sm" : "flex flex-col border-border/50 shadow-sm"} style={isNarrowLayout ? {} : { height: '75vh' }}>
-            <CardHeader className="pb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
+                  <Package className="h-4 w-4 text-primary" />
                   Transfer Items ({items.length})
                 </CardTitle>
-                {(isEditMode || !transfer) && (
+                {!isReadOnly && (
                   <div className="flex gap-2">
-                    <ItemScanner 
-                      onItemScanned={handleItemScanned}
-                      existingItems={[]}
-                      disabled={isReadOnly}
-                    />
+                    <ItemScanner onItemScanned={handleItemScanned} existingItems={[]} disabled={isReadOnly} />
                     <Button onClick={() => addItem()} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
                     </Button>
                   </div>
                 )}
               </div>
             </CardHeader>
-            <CardContent className={isNarrowLayout ? "py-4" : "flex-1 overflow-hidden"}>
-              {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
-                  No items added yet. Click "Add Item" to get started.
-                </div>
-              ) : isNarrowLayout ? (
-                // Mobile/Narrow Layout: Card-based view
-                <div className="space-y-3 overflow-auto max-h-96">
-                  {items.map((item, index) => (
-                    <Card key={index} className="border">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 space-y-3">
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground">Item Name</Label>
-                              {(isEditMode || !transfer) ? (
-                                <AutosuggestInput
-                                  value={item.name}
-                                  onChange={(value) => updateItem(index, 'name', value)}
-                                  onSelect={(stockItem) => {
-                                    updateItem(index, 'name', stockItem.name);
-                                    updateItem(index, 'availableStock', stockItem.stock || 0);
-                                    updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
-                                    updateItem(index, 'quantity', 1);
-                                    if (index === items.length - 1) {
-                                      addItem();
-                                    }
-                                  }}
-                                  placeholder="Search items..."
-                                />
-                              ) : (
-                                <div className="font-medium mt-1">{item.name}</div>
-                              )}
-                            </div>
+            <CardContent>
+              {itemsTableContent}
+            </CardContent>
+          </Card>
 
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label className="text-xs font-medium text-muted-foreground">Transfer Quantity</Label>
-                                {(isEditMode || !transfer) ? (
-                                  <Input
-                                    type="number"
-                                    value={item.quantity}
-                                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                    className="mt-1 min-w-[60px]"
-                                    min={1}
-                                  />
-                                ) : (
-                                  <div className="mt-1 font-medium">{item.quantity}</div>
-                                )}
-                              </div>
-
-                              <div>
-                                <Label className="text-xs font-medium text-muted-foreground">Sale Unit</Label>
-                                <div className="mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {item.saleUnit || 'Unit'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground">Available Stock</Label>
-                              <div className="mt-1">
-                                <Badge variant="outline" className="bg-muted">
-                                  {item.availableStock || 0} units
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-
-                          {(isEditMode || !transfer) && (
-                            <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                // Desktop/Wide Layout: Table view
-                <div className="h-full overflow-auto" style={{ height: '60vh' }}>
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        <TableHead className="w-[45%]">Item Name</TableHead>
-                        <TableHead className="w-[20%]">Transfer Quantity</TableHead>
-                        <TableHead className="w-[20%]">Available Stock</TableHead>
-                        {(isEditMode || !transfer) && <TableHead className="w-[15%]"></TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="relative overflow-visible p-2 break-words">
-                            {(isEditMode || !transfer) ? (
-                              <AutosuggestInput
-                                value={item.name}
-                                onChange={(value) => updateItem(index, 'name', value)}
-                                onSelect={(stockItem) => {
-                                  updateItem(index, 'name', stockItem.name);
-                                  updateItem(index, 'availableStock', stockItem.stock || 0);
-                                  updateItem(index, 'saleUnit', stockItem.saleUnit || 'Unit');
-                                  updateItem(index, 'quantity', 1);
-                                  if (index === items.length - 1) {
-                                    addItem();
-                                  }
-                                }}
-                                placeholder="Search items..."
-                              />
-                            ) : (
-                              <span className="font-medium whitespace-normal break-words leading-tight">{item.name}</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="flex items-center gap-2">
-                              {(isEditMode || !transfer) ? (
-                                <Input
-                                  type="number"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                                  className="w-20 min-w-[5rem] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  min={1}
-                                />
-                              ) : (
-                                <span>{item.quantity}</span>
-                              )}
-                              <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                {item.saleUnit || 'Unit'}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <Badge variant="outline" className="bg-muted">
-                              {item.availableStock || 0} units
-                            </Badge>
-                          </TableCell>
-                          {(isEditMode || !transfer) && (
-                            <TableCell className="p-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+          {/* Reason for Transfer */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                Reason for Transfer
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                placeholder="Add any reason or notes for this stock transfer…"
+                disabled={!editable}
+                className="resize-none min-h-[80px]"
+              />
             </CardContent>
           </Card>
         </div>
+      )}
+
       </div>
     </ModernInventoryOverlay>
 
@@ -878,6 +1091,149 @@ export const ModernStockTransferOverlay = ({
         }))}
         onStatusUpdate={handleStatusUpdate}
       />
+    )}
+
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title={`Delete stock transfer ${transfer?.transferId ?? ''}?`}
+      description="This will permanently remove this stock transfer. This action cannot be undone."
+      confirmLabel="Delete"
+      variant="destructive"
+      onConfirm={handleDeleteTransfer}
+    />
+
+    {/* Track Dialog */}
+    {transfer && (
+      <Dialog open={showTrack} onOpenChange={setShowTrack}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Navigation className="h-4 w-4 text-primary" />
+              Track Transfer · {transfer.transferId}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {/* Route summary */}
+            <div className="flex items-center justify-between rounded-lg bg-muted/40 border border-border px-4 py-3 mb-5 text-sm">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">From</p>
+                <p className="font-semibold text-foreground text-xs">{transfer.fromLocation || '—'}</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-primary/50 flex-shrink-0" />
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-0.5">To</p>
+                <p className="font-semibold text-foreground text-xs">{transfer.toLocation || '—'}</p>
+              </div>
+            </div>
+            {/* Status timeline */}
+            <div className="space-y-0">
+              {(['Pending', 'In Transit', 'Completed'] as const).map((step, idx) => {
+                const statusOrder = { 'Pending': 0, 'In Transit': 1, 'Completed': 2, 'Cancelled': 3, 'Partially Received': 1.5 };
+                const currentOrder = statusOrder[transfer.status as keyof typeof statusOrder] ?? 0;
+                const stepOrder = statusOrder[step];
+                const isCancelled = transfer.status === 'Cancelled';
+                const isDone = !isCancelled && currentOrder > stepOrder;
+                const isCurrent = !isCancelled && Math.floor(currentOrder) === stepOrder;
+                const stepColors = isDone ? 'bg-emerald-500 border-emerald-500' : isCurrent ? 'bg-primary border-primary' : 'bg-muted border-border';
+                const labelColor = isDone || isCurrent ? 'text-foreground' : 'text-muted-foreground';
+                return (
+                  <div key={step} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full border-2 ${stepColors} mt-0.5 flex-shrink-0`} />
+                      {idx < 2 && <div className={`w-0.5 h-8 ${isDone ? 'bg-emerald-400' : 'bg-border'}`} />}
+                    </div>
+                    <div className="pb-6">
+                      <p className={`text-sm font-semibold ${labelColor}`}>{step}</p>
+                      {isCurrent && (
+                        <p className="text-xs text-primary font-medium mt-0.5">Current status</p>
+                      )}
+                      {step === 'Pending' && transfer.requestDate && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{transfer.requestDate}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {transfer.status === 'Cancelled' && (
+                <div className="flex items-start gap-3 mt-1">
+                  <div className="w-3 h-3 rounded-full border-2 bg-red-500 border-red-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-600">Cancelled</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">This transfer was cancelled</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Items summary */}
+            <div className="mt-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Items</span>
+                <span className="font-semibold">{items.length}</span>
+              </div>
+              <div className="flex justify-between text-xs mt-1">
+                <span className="text-muted-foreground">Total Qty</span>
+                <span className="font-semibold">{items.reduce((s, i) => s + (i.quantity || 0), 0)}</span>
+              </div>
+              {transfer.expectedDate && (
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-muted-foreground">Expected by</span>
+                  <span className="font-semibold">{transfer.expectedDate}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+
+    {/* History Dialog */}
+    {transfer && (
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <History className="h-4 w-4 text-primary" />
+              History · {transfer.transferId}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-1">
+            {[
+              ...(transfer.approvedBy ? [{
+                icon: CheckCircle,
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+                label: `Status changed to ${transfer.status}`,
+                meta: `By ${transfer.approvedBy}`,
+              }] : []),
+              {
+                icon: Send,
+                color: 'text-blue-600',
+                bg: 'bg-blue-50 dark:bg-blue-950/30',
+                label: 'Transfer requested',
+                meta: `${transfer.requestDate ? `On ${transfer.requestDate}` : ''} · By ${transfer.requestedBy || '—'}`,
+              },
+              {
+                icon: FileText,
+                color: 'text-muted-foreground',
+                bg: 'bg-muted/50',
+                label: 'Transfer created',
+                meta: `${items.length} item${items.length !== 1 ? 's' : ''} · ${transfer.fromLocation} → ${transfer.toLocation}`,
+              },
+            ].map((event, idx) => (
+              <div key={idx} className="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${event.bg}`}>
+                  <event.icon className={`h-3.5 w-3.5 ${event.color}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{event.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{event.meta}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     )}
     </>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ResponsiveDialog, 
   ResponsiveDialogContent, 
@@ -96,23 +96,29 @@ export const OrderStatusDialog = ({
   items,
   onStatusUpdate,
 }: OrderStatusDialogProps) => {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
-  const [notes, setNotes] = useState('');
-  const [itemQuantities, setItemQuantities] = useState<Record<string, {
-    fulfilled: number;
-    returned: number;
-    damaged: number;
-  }>>(
+  const buildItemQuantities = () =>
     items.reduce((acc, item, index) => {
       const key = item.id || `item-${index}`;
       acc[key] = {
-        fulfilled: item.fulfilledQty || 0,
+        fulfilled: item.fulfilledQty || item.qty || 0,
         returned: item.returnedQty || 0,
         damaged: item.damagedQty || 0,
       };
       return acc;
-    }, {} as Record<string, { fulfilled: number; returned: number; damaged: number }>)
-  );
+    }, {} as Record<string, { fulfilled: number; returned: number; damaged: number }>);
+
+  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
+  const [notes, setNotes] = useState('');
+  const [itemQuantities, setItemQuantities] = useState(buildItemQuantities);
+
+  // Reset all state whenever the dialog is opened (or the order changes)
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedStatus(currentStatus);
+      setNotes('');
+      setItemQuantities(buildItemQuantities());
+    }
+  }, [isOpen, currentStatus, orderNumber]);
 
   const statusOpts = statusOptions[orderType] || statusOptions.purchase;
   const requiresItemUpdate = selectedStatus.includes('Partial') || 
