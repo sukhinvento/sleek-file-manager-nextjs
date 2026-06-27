@@ -305,7 +305,7 @@ export const TrendsAnalytics = () => {
         subtitle={`Live data — ${metricLabels[metric]}`}
         badge="12 months"
       >
-        <div className="flex gap-1 px-2 pb-3 pt-1" style={{ background: 'hsl(220,14%,96%)', borderRadius: 8, margin: '0 8px 12px', padding: '4px' }}>
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ background: 'hsl(220,14%,96%)', borderRadius: 8, margin: '0 8px 12px', padding: '4px', WebkitOverflowScrolling: 'touch' }}>
           {(['admissions', 'revenue', 'expenditure', 'diagnostics'] as const).map(m => (
             <MetricTab key={m} active={metric === m} onClick={() => setMetric(m)}>
               {m}

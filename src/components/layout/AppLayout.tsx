@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Menu, ChevronLeft, ChevronRight, Plus, User, Stethoscope, BedDouble, FlaskConical, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,11 @@ export const AppLayout = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [location.pathname]);
   const navigate = useNavigate();
   const { user, displayName, logout } = useAuth();
 
@@ -302,7 +307,7 @@ export const AppLayout = ({
               {children}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 min-w-0 pb-safe">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 min-w-0 pb-safe">
               {children}
             </div>
           )}
